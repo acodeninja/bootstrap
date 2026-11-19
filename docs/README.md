@@ -27,7 +27,7 @@ $ /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/acodeninja/bootst
 ==> preflight    docker 29.9.3, make 4.4.1
 ==> scaffold     21 files -> ../my-zig
 ==> git          initialised, 1 commit
-==> image        built my-zig-dev (debian:bookworm-slim + zig 0.15.2)
+==> image        built my-zig-dev (debian:bookworm-slim + zig 0.17.1)
 ==> test         All 61 tests passed.
 
 Ready. Next:

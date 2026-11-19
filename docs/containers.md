@@ -176,9 +176,21 @@ volumes:
 ```
 
 Per language, the volume targets the directory that actually holds the artefacts —
-`node_modules`, `~/.cargo` and `target`, `_build`, `zig-cache`, `.stack-work`,
-`~/.m2`. Getting this wrong is not a subtle performance problem: it is the difference
-between a two-second loop and a ninety-second one.
+`node_modules`, `~/.cargo` and `target`, `_build`, `.stack-work`, `~/.m2`. Getting this
+wrong is not a subtle performance problem: it is the difference between a two-second
+loop and a ninety-second one.
+
+Where the toolchain reads an environment variable for its cache location, point it
+inside the volume rather than letting it write next to the source. Zig does this with
+`ZIG_GLOBAL_CACHE_DIR` and `ZIG_LOCAL_CACHE_DIR`, which also keeps `.zig-cache` out of
+the bind-mounted project.
+
+**A named volume seeds from the image while it is still empty**, and for an immutable,
+content-addressed cache that is a feature rather than the staleness trap it is for
+`node_modules`. `zig` uses it: the Dockerfile runs a throwaway `zig init && zig build
+test` so the compiled build runner is already in `/cache` when the volume is created.
+Without it the first `make test` on any machine costs seventy seconds; with it, under
+three.
 
 **The check:** no run may repeat work an earlier one did.
 
