@@ -60,6 +60,10 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 `package.json` dependencies beyond the linter. `node:test` and `node:assert` are in the
 runtime. This is the template that proves the baseline can be genuinely small.
 
+Its tests are flat `test()` calls from `node:test`, not `describe`/`it`. `test` is the
+module's own idiom, and flatness is what keeps the names readable on their own — see
+[kitchen-sink.md](kitchen-sink.md#test-conventions).
+
 Its `make test` is a bare `node --test` with no path, and that is not an oversight.
 `node --test kitchen-sink/` treats the argument as a module to load and exits `1` with
 `MODULE_NOT_FOUND` even when the suite is green. Bare, node walks the tree itself and

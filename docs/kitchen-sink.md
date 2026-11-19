@@ -72,6 +72,11 @@ growing into a full language tour.
 Anything no kata needs — concurrency, generics, modules, I/O, reflection — stays out.
 If you are tempted to add a theme, name the kata that needs it first.
 
+The same test applies to **every individual assertion**, not just to themes, and it is the
+one that keeps these files short. Name the kata that needs this line. If you cannot, cut
+it — however true or interesting it is. Reference material nobody reaches for is not
+reference material.
+
 ## Failure is expressed natively
 
 The rule that makes `09_errors` worth shipping: **do not port the JavaScript version
@@ -176,10 +181,29 @@ scaffolding you were handed, and it should survive the deletion unchanged.
 Applied in every template, adapted to the language's runner:
 
 - **Arrange-Act-Assert**, visually distinct.
-- **Names describe scenario and outcome.** `modulo_of_negative_follows_dividend_sign`,
-  not `test_3`. A failure should be legible without opening the file.
+- **A name is a complete sentence, readable on its own.** It describes the behaviour in
+  plain language rather than naming the syntax, and states a fact rather than giving
+  advice. The body shows how the thing is spelled; the name says what happens.
+
+  | Instead of | Write |
+  | ---------- | ----- |
+  | `is the only value not equal to itself` | `not-a-number does not equal itself` |
+  | `reports object, which is a bug old enough to be permanent` | `null reports its type as object` |
+  | `compare within a tolerance instead` | `adding two tenths does not give three tenths` |
+  | `undefined is absence the runtime produced` | `a property that was never set reads as empty` |
+
+  The first column is not invented: it is what the javascript template shipped with
+  before this rule existed. The faults are a fragment that needs its parent, an opinion
+  in place of a behaviour, advice in place of a fact, and prose in place of a result.
 - **Parametrise over a table** rather than copy-pasting near-identical bodies — `t.Run`
-  loops in Go, `@pytest.mark.parametrize`, `describe.each`, `forAll`.
-- **One assertion, one idea.** These files are read far more often than they are run.
+  loops in Go, `@pytest.mark.parametrize`, `forAll`, or a plain loop over a list of cases
+  inside one test. But a table must not spend the file's whole budget: a nine-row
+  `typeof` table is nine of the eight assertions you are allowed. Assert the rows that
+  surprise and drop the rest.
+- **One assertion, one idea.** These files are read far more often than they are run. A
+  quirk and the spelling that avoids it are one idea, so they share a body.
+- **Flat, with no grouping block.** The file is the grouping. A `describe` wrapper invites
+  a name that only parses next to its parent, which is exactly the fragment the rule
+  above bans — and the leaf is what CI output, `grep` and failure reports show.
 - Tests live where the language puts them: beside the source in Rust and Zig, in `test/`
   in Erlang and Gleam, in `tests/` in Python.
