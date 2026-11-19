@@ -59,6 +59,21 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 
 ## Notes on individual rows
 
+**`typescript` pins TypeScript 6, not 7, and that is the ecosystem's limit rather than
+ours.** `typescript-eslint` 8.73.0 declares `"typescript": ">=4.8.4 <6.1.0"` and hard
+*throws* on 7.x at require time rather than warning. Since the template ships eslint, 6.0.3
+is the newest version the whole toolchain can actually use. A first attempt reached 7.0.2
+by aliasing `typescript` to a `@typescript/typescript6` compat shim for eslint and
+`@typescript/native` for the real compiler; it worked, and was rejected — two conceptual
+compiler entries and a README paragraph telling people not to simplify them is too much
+config surface for a kata starter to carry for a version number.
+
+Two Node 26 constraints are worth knowing, both verified by running rather than inferred:
+its TypeScript support is **strip-only**, so a constructor parameter property throws
+`ERR_UNSUPPORTED_TYPESCRIPT_SYNTAX` at runtime even though `tsc` accepts it; and relative
+imports between `.ts` files need the literal `.ts` extension, which needs
+`allowImportingTsExtensions` to type-check and `rewriteRelativeImportExtensions` to emit.
+
 **`ruby` ships no `Gemfile`.** `bundle install` cannot run in `ruby:4.0.10-slim-trixie`:
 bundler reinstalls the `json` and `racc` the image already carries, builds both native
 extensions from source, and the slim image has no `cc` and no `make` — verified. Pinning
