@@ -59,6 +59,23 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 
 ## Notes on individual rows
 
+**`php` resolves the `vendor/` collision by never installing into the project.** The
+contract reserves `vendor/` for third-party source a template ships deliberately; Composer
+installs dependencies to the same path. So PHPUnit, PHPStan and php-cs-fixer install inside
+the image at `/tools`, against a `composer.json` written in the Dockerfile, with
+`COMPOSER_VENDOR_DIR=/tools/vendor` and `COMPOSER_HOME=/cache/composer`. The project's own
+`composer.json` declares identity and nothing else, so no `vendor/` and no `composer.lock`
+is ever written into the scaffold. Composer itself arrives via
+`COPY --from=composer:<version>`, never a piped installer.
+
+Two image details that cost real time to find: `php:8.6-cli-trixie` ships neither
+`mbstring` (PHPUnit needs it) nor `unzip`, and `apt-get purge --auto-remove libonig-dev`
+after building `mbstring` also removes `libonig5`, which `mbstring.so` links against —
+breaking PHP at every later invocation. Do not purge that build dependency.
+
+php-cs-fixer also refuses to run on PHP 8.6 without
+`Config::setUnsupportedPhpVersionAllowed(true)`; it supports syntax only up to 8.5.
+
 **`elixir` redirects its lock file with `mix.exs` itself.** `Mix.Project`'s `:lockfile`
 key takes an absolute path, so `mix.lock`, `deps/` and `_build/` all move into `/cache`
 and credo stays an ordinary dependency — a third answer to the lock-file problem, cleaner

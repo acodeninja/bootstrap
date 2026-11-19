@@ -1,0 +1,9 @@
+{
+    "name": "{{PROJECT_SLUG}}/{{PROJECT_SLUG}}",
+    "description": "{{PROJECT_NAME}}",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": ">=8.6"
+    }
+}
