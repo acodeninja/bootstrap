@@ -203,6 +203,28 @@ template that reinstalls its dependencies on every run.
 
 Either way it is part of the definition of done for every template.
 
+## Lock files land in the project, not the cache
+
+Several toolchains write a lock or generated manifest into the **project root** on first
+build — `Cargo.lock`, `package-lock.json`, `Gemfile.lock`, `pubspec.lock`, `mix.lock`,
+`composer.lock`, `packages.lock.json`, `cabal.project.freeze`. Redirecting the build
+directory does not stop it, so the generated project is dirty the moment the bootstrap runs
+its own first `make test`, and the committed scaffold stops matching the working tree.
+
+Two fixes, in order of preference:
+
+1. **Install dependencies outside the project entirely**, so no lock is written there.
+   `javascript` does this: `npm install` runs in `/deps` and the result moves to
+   `/node_modules`.
+2. **Ship a pre-generated, tokenised lock file** in `files/`, so the first build finds one
+   that already matches. `rust` does this with a two-line `Cargo.lock` whose `name` is
+   `{{PROJECT_SLUG}}`.
+
+Gitignoring it is a last resort rather than a fix: it hides a file the toolchain keeps
+rewriting, and for a template whose point is a reproducible toolchain that is the wrong
+trade. The check either way is that `git status --porcelain` in the generated project is
+empty after `make test`.
+
 ## File ownership
 
 Bind mounts on Linux write root-owned files unless the container runs as the calling
