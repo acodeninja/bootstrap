@@ -2,6 +2,6 @@
 .github
 .env
 node_modules
-kitchen-sink
+kitchen-sink.test.js
 src
 *.md

@@ -432,7 +432,8 @@ next_steps() {
   printf '\nReady. Next:\n'
   printf '  cd %s\n' "$TARGET"
   printf '  make test\n'
-  printf '  read kitchen-sink/ for the language, then pick a kata from KITCHEN-SINK.md\n'
+  printf '  read kitchen-sink.test.js for the language, then pick a kata:\n'
+  printf '  https://learn.madetech.com/technology/katas/\n'
 }
 
 main() {
