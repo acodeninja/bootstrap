@@ -59,6 +59,16 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 
 ## Notes on individual rows
 
+**`python` pins ruff's rule selection, and has to.** With no `[tool.ruff.lint] select`,
+ruff 0.17.6 enables roughly eight hundred rules rather than the `E4,E7,E9,F` baseline the
+documentation implies — including `flake8-bugbear`, which fails the template's own
+`src/`. The `pyproject.toml` pins the baseline explicitly; removing it reopens this.
+
+`pytest` also exits `5` on an empty suite rather than `0`, so `python` is the one template
+where the runner does not strictly "succeed when it finds none". Deleting the kitchen sink
+alone is safe — `src/` still holds a test, which the contract requires — but deleting that
+too makes `make test` fail. `javascript`'s bare `node --test` has no such edge.
+
 **`javascript` is pure JavaScript.** No TypeScript, no bundler, no transpiler, no
 `package.json` dependencies beyond the linter. `node:test` and `node:assert` are in the
 runtime. This is the template that proves the baseline can be genuinely small.
