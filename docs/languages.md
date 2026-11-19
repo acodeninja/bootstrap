@@ -59,6 +59,24 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 
 ## Notes on individual rows
 
+**`nim` is the first template where `lint` and `fmt` check genuinely different things.**
+`nim check` is a type check and is blind to whitespace; `nimpretty` has no check mode at
+all. So `make lint` cannot gate formatting, which the generated README says plainly rather
+than hiding.
+
+Neither tool accepts a directory — `nim check src` tries to open `src.nim` — so both run
+through wrapper scripts baked into the image that glob the `.nim` files, the same trick
+`go` uses for `gofmt`'s useless exit code. A first attempt named two files explicitly in
+the Makefile instead, which left the kitchen sink neither type-checked nor formatted: the
+file the template exists to make someone read was the one file no tool touched.
+
+Two traps the image works around: `nim`/`nimble` write a scratch directory under `/tmp`
+regardless of `--nimcache` and `NIMBLE_DIR`, so priming the cache as root leaves it
+root-owned and every other uid then fails to compile — the Dockerfile clears `/tmp` in its
+last layer. And `nim`'s cache only skips the C-compiler step, not its own frontend, so the
+warm-run speedup is real but modest: measured in isolation, 22 `gcc` invocations cold
+against 0 warm.
+
 **`kotlin` and `java` pin the newest *LTS* JDK, not the newest JDK.** `gradle:9.9.1`
 publishes jdk17, jdk21, jdk25 and jdk27 variants. 21 and 25 are LTS; 27 is an interim
 release, and the Kotlin Gradle plugin, Checkstyle and Spotless all lag interim JDKs. A
