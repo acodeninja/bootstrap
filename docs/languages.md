@@ -59,6 +59,17 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 
 ## Notes on individual rows
 
+**`go` needs a wrapper to make `make lint` fail.** `gofmt -l` exits `0` whether or not it
+names a file, so a recipe gating on its exit code can never go red. `go vet` does exit
+non-zero, but it does not check formatting. The Dockerfile bakes a two-line `gofmt-check`
+script into the image and the Makefile calls that.
+
+The reason it lives in the image rather than the project: the no-quotes, no-`sh -c` rule
+constrains the *Makefile*, because those recipes run through `cmd.exe` on Windows. It says
+nothing about what runs inside the container, which has a real shell. A first attempt put
+a small Go program in the generated project instead, which worked but shipped a `tools/`
+directory to every kata for a toolchain deficiency.
+
 **`python` pins ruff's rule selection, and has to.** With no `[tool.ruff.lint] select`,
 ruff 0.17.6 enables roughly eight hundred rules rather than the `E4,E7,E9,F` baseline the
 documentation implies — including `flake8-bugbear`, which fails the template's own

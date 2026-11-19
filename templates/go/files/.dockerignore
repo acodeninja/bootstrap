@@ -1,0 +1,6 @@
+.git
+.github
+.env
+src
+kitchen_sink_test.go
+*.md
