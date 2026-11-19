@@ -41,12 +41,13 @@ nim, prolog, elm, lua, c, cpp.
 
 ## Status
 
-Two templates of twenty-six. `javascript` and `zig` both work end to end from a clone:
+Five templates of twenty-six — `javascript`, `zig`, `go`, `python` and `rust` — each
+green in CI from a cold registry:
 
 ```console
 $ git clone git@github.com:acodeninja/bootstrap.git && cd bootstrap
-$ ./bootstrap.sh javascript ../my-js
-$ ./bootstrap.sh zig ../my-zig
+$ ./bootstrap.sh --list
+$ ./bootstrap.sh rust ../my-rust
 ```
 
 `bootstrap.ps1` is not written yet, and the one-liners above 404 until this repo is
