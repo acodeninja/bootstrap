@@ -11,7 +11,7 @@ The only wave with real design risk. Everything after it is repetition.
   clone and remote mode per [install.md](install.md)
 - `.github/workflows/ci.yml` per [ci.md](ci.md), with registry auth and layer caching
 - `templates/javascript/` — official `node` image, `node:test`, no runtime dependencies
-- `templates/zig/` — hand-rolled image from `debian:bookworm-slim`, `std.testing`
+- `templates/zig/` — hand-rolled image from `debian:trixie-slim`, `std.testing`
 
 Two templates, chosen because they are maximally unalike on both axes that matter:
 interpreted versus compiled, and official image versus hand-rolled. If the contract fits
@@ -54,7 +54,7 @@ for free. `zig` in wave 0 already proved the hand-rolled path.
 
 `elm` · `lua` — no usable upstream image, so the Dockerfile does the installing.
 
-`c` · `cpp` — official `gcc:14`, but no stdlib test runner, so each vendors one (Unity
+`c` · `cpp` — official `gcc:16-trixie`, but no stdlib test runner, so each vendors one (Unity
 and doctest). First use of the vendoring rule in
 [template-contract.md](template-contract.md#vendored-code); get it right here because
 it sets the precedent.

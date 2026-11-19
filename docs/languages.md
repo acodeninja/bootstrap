@@ -9,37 +9,40 @@ runner appears only where the language has no credible built-in (`hspec`, `buste
 `alcotest`, `xUnit`, `PHPUnit`, and the two vendored C/C++ frameworks `Unity` and
 `doctest`).
 
-Base images were resolved against the registry on 2026-11-19 — see
+Base images were resolved against the registry on 2026-11-19: newest stable release,
+Debian variant, picked by semantic version sort rather than by recency. Ordering registry
+tags by last-updated does not give the newest version — maintenance branches get security
+patches, so an old minor can outrank a current one. See
 [containers.md](containers.md#base-images) for the official/vendor/hand-rolled split.
 
-| id           | base image                               | test runner                  | lint / fmt                           | wave |
-| ------------ | ---------------------------------------- | ---------------------------- | ------------------------------------ | ---- |
-| `javascript` | `node:24-bookworm-slim`                  | `node:test`                  | eslint / prettier                    | 0    |
-| `zig`        | `debian:bookworm-slim` + zig 0.17.1      | `std.testing`                | `zig fmt --check` / `zig fmt`        | 0    |
-| `go`         | `golang:1.23-bookworm`                   | `go test`                    | `go vet` / `gofmt`                   | 1    |
-| `rust`       | `rust:1.83-slim`                         | `cargo test`                 | `clippy` / `rustfmt`                 | 1    |
-| `python`     | `python:3.13-slim`                       | `pytest`                     | `ruff check` / `ruff format`         | 1    |
-| `typescript` | `node:24-bookworm-slim`                  | `node:test` + `tsc --noEmit` | eslint / prettier                    | 1    |
-| `ruby`       | `ruby:3.3-slim`                          | `minitest`                   | `rubocop` / `rubocop -a`             | 1    |
-| `elixir`     | `elixir:1.17-otp-27`                     | `ExUnit`                     | `mix credo` / `mix format`           | 1    |
-| `php`        | `php:8.3-cli` + `composer:2`             | `PHPUnit`                    | `phpstan` / `php-cs-fixer`           | 1    |
-| `swift`      | `swift:6.0`                              | `XCTest`                     | `swift format lint` / `swift format` | 1    |
-| `dart`       | `dart:3.5`                               | `package:test`               | `dart analyze` / `dart format`       | 1    |
-| `erlang`     | `erlang:27-slim`                         | `eunit`                      | `dialyzer` / `erlfmt`                | 2    |
-| `gleam`      | `ghcr.io/gleam-lang/gleam:v1.9.1-erlang` | `gleeunit`                   | `gleam check` / `gleam format`       | 2    |
-| `clojure`    | `clojure:temurin-21-tools-deps`          | `clojure.test`               | `clj-kondo` / `cljfmt`               | 2    |
-| `haskell`    | `haskell:9.6.6`                          | `hspec`                      | `hlint` / `ormolu`                   | 2    |
-| `kotlin`     | `gradle:8.10-jdk21`                      | `kotlin.test`                | `ktlint` / `ktlint -F`               | 2    |
-| `java`       | `gradle:8.10-jdk21`                      | `JUnit 5`                    | `checkstyle` / `spotless`            | 2    |
-| `fsharp`     | `mcr.microsoft.com/dotnet/sdk:9.0`       | `xUnit`                      | `dotnet format --verify-no-changes`  | 2    |
-| `csharp`     | `mcr.microsoft.com/dotnet/sdk:9.0`       | `xUnit`                      | `dotnet format --verify-no-changes`  | 2    |
-| `ocaml`      | `ocaml/opam:debian-12`                   | `alcotest` via `dune test`   | `dune build @lint` / `ocamlformat`   | 2    |
-| `nim`        | `nim:2.2.0`                              | `unittest`                   | `nim check` / `nimpretty`            | 2    |
-| `prolog`     | `swipl:9.2.9`                            | `plunit`                     | load check / —                       | 2    |
-| `elm`        | `node:24-bookworm-slim` + elm            | `elm-test`                   | `elm-format --validate`              | 3    |
-| `lua`        | `debian:bookworm-slim` + lua, luarocks   | `busted`                     | `luacheck` / `stylua`                | 3    |
-| `c`          | `gcc:14` + Unity (vendored)              | `Unity`                      | `clang-format` check / in place      | 3    |
-| `cpp`        | `gcc:14` + doctest (vendored)            | `doctest`                    | `clang-format` check / in place      | 3    |
+| id           | base image                                     | test runner                  | lint / fmt                           | wave |
+| ------------ | ---------------------------------------------- | ---------------------------- | ------------------------------------ | ---- |
+| `javascript` | `node:26.13.1-trixie-slim`                     | `node:test`                  | eslint / prettier                    | 0    |
+| `zig`        | `debian:trixie-20261104-slim` + zig 0.17.1     | `std.testing`                | `zig fmt --check` / `zig fmt`        | 0    |
+| `go`         | `golang:1.27.4-trixie`                         | `go test`                    | `go vet` / `gofmt`                   | 1    |
+| `rust`       | `rust:1.100.0-slim-trixie`                     | `cargo test`                 | `clippy` / `rustfmt`                 | 1    |
+| `python`     | `python:3.15.2-slim-trixie`                    | `pytest`                     | `ruff check` / `ruff format`         | 1    |
+| `typescript` | `node:26.13.1-trixie-slim`                     | `node:test` + `tsc --noEmit` | eslint / prettier                    | 1    |
+| `ruby`       | `ruby:4.0.10-slim-trixie`                      | `minitest`                   | `rubocop` / `rubocop -a`             | 1    |
+| `elixir`     | `elixir:1.20.5-otp-29-slim`                    | `ExUnit`                     | `mix credo` / `mix format`           | 1    |
+| `php`        | `php:8.6.0-cli-trixie` + `composer:2.11.2`     | `PHPUnit`                    | `phpstan` / `php-cs-fixer`           | 1    |
+| `swift`      | `swift:6.4.2-trixie-slim`                      | `XCTest`                     | `swift format lint` / `swift format` | 1    |
+| `dart`       | `dart:3.14.1-sdk`                              | `package:test`               | `dart analyze` / `dart format`       | 1    |
+| `erlang`     | `erlang:29.1.2.0-slim`                         | `eunit`                      | `dialyzer` / `erlfmt`                | 2    |
+| `gleam`      | `ghcr.io/gleam-lang/gleam:v1.19.2-erlang-slim` | `gleeunit`                   | `gleam check` / `gleam format`       | 2    |
+| `clojure`    | `clojure:temurin-27-tools-deps-trixie`         | `clojure.test`               | `clj-kondo` / `cljfmt`               | 2    |
+| `haskell`    | `haskell:9.14.1-slim-bookworm`                 | `hspec`                      | `hlint` / `ormolu`                   | 2    |
+| `kotlin`     | `gradle:9.9.1-jdk27`                           | `kotlin.test`                | `ktlint` / `ktlint -F`               | 2    |
+| `java`       | `gradle:9.9.1-jdk27`                           | `JUnit 5`                    | `checkstyle` / `spotless`            | 2    |
+| `fsharp`     | `mcr.microsoft.com/dotnet/sdk:10.0.404`        | `xUnit`                      | `dotnet format --verify-no-changes`  | 2    |
+| `csharp`     | `mcr.microsoft.com/dotnet/sdk:10.0.404`        | `xUnit`                      | `dotnet format --verify-no-changes`  | 2    |
+| `ocaml`      | `ocaml/opam:debian-13-ocaml-5.6`               | `alcotest` via `dune test`   | `dune build @lint` / `ocamlformat`   | 2    |
+| `nim`        | `nim:2.4.0`                                    | `unittest`                   | `nim check` / `nimpretty`            | 2    |
+| `prolog`     | `swipl:11.0.0`                                 | `plunit`                     | load check / —                       | 2    |
+| `elm`        | `node:26.13.1-trixie-slim` + elm               | `elm-test`                   | `elm-format --validate`              | 3    |
+| `lua`        | `debian:trixie-20261104-slim` + lua, luarocks  | `busted`                     | `luacheck` / `stylua`                | 3    |
+| `c`          | `gcc:16.2.0-trixie` + Unity (vendored)         | `Unity`                      | `clang-format` check / in place      | 3    |
+| `cpp`        | `gcc:16.2.0-trixie` + doctest (vendored)       | `doctest`                    | `clang-format` check / in place      | 3    |
 
 ## Waves
 
@@ -47,7 +50,7 @@ Difficulty is now "does a usable image exist", not "can a version manager pin it
 grouping follows from that — see [roadmap.md](roadmap.md) for what each wave delivers.
 
 - **Wave 0** proves both image strategies before anything else is written: `javascript`
-  on an official image, `zig` hand-rolled from `debian:bookworm-slim`.
+  on an official image, `zig` hand-rolled from `debian:trixie-slim`.
 - **Wave 1** is official image plus a stdlib test runner — the cheapest rows.
 - **Wave 2** is an official or vendor image with a real build tool underneath (the JVM,
   the BEAM, .NET, dune, opam). The images do the installing; the work is the build config.
@@ -100,11 +103,16 @@ the host stops mattering, which is most of the argument for this design.
 runs a load-time check (`swipl -g make -t halt`) and `make fmt` is a no-op that says so
 — the contract requires all six targets to exist, not all six to do work.
 
+**`haskell` is the only row not on trixie.** Upstream publishes no `slim-trixie` variant,
+so it pins `9.14.1-slim-bookworm`. Re-check when writing the template: if a trixie slim
+tag has appeared, take it, because the whole set being one Debian generation is worth more
+than the bump.
+
 **`kotlin` uses the `gradle` image** rather than a Kotlin one, because no official
 Kotlin image exists and Gradle is how the project builds anyway.
 
 **`java` and `csharp` cost almost nothing.** Each reuses an image already pinned for
-another template — `gradle:8.10-jdk21` from `kotlin`, `mcr.microsoft.com/dotnet/sdk:9.0`
+another template — `gradle:9.9.1-jdk27` from `kotlin`, `mcr.microsoft.com/dotnet/sdk:10.0.404`
 from `fsharp`. They exist because mainstream class-based OO was otherwise unrepresented:
 Kotlin and F# are both reactions *against* the dialect most people actually write at
 work, and a kata set that cannot show you plain Java has a hole in it.

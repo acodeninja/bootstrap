@@ -72,33 +72,33 @@ Verified against Docker Hub. **Official** means a Docker Official Image
 (`docker.io/library/<name>`).
 
 Rows name the image *family*. A template pins a narrower tag than the row shows —
-`javascript` is on `node:24.22-bookworm-slim`, not `node:24-bookworm-slim` — per
+`javascript` is on `node:26.13.1-trixie-slim`, not `node:26-trixie-slim` — per
 [Pin the tag, never `latest`](#pin-the-tag-never-latest) below.
 
-| Language               | Image                                    | Status      |
-| ---------------------- | ---------------------------------------- | ----------- |
-| javascript, typescript | `node:24-bookworm-slim`                  | official    |
-| python                 | `python:3.13-slim`                       | official    |
-| go                     | `golang:1.23-bookworm`                   | official    |
-| rust                   | `rust:1.83-slim`                         | official    |
-| ruby                   | `ruby:3.3-slim`                          | official    |
-| elixir                 | `elixir:1.17-otp-27`                     | official    |
-| php                    | `php:8.3-cli` + `composer:2`             | official    |
-| swift                  | `swift:6.0`                              | official    |
-| dart                   | `dart:3.5`                               | official    |
-| c, cpp                 | `gcc:14`                                 | official    |
-| erlang                 | `erlang:27-slim`                         | official    |
-| clojure                | `clojure:temurin-21-tools-deps`          | official    |
-| haskell                | `haskell:9.6.6`                          | official    |
-| prolog                 | `swipl:9.2.9`                            | official    |
-| kotlin, java           | `gradle:8.10-jdk21`                      | official    |
-| nim                    | `nim:2.2.0`                              | official    |
-| fsharp, csharp         | `mcr.microsoft.com/dotnet/sdk:9.0`       | vendor      |
-| ocaml                  | `ocaml/opam:debian-12`                   | vendor      |
-| gleam                  | `ghcr.io/gleam-lang/gleam:v1.9.1-erlang` | vendor      |
-| lua                    | `debian:bookworm-slim` + lua, luarocks   | hand-rolled |
-| zig                    | `debian:bookworm-slim` + release tarball | hand-rolled |
-| elm                    | `node:24-bookworm-slim` + elm, elm-test  | hand-rolled |
+| Language               | Image                                        | Status      |
+| ---------------------- | -------------------------------------------- | ----------- |
+| javascript, typescript | `node:26-trixie-slim`                        | official    |
+| python                 | `python:3.15-slim-trixie`                    | official    |
+| go                     | `golang:1.27-trixie`                         | official    |
+| rust                   | `rust:1.100-slim-trixie`                     | official    |
+| ruby                   | `ruby:4.0-slim-trixie`                       | official    |
+| elixir                 | `elixir:1.20-otp-29-slim`                    | official    |
+| php                    | `php:8.6-cli-trixie` + `composer:2`          | official    |
+| swift                  | `swift:6.4-trixie-slim`                      | official    |
+| dart                   | `dart:3.14-sdk`                              | official    |
+| c, cpp                 | `gcc:16-trixie`                              | official    |
+| erlang                 | `erlang:29-slim`                             | official    |
+| clojure                | `clojure:temurin-27-tools-deps-trixie`       | official    |
+| haskell                | `haskell:9.14-slim-bookworm`                 | official    |
+| prolog                 | `swipl:11.0`                                 | official    |
+| kotlin, java           | `gradle:9.9-jdk27`                           | official    |
+| nim                    | `nim:2.4`                                    | official    |
+| fsharp, csharp         | `mcr.microsoft.com/dotnet/sdk:10.0`          | vendor      |
+| ocaml                  | `ocaml/opam:debian-13-ocaml-5.6`             | vendor      |
+| gleam                  | `ghcr.io/gleam-lang/gleam:v1.19-erlang-slim` | vendor      |
+| lua                    | `debian:trixie-slim` + lua, luarocks         | hand-rolled |
+| zig                    | `debian:trixie-slim` + release tarball       | hand-rolled |
+| elm                    | `node:26-trixie-slim` + elm, elm-test        | hand-rolled |
 
 Across 26 templates that is **19 official, 4 vendor, 3 hand-rolled**. The hand-rolled
 set — zig, lua, elm — is the same three it was at 18 templates, because every language
@@ -110,13 +110,13 @@ languages had no usable pin at all.
 Five images cover eleven templates. This is deliberate; do not "tidy up" by giving each
 language its own.
 
-| Image                              | Templates                   |
-| ---------------------------------- | --------------------------- |
-| `node:24-bookworm-slim`            | javascript, typescript, elm |
-| `gradle:8.10-jdk21`                | kotlin, java                |
-| `mcr.microsoft.com/dotnet/sdk:9.0` | fsharp, csharp              |
-| `gcc:14`                           | c, cpp                      |
-| `debian:bookworm-slim`             | zig, lua                    |
+| Image                                 | Templates                   |
+| ------------------------------------- | --------------------------- |
+| `node:26-trixie-slim`                 | javascript, typescript, elm |
+| `gradle:9.9-jdk27`                    | kotlin, java                |
+| `mcr.microsoft.com/dotnet/sdk:10.0`   | fsharp, csharp              |
+| `gcc:16-trixie`                       | c, cpp                      |
+| `debian:trixie-slim`                  | zig, lua                    |
 
 Sharing a base image does not mean sharing a template. Each still has its own
 Dockerfile, Makefile and kitchen sink, because the image is the toolchain and the
@@ -126,12 +126,12 @@ template is the idiom.
 
 Three cases, recorded here so they are not rediscovered per template:
 
-- **php** — `php:8.3-cli` ships no Composer. Take it from the official image in a
+- **php** — `php:8.6-cli-trixie` ships no Composer. Take it from the official image in a
   multi-stage copy rather than piping an installer script:
   `COPY --from=composer:2 /usr/bin/composer /usr/bin/composer`.
-- **c, cpp** — `gcc:14` ships no `clang-format`; one `apt-get install`.
+- **c, cpp** — `gcc:16-trixie` ships no `clang-format`; one `apt-get install`.
 - **swift** — `swift format` became a toolchain subcommand in Swift 6.0. Confirm it is
-  actually present in `swift:6.0` before writing the lint task, and fall back to
+  actually present in `swift:6.4-trixie-slim` before writing the lint task, and fall back to
   installing `swift-format` separately if not.
 
 Every reference above was resolved against the registry on 2026-11-19, tags included.
@@ -151,10 +151,10 @@ The image tag is now the version pin. It is the only thing making a local run ma
 so it does the job `mise.toml` used to:
 
 ```dockerfile
-FROM node:24.11-bookworm-slim
+FROM node:26.13.1-trixie-slim
 ```
 
-Not `node`, not `node:latest`, not `node:24`. A floating tag means a green suite can go
+Not `node`, not `node:latest`, not `node:26`. A floating tag means a green suite can go
 red with no commit in between.
 
 ## Caching is mandatory
