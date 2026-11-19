@@ -9,12 +9,26 @@ permissions:
   contents: read
 
 jobs:
+  # The matrix is whatever is in templates/, discovered with the same glob
+  # bootstrap.sh uses, so adding a template needs no edit here.
+  templates:
+    runs-on: ubuntu-latest
+    outputs:
+      ids: ${{ steps.ids.outputs.ids }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: ids
+        run: |
+          ids=$(for f in templates/*/template.env; do d=${f%/template.env}; printf '"%s",' "${d##*/}"; done)
+          echo "ids=[${ids%,}]" >> "$GITHUB_OUTPUT"
+
   bootstrap:
+    needs: templates
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        template: [javascript, zig]
+        template: ${{ fromJSON(needs.templates.outputs.ids) }}
     steps:
       - uses: actions/checkout@v7
 
