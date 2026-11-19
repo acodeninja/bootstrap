@@ -32,8 +32,8 @@ patches, so an old minor can outrank a current one. See
 | `gleam`      | `ghcr.io/gleam-lang/gleam:v1.19.2-erlang-slim` | `gleeunit`                   | `gleam check` / `gleam format`       | 2    |
 | `clojure`    | `clojure:temurin-27-tools-deps-trixie`         | `clojure.test`               | `clj-kondo` / `cljfmt`               | 2    |
 | `haskell`    | `haskell:9.14.1-slim-bookworm`                 | `hspec`                      | `hlint` / `ormolu`                   | 2    |
-| `kotlin`     | `gradle:9.9.1-jdk27`                           | `kotlin.test`                | `ktlint` / `ktlint -F`               | 2    |
-| `java`       | `gradle:9.9.1-jdk27`                           | `JUnit 5`                    | `checkstyle` / `spotless`            | 2    |
+| `kotlin`     | `gradle:9.9.1-jdk25`                           | `kotlin.test`                | `ktlint` / `ktlint -F`               | 2    |
+| `java`       | `gradle:9.9.1-jdk25`                           | `JUnit 5`                    | `checkstyle` / `spotless`            | 2    |
 | `fsharp`     | `mcr.microsoft.com/dotnet/sdk:10.0.404`        | `xUnit`                      | `dotnet format --verify-no-changes`  | 2    |
 | `csharp`     | `mcr.microsoft.com/dotnet/sdk:10.0.404`        | `xUnit`                      | `dotnet format --verify-no-changes`  | 2    |
 | `ocaml`      | `ocaml/opam:debian-13-ocaml-5.6`               | `alcotest` via `dune test`   | `dune build @lint` / `ocamlformat`   | 2    |
@@ -58,6 +58,11 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
   test framework because the language has no stdlib one.
 
 ## Notes on individual rows
+
+**`kotlin` and `java` pin the newest *LTS* JDK, not the newest JDK.** `gradle:9.9.1`
+publishes jdk17, jdk21, jdk25 and jdk27 variants. 21 and 25 are LTS; 27 is an interim
+release, and the Kotlin Gradle plugin, Checkstyle and Spotless all lag interim JDKs. A
+template exists to hand someone a toolchain that works, so "newest" here means newest LTS.
 
 **`php` resolves the `vendor/` collision by never installing into the project.** The
 contract reserves `vendor/` for third-party source a template ships deliberately; Composer
@@ -209,7 +214,7 @@ than the bump.
 Kotlin image exists and Gradle is how the project builds anyway.
 
 **`java` and `csharp` cost almost nothing.** Each reuses an image already pinned for
-another template — `gradle:9.9.1-jdk27` from `kotlin`, `mcr.microsoft.com/dotnet/sdk:10.0.404`
+another template — `gradle:9.9.1-jdk25` from `kotlin`, `mcr.microsoft.com/dotnet/sdk:10.0.404`
 from `fsharp`. They exist because mainstream class-based OO was otherwise unrepresented:
 Kotlin and F# are both reactions *against* the dialect most people actually write at
 work, and a kata set that cannot show you plain Java has a hole in it.

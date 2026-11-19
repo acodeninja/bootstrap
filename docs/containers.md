@@ -91,7 +91,7 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | clojure                | `clojure:temurin-27-tools-deps-trixie`       | official    |
 | haskell                | `haskell:9.14-slim-bookworm`                 | official    |
 | prolog                 | `swipl:11.0`                                 | official    |
-| kotlin, java           | `gradle:9.9-jdk27`                           | official    |
+| kotlin, java           | `gradle:9.9-jdk25`                           | official    |
 | nim                    | `nim:2.4`                                    | official    |
 | fsharp, csharp         | `mcr.microsoft.com/dotnet/sdk:10.0`          | vendor      |
 | ocaml                  | `ocaml/opam:debian-13-ocaml-5.6`             | vendor      |
@@ -113,7 +113,7 @@ language its own.
 | Image                                 | Templates                   |
 | ------------------------------------- | --------------------------- |
 | `node:26-trixie-slim`                 | javascript, typescript, elm |
-| `gradle:9.9-jdk27`                    | kotlin, java                |
+| `gradle:9.9-jdk25`                    | kotlin, java                |
 | `mcr.microsoft.com/dotnet/sdk:10.0`   | fsharp, csharp              |
 | `gcc:16-trixie`                       | c, cpp                      |
 | `debian:trixie-slim`                  | zig, lua                    |
