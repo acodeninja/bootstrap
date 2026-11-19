@@ -404,8 +404,12 @@ build_image() {
         done
         exit "$rate_limited"
       }
-    if [ "${PIPESTATUS[0]}" -eq 0 ]; then exit 0; fi
-    if [ "${PIPESTATUS[1]}" -eq 1 ]; then exit 2; fi
+    # Copied in one command because every command rewrites PIPESTATUS -- a bare
+    # assignment included, so reading the two elements on separate lines loses
+    # the second and takes the generic failure branch instead.
+    stages=("${PIPESTATUS[@]}")
+    if [ "${stages[0]}" -eq 0 ]; then exit 0; fi
+    if [ "${stages[1]}" -eq 1 ]; then exit 2; fi
     exit 1
   )
   status=$?
