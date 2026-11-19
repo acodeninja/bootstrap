@@ -20,7 +20,9 @@ template, so there is nothing per-language left to say — see [containers.md](c
 
 ## `template.env`
 
-Flat `KEY=value`, double-quoted. Bash sources it; PowerShell splits it on the first `=`.
+Flat `KEY=value`, double-quoted. Both scripts read it line by line and split on the first
+`=`. Neither sources it: this file is display data, and sourcing would execute whatever it
+happened to contain.
 One key:
 
 ```sh
@@ -59,9 +61,15 @@ Every template's `files/` must contain:
 | `LICENSE`                  | MIT, with `{{AUTHOR}}` and `{{YEAR}}` substituted                  |
 | `.github/workflows/ci.yml` | `docker compose build`, then `make lint` and `make test`           |
 | `vendor/`                  | Optional — third-party source, where there is no alternative       |
+| `src/`                     | Expected, not required — see below                                 |
 
 `.env` is **not** in `files/`. The bootstrap script generates it — see
 [containers.md](containers.md#file-ownership).
+
+`src/` is not required, but every template should have one: a module and a test beside
+it. Deleting the kitchen sink is supposed to leave a working project, and without `src/`
+it leaves an empty one. It is also the only place a template exercises token
+substitution in a *filename*.
 
 ### The Makefile targets
 
@@ -69,7 +77,7 @@ All six, in every template, even where two are the same command:
 
 | Target  | Must                                                           |
 | ------- | -------------------------------------------------------------- |
-| `test`  | Run the kitchen sink suite                                     |
+| `test`  | Run the suite — without naming `kitchen-sink/`, see below      |
 | `lint`  | Be non-mutating, and exit non-zero on a violation — CI runs it |
 | `fmt`   | Reformat in place                                              |
 | `build` | Compile, or be a documented no-op for interpreted languages    |
@@ -77,6 +85,12 @@ All six, in every template, even where two are the same command:
 | `help`  | List the targets; the default goal                             |
 
 A language with no separate linter uses its formatter in check mode for `lint`.
+
+**`test` must not name the kitchen-sink directory.** The suite is meant to be deleted, so
+a target that points at it breaks the moment someone does. Use whatever spelling of the
+runner discovers tests for itself and succeeds when it finds none. In `javascript` this is
+load-bearing twice over: `node --test kitchen-sink/` treats the path as a module to load
+and exits `1` even when every assertion passes.
 
 Targets must not call host shell tools beyond `docker` — no `grep`, `awk`, `sed` or
 `id`. Windows `make` runs through `cmd.exe` and has none of them. The reasoning and the
@@ -144,5 +158,7 @@ is ever needed, the contract gains an exclusion list and not before.
 10. Run `make test` a second time. It must be materially faster — if it isn't, the cache
     volumes are pointed at the wrong directory.
 11. Confirm `--dry-run` lists what you expect and that no `{{TOKEN}}` survives:
-    `grep -r '{{' /tmp/check` must find nothing.
+    `grep -rn '{{[A-Z_]\{2,\}}}' /tmp/check` must find nothing. The pattern names the
+    closed token set on purpose: a bare `{{` also matches the `${{ secrets... }}` in every
+    template's CI workflow, so it can never find nothing.
 12. One commit: `feat: add <id> template`.

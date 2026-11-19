@@ -69,6 +69,11 @@ disk. `4` is raised either at preflight
 (no `docker`, no `make`, daemon unreachable) or at build time; when it is raised after
 scaffolding, the files are left in place — they are valid, they just haven't built yet.
 
+Preflight is skipped entirely under `--no-build` and `--dry-run`. Neither tool is needed
+to produce a valid project, and demanding them would make `--dry-run` exit `4` on a
+machine that has neither — contradicting both its "touches nothing, exits `0`" contract
+above and the assertion in [ci.md](ci.md#failure-mode-assertions).
+
 A `4` from the build step must say what is actually wrong. The most common cause is
 Docker Hub rate-limiting an anonymous pull, which looks nothing like a broken template:
 
@@ -105,6 +110,11 @@ Do not capture and re-print it — a failing test's own output is the most usefu
 the screen at that moment. The one exception is the rate-limit case above, where the
 script adds a line of explanation after passing the original error through.
 
+One qualification, because it cannot be met literally: reading the build output at all
+costs buildkit its TTY renderer. The build therefore streams line-buffered under
+`--progress plain`. The test run is never piped, so a failing test keeps its TTY and its
+colour — which is the case the rule exists to protect.
+
 ### `--list` format
 
 One template per line, tab-separated, sorted by ID:
@@ -136,10 +146,12 @@ change to one script as a change to both, and test the PowerShell side by hand. 
 
 - **No TOML or YAML parsing in bash.** The template manifest is flat `KEY=value` for
   exactly this reason. See [template-contract.md](template-contract.md).
-- **No dependency beyond the documented prerequisites.** `bootstrap.sh` uses POSIX shell
-  plus `git`, `docker`, `make`, and — in remote mode — `curl` and `tar`;
+- **No dependency beyond the documented prerequisites.** `bootstrap.sh` uses **bash 3.2
+  or newer** — the version macOS ships, and what the documented one-liner invokes —
+  plus `git`, `docker`, `make`, `date`, and — in remote mode — `curl` and `tar`;
   `bootstrap.ps1` uses Windows PowerShell 5.1 built-ins plus the same. No `jq`, no
-  `node`, no `python`.
+  `node`, no `python`, and no `sed` — bash does literal substitution itself with
+  `${v//pat/rep}`, which is also why an `&` or a `` in an author name needs no escaping.
 - **Both scripts must survive being executed as a string.** Under
   `bash -c "$(curl ...)"` and `[scriptblock]::Create(...)` the script was never a file,
   so neither may rely on its own path or assume `$0` names it. That absence is how

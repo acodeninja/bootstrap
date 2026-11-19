@@ -71,13 +71,16 @@ or, from a clone, `./bootstrap.sh zig ../my-zig` — the same steps either way.
    leaves the disk untouched.
 3. **Preflight.** Check `docker` is installed and its daemon reachable, and that `make`
    is on `PATH`. Identical for every template — exit `4` with the install command for the
-   current platform if either is missing. See [containers.md](containers.md).
+   current platform if either is missing. Skipped under `--no-build` and `--dry-run`,
+   which need neither. See [containers.md](containers.md).
 4. **Scaffold.** Copy `templates/zig/files/` into the target, substituting a closed set
-   of tokens in file contents and filenames. See [template-contract.md](template-contract.md).
+   of tokens in file contents and filenames, and write `.env` with the caller's uid/gid.
+   See [template-contract.md](template-contract.md). `.env` belongs here rather than
+   beside the build, so `--no-build` cannot leave a project that later runs as the wrong
+   uid.
 5. **Initialise git.** `git init`, stage everything, one commit:
    `chore: bootstrap zig project`. Skipped with `--no-git`.
-6. **Build the image.** Write `.env` with the caller's uid/gid, then
-   `docker compose build`. This is the slow step on a cold machine; afterwards it is
+6. **Build the image.** `docker compose build`. This is the slow step on a cold machine; afterwards it is
    cached. A failure exits `4`.
 7. **Run the test.** `make test`. This is the whole promise of the tool, so it runs by
    default and a failure exits `5`. Skipped with `--no-build`.

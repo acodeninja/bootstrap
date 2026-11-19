@@ -18,9 +18,8 @@ interpreted versus compiled, and official image versus hand-rolled. If the contr
 both, it fits. Build `javascript` first, then `zig`, and fix the contract from what `zig`
 breaks before writing a third.
 
-**Done when:** both bootstrap green from a cold Docker cache, a second `make test` is
-materially faster than the first, and the one-liner works end to end against a public
-repo.
+**Done when:** both bootstrap green from a cold Docker cache, neither repeats install
+work on a second `make test`, and the one-liner works end to end against a public repo.
 
 Making the repository public is a prerequisite for that last one and is not a code
 change — see [install.md](install.md). Until it happens, wave 0 can be finished and
@@ -63,8 +62,9 @@ it sets the precedent.
 ## Per-template definition of done
 
 1. `make test`, `make lint` and `make fmt` all work from a cold image.
-2. A second `make test` with no edits is materially faster than the first — if not, the
-   cache volumes point at the wrong directory. See
+2. No run repeats work an earlier one did. For a compiled language that means a second
+   `make test` is materially faster than the first; for an interpreted one with no build
+   artefacts, first ≈ second is the pass. See
    [containers.md](containers.md#caching-is-mandatory).
 3. The base image tag is pinned, not floating.
 4. All ten `kitchen-sink/` files are present and every assertion passes, per
@@ -74,7 +74,8 @@ it sets the precedent.
 6. The Makefile calls no host tool but `docker`.
 7. Any vendored code is confined to `vendor/`, version-pinned in a header comment,
    excluded from lint and fmt, and its licence named in the generated `README.md`.
-8. `grep -r '{{' <generated>` finds nothing.
+8. `grep -rn '{{[A-Z_]\{2,\}}}' <generated>` finds nothing. Not a bare `{{` — that
+   also matches the `${{ secrets... }}` every template's CI workflow ships.
 9. CI is green.
 10. A row in [languages.md](languages.md).
 11. One commit: `feat: add <id> template`.

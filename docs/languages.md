@@ -60,6 +60,11 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 `package.json` dependencies beyond the linter. `node:test` and `node:assert` are in the
 runtime. This is the template that proves the baseline can be genuinely small.
 
+Its `make test` is a bare `node --test` with no path, and that is not an oversight.
+`node --test kitchen-sink/` treats the argument as a module to load and exits `1` with
+`MODULE_NOT_FOUND` even when the suite is green. Bare, node walks the tree itself and
+exits `0` when it finds nothing — which is what makes the suite safe to delete.
+
 **`typescript` is a separate template, not a flag.** It differs in layout, config and
 the lint task, and the two-template split is cheaper than conditionals in one.
 

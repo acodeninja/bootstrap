@@ -71,6 +71,10 @@ lines.
 Verified against Docker Hub. **Official** means a Docker Official Image
 (`docker.io/library/<name>`).
 
+Rows name the image *family*. A template pins a narrower tag than the row shows —
+`javascript` is on `node:24.22-bookworm-slim`, not `node:24-bookworm-slim` — per
+[Pin the tag, never `latest`](#pin-the-tag-never-latest) below.
+
 | Language               | Image                                    | Status      |
 | ---------------------- | ---------------------------------------- | ----------- |
 | javascript, typescript | `node:24-bookworm-slim`                  | official    |
@@ -176,8 +180,16 @@ Per language, the volume targets the directory that actually holds the artefacts
 `~/.m2`. Getting this wrong is not a subtle performance problem: it is the difference
 between a two-second loop and a ninety-second one.
 
-**The check:** a second `make test` with no edits must be materially faster than the
-first. It is part of the definition of done for every template.
+**The check:** no run may repeat work an earlier one did.
+
+For a compiled language that shows up directly — a second `make test` with no edits must
+be materially faster than the first. For an interpreted one it does not, and should not be
+made to: `javascript` measures flat at about a second a run, because the toolchain is
+baked into the image and there is no build artefact to cache. Run one is already as fast
+as run N, which is the stronger result. The failure this check is really looking for is a
+template that reinstalls its dependencies on every run.
+
+Either way it is part of the definition of done for every template.
 
 ## File ownership
 
@@ -189,8 +201,11 @@ user, which leaves a project the user cannot edit without `sudo`. The service de
 ```
 
 The values come from a generated `.env`, which Compose loads automatically from the
-project directory. `bootstrap.sh` writes it with the real values; `bootstrap.ps1` omits
+project directory. `bootstrap.sh` writes it with the real values on macOS and Linux; `bootstrap.ps1` omits
 it, since Docker Desktop handles ownership itself and the defaults are never used there.
+`bootstrap.sh` running under Git Bash omits it for the same reason, and for one more:
+`$UID` there is a Windows RID that means nothing to a Linux container, so writing it would
+leave the container running as an unknown uid whose `$HOME` resolves to `/`.
 
 ```sh
 DOCKER_UID=1000
