@@ -59,6 +59,24 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 
 ## Notes on individual rows
 
+**`erlang` installs rebar3 itself and primes the dialyzer PLT.** The slim image ships no
+rebar3, so it comes from a pinned release escript with a sha256 — and unlike `zig`'s
+tarball there is no per-architecture variant, because an escript is portable.
+
+The PLT is the reason this template needs priming at all. Building it takes about thirty
+seconds and `make lint` would pay that on every run; built in a `RUN` layer, a wiped volume
+reseeds from the image and `make lint` measures 5.4s instead. `REBAR_BASE_DIR` and
+`REBAR_CACHE_DIR` put both the base and project PLTs inside `/cache` with no `dialyzer`
+stanza in `rebar.config` at all.
+
+`erlfmt` is wired as `{project_plugins, [{erlfmt, VSN}]}` and the task is `rebar3 fmt`
+— not `{plugins, …}`, and there is no `rebar3 erlfmt` command. Using `project_plugins` makes
+rebar3 write a `rebar.lock` even with zero dependencies; its content is the static `[].`,
+so it ships pre-generated like `rust`'s `Cargo.lock`.
+
+`rebar3 eunit` exits 0 given sixteen tests, one, or none — better discovery behaviour than
+`pytest`, and on par with `javascript`'s bare `node --test`.
+
 **`swift` must use the full image, not `-slim`.** Swift's `-slim` tags are runtime-only:
 in `swift:6.4.2-trixie-slim` there is no `swift` binary on `PATH` at all, only the runtime
 libraries for deploying an already-built binary. The Debian-variant rule that picks `-slim`
