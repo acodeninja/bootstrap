@@ -250,6 +250,29 @@ DOCKER_GID=1000
 describes the machine, not the project. This keeps the Makefile free of `$(shell id -u)`,
 which would break on Windows for the reason given above.
 
+### Seed directories, never files
+
+The service runs as the host's uid, and that uid is **not** 1000 everywhere — CI's runner
+is 1001. A template that bakes files into its cache volume owned by a uid it guessed works
+on the machine it was written on and fails everywhere else.
+
+`dart` shipped exactly this bug. Its Dockerfile chowned `.dart_tool` to `1000:1000`, and
+`dart pub` refreshes `package_config.json` by setting its mtime — which Linux permits only
+to the file's *owner*, not merely to anyone with write permission. Every other uid got
+`EPERM`, so it passed locally on Windows, where no `.env` is written and 1000 is the
+default, and would have failed CI on the first push.
+
+The rule that falls out: **`chmod 777` an empty directory in the image and let the first
+run create the files**, so they are owned by whoever is running. Never `chown` to a
+specific uid, and never assume `chmod 777` is enough for an operation that checks
+ownership.
+
+One consequence worth knowing, which is not a bug to fix: a cache volume populated by one
+uid will refuse a *different* uid later, because the subdirectories the toolchain created
+belong to the first one. Per machine the uid is stable, so this only shows up if
+`DOCKER_UID` changes under an existing project. The fix is `docker compose down -v`, and it
+is generic to every template rather than specific to any.
+
 ## `.dockerignore`
 
 Every template ships one. At minimum `.git`, the build output directory, and `.env`, so
