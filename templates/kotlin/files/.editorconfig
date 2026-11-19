@@ -1,0 +1,17 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# The module's filename carries the project name, which ktlint would reject for
+# not matching the class in PascalCase.
+[*.{kt,kts}]
+ktlint_standard_filename = disabled
+
+[Makefile]
+indent_style = tab

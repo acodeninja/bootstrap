@@ -59,6 +59,29 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 
 ## Notes on individual rows
 
+**`kotlin` redirects three project-root writes, not one.** `build/` needs
+`layout.buildDirectory`, `.gradle/` needs `--project-cache-dir` on *every* invocation, and
+`.kotlin/` needs the `kotlin.project.persistent.dir` Gradle property. Dropping that last
+one alone puts `.kotlin/` straight back into the bind mount, and only the
+`git status --porcelain` check catches it.
+
+Its uid fix is a **chmod, not a write**, which is why `chmod -R 777` is not enough: Gradle's
+single-use daemon calls `chmod 700` on `$GRADLE_USER_HOME/daemon/<version>`, and chmod needs
+*ownership*. A root-primed directory therefore fails for every other uid however permissive
+its mode. The image deletes that one directory after priming and lets the first run recreate
+it — the same shape as `dart`, by a different mechanism. Note also that `--no-daemon` does
+not prevent a daemon process: Gradle forks a single-use one anyway, which is the only reason
+that chmod is reached.
+
+**ktlint's `standard:filename` rule is irreconcilable with the contract** and is the one
+rule disabled. It rejects any snake_case `.kt` filename outright — with a single class it
+demands the class's name, with none it demands PascalCase — so `src/{{PROJECT_SNAKE}}.kt`
+cannot pass, and there is no CamelCase token to name the file after its class.
+
+ktlint has also **moved from `pinterest/ktlint` to `ktlint/ktlint`**; the old releases
+endpoint answers 301 with an empty body, which looks exactly like "no releases" unless you
+follow the redirect.
+
 **`erlang` installs rebar3 itself and primes the dialyzer PLT.** The slim image ships no
 rebar3, so it comes from a pinned release escript with a sha256 — and unlike `zig`'s
 tarball there is no per-architecture variant, because an escript is portable.
