@@ -1,0 +1,18 @@
+AllCops:
+  TargetRubyVersion: 4.0
+  NewCops: enable
+
+Style/Documentation:
+  Enabled: false
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+# A test file's length is a count of cases, not a measure of complexity.
+Metrics/ClassLength:
+  Exclude:
+    - "test/**/*_test.rb"
+
+Metrics/MethodLength:
+  Exclude:
+    - "test/**/*_test.rb"

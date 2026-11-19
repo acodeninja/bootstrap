@@ -1,0 +1,12 @@
+# frozen_string_literal: true
+
+require "rake/testtask"
+
+# A glob, not a list: minitest has no discovering runner of its own, and
+# naming the files here would break the moment one is deleted.
+Rake::TestTask.new(:test) do |t|
+  t.libs = %w[src test]
+  t.test_files = FileList["test/**/*_test.rb"]
+end
+
+task default: :test

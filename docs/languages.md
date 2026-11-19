@@ -59,6 +59,19 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 
 ## Notes on individual rows
 
+**`ruby` ships no `Gemfile`.** `bundle install` cannot run in `ruby:4.0.10-slim-trixie`:
+bundler reinstalls the `json` and `racc` the image already carries, builds both native
+extensions from source, and the slim image has no `cc` and no `make` — verified. Pinning
+those gems to the image's own versions does not help, because bundler reinstalls default
+gems rather than reusing them. `gem install --no-document rubocop:<version>` in the
+Dockerfile reuses them, and installs into the image's `GEM_HOME`, so no `Gemfile.lock` can
+ever dirty the generated project. It is the same reasoning that leaves `zig` without a
+`build.zig.zon`.
+
+`make test` is `rake test` against a `Rake::TestTask` glob, because minitest has no
+discovering CLI and naming the suite is what the contract forbids. Ruby 4.0 bundles
+minitest 6, whose assertions are unchanged from 5.x.
+
 **`go` needs a wrapper to make `make lint` fail.** `gofmt -l` exits `0` whether or not it
 names a file, so a recipe gating on its exit code can never go red. `go vet` does exit
 non-zero, but it does not check formatting. The Dockerfile bakes a two-line `gofmt-check`

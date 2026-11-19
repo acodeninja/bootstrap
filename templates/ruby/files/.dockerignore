@@ -1,0 +1,8 @@
+.git
+.github
+.env
+.bundle
+.rubocop_cache
+src
+test
+*.md
