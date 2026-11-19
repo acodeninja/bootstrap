@@ -64,6 +64,7 @@ Every template's `files/` must contain:
 | the kitchen sink           | The one-page suite, at `KITCHEN_SINK` — see [kitchen-sink.md](kitchen-sink.md) |
 | `.gitignore`               | Build artefacts for this language, plus `.env`                     |
 | `.editorconfig`            | Indentation and line endings matching the language's convention    |
+| `.gitattributes`           | `* text=auto eol=lf` — see below                                   |
 | `LICENSE`                  | MIT, with `{{AUTHOR}}` and `{{YEAR}}` substituted                  |
 | `.github/workflows/ci.yml` | `docker compose build`, then `make lint` and `make test`           |
 | `vendor/`                  | Optional — third-party source, where there is no alternative       |
@@ -71,6 +72,14 @@ Every template's `files/` must contain:
 
 `.env` is **not** in `files/`. The bootstrap script generates it — see
 [containers.md](containers.md#file-ownership).
+
+`.gitattributes` is one line, `* text=auto eol=lf`, and it is not decoration. The
+toolchain runs in a Linux container while the project may be checked out on Windows, where
+`core.autocrlf=true` is common and rewrites files to CRLF on checkout. Two templates have
+already been observed failing that way: a `git checkout` inside a generated project turned
+`rubocop` red with `Layout/EndOfLine` and `prettier --check` red on an otherwise untouched
+file. The repository itself carries a `.gitattributes` for exactly this reason, so a
+generated project without one is the inconsistency.
 
 `src/` is not required, but every template should have one: a module, plus a test
 **wherever that language puts tests**. Deleting the kitchen sink is supposed to leave a
