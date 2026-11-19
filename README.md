@@ -41,7 +41,8 @@ nim, prolog, elm, lua, c, cpp.
 
 ## Status
 
-Five templates of twenty-six — `javascript`, `zig`, `go`, `python` and `rust` — each
+Eight templates of twenty-six — `javascript`, `typescript`, `zig`, `go`, `rust`, `python`,
+`ruby` and `dart` — each
 green in CI from a cold registry:
 
 ```console
