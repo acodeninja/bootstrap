@@ -105,3 +105,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - run: shellcheck bootstrap.sh
+
+      - name: hadolint every template dockerfile
+        run: |
+          for f in templates/*/files/Dockerfile; do
+            echo "== $f"
+            docker run --rm -i hadolint/hadolint:v2.15.1 < "$f"
+          done
