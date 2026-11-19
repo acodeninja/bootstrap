@@ -250,6 +250,9 @@ Applied in every template, adapted to the language's runner:
   `describe` wrapper invites a name that only parses next to its parent, which is exactly
   the fragment the rule above bans — and the leaf is what CI output, `grep` and failure
   reports show.
-- The file lives where the language puts tests: the project root in JavaScript, beside
-  the source in Rust and Zig, `test/` in Erlang and Gleam, `tests/` in Python. It is one
-  file wherever that is.
+- The file lives wherever the language's runner discovers it **without a declaration
+  anywhere**: the project root in JavaScript, beside the source in Zig, `tests/` in Rust
+  and Python, `test/` in Erlang and Gleam. It is one file wherever that is. Discovery
+  outranks convention here — Rust's suite would be `src/`-adjacent by habit, but a
+  `#[cfg(test)] mod` needs a `mod kitchen_sink;` line in the crate root, and naming the
+  suite is the one thing the contract forbids.
