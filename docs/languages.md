@@ -59,6 +59,20 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 
 ## Notes on individual rows
 
+**`dart` is the one template where the container's uid is load-bearing.** `dart pub`
+refreshes `.dart_tool/package_config.json` by setting its mtime, and Linux requires
+*ownership* for that, not merely write permission — so a `chmod 777` is not enough. The
+Dockerfile seeds `.dart_tool` as an empty world-writable directory on a named volume, which
+lets the first run create that file as whatever uid Compose maps in. An earlier attempt
+chowned it to 1000 and passed locally while failing for every other uid, including CI's.
+Verified at uid 1000, 1001 and 1234.
+
+`pubspec.lock` is gitignored rather than shipped — the one place the preferred lock-file
+remedy does not apply, because a host-written lock arrives through a Windows bind mount
+owned by root and `pub`'s mtime touch then fails the same way. It carries no project name,
+so there is nothing to tokenise, and gitignoring it is Dart's own convention for a library.
+`dart analyze` also needs `--fatal-infos`: warnings are fatal by default, infos are not.
+
 **`typescript` pins TypeScript 6, not 7, and that is the ecosystem's limit rather than
 ours.** `typescript-eslint` 8.73.0 declares `"typescript": ">=4.8.4 <6.1.0"` and hard
 *throws* on 7.x at require time rather than warning. Since the template ships eslint, 6.0.3

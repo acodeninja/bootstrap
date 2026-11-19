@@ -1,0 +1,10 @@
+name: {{PROJECT_SNAKE}}
+description: {{PROJECT_NAME}}
+publish_to: none
+
+environment:
+  sdk: ^3.14.0
+
+dev_dependencies:
+  test: ^1.33.0
+  lints: ^6.1.0
