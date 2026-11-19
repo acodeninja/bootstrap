@@ -17,6 +17,14 @@ jobs:
         template: [javascript]
     steps:
       - uses: actions/checkout@v7
+
+      # Without an identity bootstrap.sh takes its commitless fallback, exits 0,
+      # and the commit path silently stops being covered.
+      - name: git identity
+        run: |
+          git config --global user.name 'bootstrap ci'
+          git config --global user.email 'ci@example.invalid'
+
       - uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -29,6 +37,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+
+      - name: git identity
+        run: |
+          git config --global user.name 'bootstrap ci'
+          git config --global user.email 'ci@example.invalid'
 
       - name: exit codes
         run: |
@@ -59,6 +72,19 @@ jobs:
         run: |
           ./bootstrap.sh javascript ../out --no-build
           ! grep -rn '{{[A-Z_]\{2,\}}}' ../out
+
+      # .env carries the host uid and gid, so it is generated and gitignored --
+      # a commit containing it would be a real bug nothing else here would see.
+      - name: the scaffold is committed
+        run: |
+          ./bootstrap.sh javascript ../committed --no-build | tee ../scaffold.log
+          grep -q 'initialised, 1 commit' ../scaffold.log
+          git -C ../committed rev-parse --abbrev-ref HEAD | grep -qx main
+          test "$(git -C ../committed rev-list --count HEAD)" -eq 1
+          test "$(git -C ../committed log -1 --pretty=%s)" = 'chore: bootstrap javascript project'
+          test -z "$(git -C ../committed status --porcelain)"
+          test -f ../committed/.env
+          test -z "$(git -C ../committed ls-files .env)"
 
   lint:
     runs-on: ubuntu-latest

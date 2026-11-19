@@ -54,6 +54,10 @@ jobs:
         template: [javascript, zig, go, rust, python, ...]
     steps:
       - uses: actions/checkout@v7
+      - name: git identity
+        run: |
+          git config --global user.name 'bootstrap ci'
+          git config --global user.email 'ci@example.invalid'
       - uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -64,6 +68,19 @@ jobs:
 
 `fail-fast: false` matters: when an upstream image bumps and breaks three languages, you
 want all three in one run.
+
+### The commit path
+
+A runner has no `user.name` or `user.email`, and `bootstrap.sh` treats that as
+non-fatal — it initialises the repository, skips the commit, says so, and still exits
+`0`. Left alone, CI would prove the fallback and never the normal path, so both jobs
+configure an identity first.
+
+The `contract` job then asserts what the commit contains: one commit, on `main`, with a
+clean tree afterwards. It also asserts that `.env` exists and is **not** tracked. That
+file is generated rather than templated — it carries the host's uid and gid so the
+container writes files you own — and committing one machine's ids into a project is the
+kind of bug that survives review.
 
 The bootstrap's own build and test steps are what assert the generated project works.
 CI does not re-run them — a non-zero exit from `bootstrap.sh` with code `4` or `5`
