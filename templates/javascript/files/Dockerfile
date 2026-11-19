@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM node:24.22-bookworm-slim
+FROM node:26.13.1-trixie-slim
 
 # The toolchain installs to /node_modules, outside /work. Node resolves
 # node_modules by walking up from the cwd, so /work finds it without NODE_PATH,
