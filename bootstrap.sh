@@ -30,6 +30,7 @@ TARGET=
 TEMPLATE_DIR=
 TEMPLATE_ROOT=
 DISPLAY=
+KITCHEN_SINK=
 PROJECT_NAME=
 PROJECT_SLUG=
 PROJECT_SNAKE=
@@ -128,18 +129,18 @@ script_root() {
 
 # Parsed, not sourced: template.env is display data, and sourcing it would
 # execute whatever it happened to contain.
-display_name() {
-  local line name=
+manifest_value() {
+  local file=$1 key=$2 line value=
   while IFS= read -r line || [ -n "$line" ]; do
     case $line in
-      DISPLAY_NAME=*)
-        name=${line#DISPLAY_NAME=}
-        name=${name%\"}
-        name=${name#\"}
+      "$key"=*)
+        value=${line#"$key"=}
+        value=${value%\"}
+        value=${value#\"}
         ;;
     esac
-  done <"$1"
-  printf '%s' "$name"
+  done <"$file"
+  printf '%s' "$value"
 }
 
 template_ids() {
@@ -163,7 +164,7 @@ list_templates() {
   for env_file in "$TEMPLATE_ROOT"/*/template.env; do
     id=${env_file%/template.env}
     id=${id##*/}
-    name=$(display_name "$env_file")
+    name=$(manifest_value "$env_file" DISPLAY_NAME)
     [ -n "$name" ] || name=$id
     printf '%s\t%s\n' "$id" "$name"
   done
@@ -200,8 +201,10 @@ resolve_template() {
     die 2 "no template '$TEMPLATE_ID'" \
       "run --list to see all $(template_count) templates"
   fi
-  DISPLAY=$(display_name "$TEMPLATE_DIR/template.env")
+  DISPLAY=$(manifest_value "$TEMPLATE_DIR/template.env" DISPLAY_NAME)
   [ -n "$DISPLAY" ] || DISPLAY=$TEMPLATE_ID
+  KITCHEN_SINK=$(manifest_value "$TEMPLATE_DIR/template.env" KITCHEN_SINK)
+  [ -n "$KITCHEN_SINK" ] || KITCHEN_SINK='the kitchen sink file'
 }
 
 # Lowercase, collapse every non-alphanumeric run to one separator, and trim the
@@ -432,7 +435,7 @@ next_steps() {
   printf '\nReady. Next:\n'
   printf '  cd %s\n' "$TARGET"
   printf '  make test\n'
-  printf '  read kitchen-sink.test.js for the language, then pick a kata:\n'
+  printf '  read %s for the language, then pick a kata:\n' "$KITCHEN_SINK"
   printf '  https://learn.madetech.com/technology/katas/\n'
 }
 

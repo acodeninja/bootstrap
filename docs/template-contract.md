@@ -8,7 +8,7 @@ registry to update, no script to edit, no case statement to extend.
 
 ```
 templates/<id>/
-  template.env      manifest: one key
+  template.env      manifest: two keys
   files/            copied into the target, with tokens substituted
 ```
 
@@ -23,20 +23,27 @@ template, so there is nothing per-language left to say — see [containers.md](c
 Flat `KEY=value`, double-quoted. Both scripts read it line by line and split on the first
 `=`. Neither sources it: this file is display data, and sourcing would execute whatever it
 happened to contain.
-One key:
+Two keys:
 
 ```sh
 DISPLAY_NAME="Zig"
+KITCHEN_SINK="src/kitchen_sink.zig"
 ```
 
-| Key            | Meaning                                                       |
-| -------------- | ------------------------------------------------------------- |
-| `DISPLAY_NAME` | Human label, shown by `--list` and in the `==> template` line |
+| Key            | Meaning                                                           |
+| -------------- | ----------------------------------------------------------------- |
+| `DISPLAY_NAME` | Human label, shown by `--list` and in the `==> template` line     |
+| `KITCHEN_SINK` | Path to the suite, named in the orientation the bootstrap prints  |
 
 It had four keys until containers replaced mise. `TOOLCHAIN_TIER` and `PREFLIGHT_BIN`
 died with the tier system; `PLATFORMS` died because the container is Linux regardless of
-host. The file survives because `--list` still needs a label and because a manifest is
+host. The file survived because `--list` still needs a label, and because a manifest is
 the obvious place for the next thing that varies per template.
+
+`KITCHEN_SINK` was that next thing. The suite's path is the one per-template fact the
+script has to say out loud, and it had been hardcoded as `kitchen-sink.test.js` — right
+for exactly one language. It is a path relative to the project root, because that is what
+the reader has to type.
 
 Everything else a template needs to say, it says in its `Dockerfile` and `Makefile`.
 There is deliberately no `TEST_CMD`: the test command is `make test` in every template,
@@ -54,7 +61,7 @@ Every template's `files/` must contain:
 | `Makefile`                 | `test`, `lint`, `fmt`, `build`, `shell`, `help`                    |
 | `.dockerignore`            | `.git`, build output, `.env`                                       |
 | `README.md`                | What this is, how to run it, the prerequisites                     |
-| `kitchen-sink.test.js`     | The one-page suite — see [kitchen-sink.md](kitchen-sink.md)        |
+| the kitchen sink           | The one-page suite, at `KITCHEN_SINK` — see [kitchen-sink.md](kitchen-sink.md) |
 | `.gitignore`               | Build artefacts for this language, plus `.env`                     |
 | `.editorconfig`            | Indentation and line endings matching the language's convention    |
 | `LICENSE`                  | MIT, with `{{AUTHOR}}` and `{{YEAR}}` substituted                  |
@@ -141,7 +148,7 @@ is ever needed, the contract gains an exclusion list and not before.
 ## Adding a template
 
 1. `mkdir -p templates/<id>/files`.
-2. Write `template.env` — one line.
+2. Write `template.env` — two lines.
 3. Pick the base image. Check for an official one first:
    `docker search --filter is-official=true <lang>`. See [containers.md](containers.md#base-images).
 4. Write the `Dockerfile` with a pinned tag, and `compose.yaml` with cache volumes
