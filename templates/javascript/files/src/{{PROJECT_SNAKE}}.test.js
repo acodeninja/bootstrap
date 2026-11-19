@@ -1,14 +1,12 @@
-import { describe, it } from 'node:test';
+import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { greet } from './{{PROJECT_SNAKE}}.js';
 
-describe('greet', () => {
-  it('addresses the name it is given', () => {
-    const name = 'world';
+test('a greeting addresses the name it is given', () => {
+  const name = 'world';
 
-    const greeting = greet(name);
+  const greeting = greet(name);
 
-    assert.equal(greeting, 'Hello, world!');
-  });
+  assert.equal(greeting, 'Hello, world!');
 });
