@@ -9,10 +9,10 @@ test('adding two tenths does not give three tenths', () => {
 });
 
 test('sorting numbers puts 10 before 9', () => {
-  const scores = [10, 9, 1];
+  const values = [10, 9, 1];
 
-  const byDefault = [...scores].sort();
-  const byValue = [...scores].sort((a, b) => a - b);
+  const byDefault = [...values].sort();
+  const byValue = [...values].sort((a, b) => a - b);
 
   assert.deepEqual(byDefault, [1, 10, 9]);
   assert.deepEqual(byValue, [1, 9, 10]);
@@ -27,7 +27,7 @@ test('an empty string counts as zero when compared loosely', () => {
 });
 
 test('not-a-number does not equal itself', () => {
-  const parsed = Number('strike');
+  const parsed = Number('none');
   const copy = parsed;
 
   assert.ok(parsed !== copy);

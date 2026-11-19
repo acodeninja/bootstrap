@@ -2,38 +2,38 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 test('a constant can be changed from the inside', () => {
-  const rolls = [10, 7];
+  const items = ['a', 'b'];
 
-  rolls.push(3);
+  items.push('c');
 
-  assert.deepEqual(rolls, [10, 7, 3]);
+  assert.deepEqual(items, ['a', 'b', 'c']);
 });
 
 test('a property that was never set reads as empty', () => {
-  const pinsByFrame = { 1: 10 };
+  const counts = { a: 2 };
 
-  assert.equal(pinsByFrame[2], undefined);
+  assert.equal(counts.b, undefined);
 });
 
 test('a value set to nothing is not the same as a value never set', () => {
-  const frame = { first: 4, second: null };
+  const record = { first: 'x', second: null };
 
-  assert.equal(frame.second, null);
-  assert.equal(frame.third, undefined);
-  assert.notEqual(frame.second, frame.third);
+  assert.equal(record.second, null);
+  assert.equal(record.third, undefined);
+  assert.notEqual(record.second, record.third);
 });
 
 test('a fallback applies to missing values but not to zero', () => {
-  const scores = { alice: 0 };
+  const settings = { retries: 0 };
 
-  assert.equal(scores.alice ?? 100, 0);
-  assert.equal(scores.bob ?? 100, 100);
-  assert.equal(scores.alice || 100, 100);
+  assert.equal(settings.retries ?? 3, 0);
+  assert.equal(settings.timeout ?? 3, 3);
+  assert.equal(settings.retries || 3, 3);
 });
 
 test('a list does not report itself as a list', () => {
-  const rolls = [10, 7];
+  const items = ['a', 'b'];
 
-  assert.equal(typeof rolls, 'object');
-  assert.ok(Array.isArray(rolls));
+  assert.equal(typeof items, 'object');
+  assert.ok(Array.isArray(items));
 });

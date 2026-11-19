@@ -18,6 +18,12 @@ Bowling kata stub. Both are wrong:
   Gleam does not tell you how to write a `while` loop in Gleam. The kata is the thing you
   bring; the language is the thing you need handed to you.
 
+This extends to the vocabulary the assertions are written in. The javascript template
+first shipped its error example as a `parseRoll` refusing more than ten pins, which is
+Bowling with the serial numbers filed off — close enough to hand over the domain model
+before the reader has started. Name the variables after nothing: `items`, `counts`,
+`record`, `values`. The example exists to show the language, so a domain is pure risk.
+
 ## Not koans
 
 Koans are fill-in-the-blank exercises that start red and go green as you work through

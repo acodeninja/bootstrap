@@ -1,53 +1,53 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-class InvalidRoll extends Error {
+class InvalidPercentage extends Error {
   constructor(message) {
     super(message);
-    this.name = 'InvalidRoll';
+    this.name = 'InvalidPercentage';
   }
 }
 
-const parseRoll = (input) => {
-  const pins = Number(input);
+const parsePercentage = (input) => {
+  const value = Number(input);
 
-  if (!Number.isInteger(pins)) {
-    throw new InvalidRoll(`not a number: "${input}"`);
+  if (!Number.isInteger(value)) {
+    throw new InvalidPercentage(`not a number: "${input}"`);
   }
-  if (pins < 0 || pins > 10) {
-    throw new InvalidRoll(`out of range: ${pins}`);
+  if (value < 0 || value > 100) {
+    throw new InvalidPercentage(`out of range: ${value}`);
   }
 
-  return pins;
+  return value;
 };
 
 test('a valid input comes back unchanged', () => {
-  assert.equal(parseRoll('7'), 7);
+  assert.equal(parsePercentage('40'), 40);
 });
 
 test('an invalid input is refused rather than guessed at', () => {
-  assert.throws(() => parseRoll('strike'));
+  assert.throws(() => parsePercentage('half'));
 });
 
 test('a refusal says what was wrong', () => {
-  assert.throws(() => parseRoll('strike'), /not a number/);
-  assert.throws(() => parseRoll('11'), /out of range/);
+  assert.throws(() => parsePercentage('half'), /not a number/);
+  assert.throws(() => parsePercentage('140'), /out of range/);
 });
 
 test('a custom failure type lets the caller tell one problem from another', () => {
-  assert.throws(() => parseRoll('11'), InvalidRoll);
-  assert.throws(() => parseRoll('11'), Error);
+  assert.throws(() => parsePercentage('140'), InvalidPercentage);
+  assert.throws(() => parsePercentage('140'), Error);
 });
 
 test('catching a failure lets the caller carry on', () => {
-  const readRoll = (input) => {
+  const read = (input) => {
     try {
-      return parseRoll(input);
+      return parsePercentage(input);
     } catch {
       return 0;
     }
   };
 
-  assert.equal(readRoll('7'), 7);
-  assert.equal(readRoll('strike'), 0);
+  assert.equal(read('40'), 40);
+  assert.equal(read('half'), 0);
 });
