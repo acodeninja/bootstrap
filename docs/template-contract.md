@@ -98,6 +98,14 @@ discovers tests for itself and succeeds when it finds none. In `javascript` this
 load-bearing twice over: `node --test <path>` treats the path as a module to load and
 exits `1` even when every assertion passes.
 
+Some languages have no discovery to use. Zig runs a file's tests only if something names
+it as a module root, and since 0.17 `build.zig` is evaluated without `std.fs`, so it
+cannot look for the files itself. The rule still binds the Makefile — `make test` is
+`zig build test` and names nothing — but the build script names the suite, and deleting
+it means deleting that block. Where this happens, the declaration carries a comment
+saying so, and [kitchen-sink.md](kitchen-sink.md#it-is-meant-to-be-deleted) states the
+concession rather than pretending the rule held.
+
 Targets must not call host shell tools beyond `docker` — no `grep`, `awk`, `sed` or
 `id`. Windows `make` runs through `cmd.exe` and has none of them. The reasoning and the
 `help` pattern that follows from it are in [containers.md](containers.md#the-makefile-may-not-use-host-shell-tools).

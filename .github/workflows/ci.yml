@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        template: [javascript]
+        template: [javascript, zig]
     steps:
       - uses: actions/checkout@v7
 

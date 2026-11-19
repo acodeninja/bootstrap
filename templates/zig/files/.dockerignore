@@ -1,0 +1,7 @@
+.git
+.github
+.env
+.zig-cache
+zig-out
+src
+*.md

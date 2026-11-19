@@ -195,8 +195,7 @@ should be able to find the types section in both and see exactly what changed.
 
 ## It is meant to be deleted
 
-The suite is one file and nothing else in the project depends on it. When you start real
-work:
+The suite is one file and no *source* file depends on it. When you start real work:
 
 ```console
 $ rm kitchen-sink.test.js
@@ -204,6 +203,15 @@ $ make test
 ```
 
 still builds and passes.
+
+**One concession, and it is Zig's.** Where the language's build system has no test
+discovery, the build script has to name the suite, and deleting the file means deleting
+that declaration with it. `templates/zig` is the first case: `build.zig` carries a
+five-line block with a comment saying to remove it. The rule that survives is the one
+that matters — nothing you write depends on the suite, and no target points at it — but
+"one file" is now "one file, and the lines that name it". Do not extend this to a
+language whose runner can find its own tests; see
+[template-contract.md](template-contract.md#the-makefile-targets).
 
 There is no companion `KITCHEN-SINK.md`. An earlier design had one, to keep the
 explanation out of the generated `README.md` — the README is about the project you are

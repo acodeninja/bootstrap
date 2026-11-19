@@ -15,7 +15,7 @@ Base images were resolved against the registry on 2026-11-19 — see
 | id           | base image                               | test runner                  | lint / fmt                           | wave |
 | ------------ | ---------------------------------------- | ---------------------------- | ------------------------------------ | ---- |
 | `javascript` | `node:24-bookworm-slim`                  | `node:test`                  | eslint / prettier                    | 0    |
-| `zig`        | `debian:bookworm-slim` + tarball         | `std.testing`                | `zig fmt --check` / `zig fmt`        | 0    |
+| `zig`        | `debian:bookworm-slim` + zig 0.17.1      | `std.testing`                | `zig fmt --check` / `zig fmt`        | 0    |
 | `go`         | `golang:1.23-bookworm`                   | `go test`                    | `go vet` / `gofmt`                   | 1    |
 | `rust`       | `rust:1.83-slim`                         | `cargo test`                 | `clippy` / `rustfmt`                 | 1    |
 | `python`     | `python:3.13-slim`                       | `pytest`                     | `ruff check` / `ruff format`         | 1    |
@@ -72,9 +72,25 @@ exits `0` when it finds nothing — which is what makes the suite safe to delete
 **`typescript` is a separate template, not a flag.** It differs in layout, config and
 the lint task, and the two-template split is cheaper than conditionals in one.
 
-**`zig` is wave 0 on purpose.** It is the only hand-rolled image that lands before the
-contract is settled, and it is the one that will expose whatever the contract gets wrong
-about templates with no base image to inherit from.
+**`zig` was wave 0 on purpose**, as the template expected to break the contract — and it
+did, in three places.
+
+It has **no test discovery**. A test file runs only if something names it as a module
+root, and since 0.17 `build.zig` runs in a sandboxed configurer with no `std.fs`, so it
+cannot find the files for itself. `build.zig` names `src/kitchen_sink.zig` explicitly and
+deleting the suite means deleting that block too — the one template so far where the
+kitchen sink is not self-contained. See [kitchen-sink.md](kitchen-sink.md#it-is-meant-to-be-deleted).
+
+It ships **no `build.zig.zon`**. The manifest is optional for a project with no
+dependencies, and that is the only reason this works: `.fingerprint` is checked against
+the package name, so a hardcoded one in a template would reject every project not named
+after the template. Omitting the file sidesteps a problem that literal token substitution
+cannot solve.
+
+Its **image primes its own cache**. `zig build` compiles `build.zig` into a runner before
+it builds anything, which is about seventy seconds of `std.Build` against a cold cache.
+The Dockerfile runs a throwaway `zig init && zig build test`, and the named volume seeds
+from the image — first `make test` measures 2.8s instead of 73s.
 
 **`erlang` and `prolog` are no longer platform-restricted.** Under mise they were
 linux+macos only because the toolchains were unreliable elsewhere. In a Linux container

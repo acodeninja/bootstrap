@@ -70,8 +70,8 @@ it sets the precedent.
 4. The `kitchen-sink` file has every section, no more than fifteen assertions, and all
    of them pass, per [kitchen-sink.md](kitchen-sink.md). The errors slot uses the
    language's native failure idiom; the gotcha is genuinely specific to this language.
-5. `rm kitchen-sink.test.js` — or the language's equivalent — leaves a project that
-   still builds.
+5. Deleting the kitchen sink — the file at `KITCHEN_SINK`, plus any build-script block
+   that names it — leaves a project that still builds.
 6. The Makefile calls no host tool but `docker`.
 7. Any vendored code is confined to `vendor/`, version-pinned in a header comment,
    excluded from lint and fmt, and its licence named in the generated `README.md`.
