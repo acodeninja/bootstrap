@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM debian:bookworm-20261104-slim AS toolchain
+FROM debian:trixie-20261104-slim AS toolchain
 
 # No official Zig image exists, so the toolchain comes from the release
 # tarball. The debian image is multi-arch and the tarball is not, so the
@@ -26,7 +26,7 @@ RUN apt-get update \
     && tar -xJf /tmp/zig.tar.xz -C /opt/zig --strip-components=1 \
     && rm /tmp/zig.tar.xz /tmp/zig.sha256
 
-FROM debian:bookworm-20261104-slim
+FROM debian:trixie-20261104-slim
 
 COPY --from=toolchain /opt/zig /opt/zig
 
