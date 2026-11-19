@@ -33,7 +33,8 @@ $ /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/acodeninja/bootst
 Ready. Next:
   cd ../my-zig
   make test
-  read kitchen-sink/ for the language, then pick a kata from KITCHEN-SINK.md
+  read kitchen-sink.test.js for the language, then pick a kata:
+  https://learn.madetech.com/technology/katas/
 ```
 
 You need Docker and `make`. You do not need Zig, and you do not need a clone of this

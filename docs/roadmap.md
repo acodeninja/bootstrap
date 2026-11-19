@@ -67,10 +67,11 @@ it sets the precedent.
    artefacts, first ≈ second is the pass. See
    [containers.md](containers.md#caching-is-mandatory).
 3. The base image tag is pinned, not floating.
-4. All ten `kitchen-sink/` files are present and every assertion passes, per
-   [kitchen-sink.md](kitchen-sink.md). `09_errors` uses the language's native failure
-   idiom; `10_gotchas` has at least four entries genuinely specific to this language.
-5. `rm -r kitchen-sink KITCHEN-SINK.md` leaves a project that still builds.
+4. The `kitchen-sink` file has every section, no more than fifteen assertions, and all
+   of them pass, per [kitchen-sink.md](kitchen-sink.md). The errors slot uses the
+   language's native failure idiom; the gotcha is genuinely specific to this language.
+5. `rm kitchen-sink.test.js` — or the language's equivalent — leaves a project that
+   still builds.
 6. The Makefile calls no host tool but `docker`.
 7. Any vendored code is confined to `vendor/`, version-pinned in a header comment,
    excluded from lint and fmt, and its licence named in the generated `README.md`.

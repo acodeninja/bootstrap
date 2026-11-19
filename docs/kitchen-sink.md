@@ -1,7 +1,8 @@
 # The kitchen sink suite
 
-Every generated project ships a `kitchen-sink/` test suite: a small set of executable,
-all-passing assertions that together are a cheatsheet for the language's toolbox.
+Every generated project ships a single `kitchen-sink` test file: fifteen executable,
+all-passing assertions that together are a cheatsheet for the language's toolbox. One
+page, read top to bottom in under a minute.
 
 The framing is **"here are the tools you'll need to solve any of these katas"** —
 the [Made Tech kata list](https://learn.madetech.com/technology/katas/). The coverage is
@@ -34,26 +35,42 @@ language fails the build.
 
 A red suite on a fresh bootstrap would also contradict the whole promise of the tool.
 
-## The ten themes
+## Fifteen assertions, allocated once
 
-Ten files, five to eight assertions each, same numbering and same concepts in every
-language so the templates are comparable side by side.
+One file. **Fifteen assertions, and that is a ceiling rather than a target.** Sections in
+the order below, the same sections in every language, so templates stay comparable side
+by side.
 
-| File              | Covers                                                                                                                                                |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `01_values`       | declaration, mutable vs immutable binding, inference vs annotation, the primitive types, absence, shadowing                                           |
-| `02_operators`    | arithmetic, integer vs float division, modulo with negative operands, precedence, overflow behaviour                                                  |
-| `03_equality`     | value vs reference equality, structural equality of collections, float comparison tolerance, comparing absence, coercion                              |
-| `04_control_flow` | if/else, conditional expression, switch/match and exhaustiveness, truthiness, for over a range, for with index, while, until/do-while, break/continue |
-| `05_collections`  | list, map, set, tuple — append, lookup, missing key, length, slice, sort, iteration order guarantees                                                  |
-| `06_strings`      | interpolation, split, join, repeat, slice, character access, case, trim, length vs unicode                                                            |
-| `07_functions`    | definition, multiple returns, default and optional parameters, closures over state, map/filter/fold, recursion                                        |
-| `08_types`        | record/struct, enum/sum type, exhaustive match on it, interface or protocol dispatch                                                                  |
-| `09_errors`       | the language's native failure idiom — raising, returning, handling                                                                                    |
-| `10_gotchas`      | four to six quirks specific to this language                                                                                                          |
+The budget is divided by how many of the twelve katas need each thing. That count is in
+[the traceability table](#coverage-is-traceable-to-the-katas) below, and it is the whole
+argument for these numbers rather than any others.
 
-There is no separate smoke test. The first assertion in `01_values` proves the toolchain
-runs; a second file asserting `1 + 1 == 2` earns nothing.
+| Section | Slots | Covers |
+| ------- | ----- | ------ |
+| collections | 3 | list, map, set — append, lookup, missing key, length, slice, membership |
+| strings | 3 | split, join, slice, character access, repeat, trim, interpolation |
+| types and branching | 3 | record or struct, a fixed set of named states, a branch that yields a value |
+| iteration | 2 | loop with the index, and walking a sequence with lookahead |
+| functions | 2 | passing a function to a function, and folding a list to one value |
+| errors | 1 | the language's native failure idiom, and how a test asserts it |
+| gotchas | 1 | the single quirk most likely to cost an hour |
+
+This supersedes the ten numbered files the design started with. Ten files at five to
+eight assertions each is fifty to eighty assertions, which cannot coexist with a budget
+of fifteen: either eight files hold one test apiece, or the kata filter gets abandoned to
+pad them out. The budget is the constraint carrying the value, so the files went.
+
+The javascript template shipped the old shape first, and what it cost is worth recording.
+Three files of five assertions, each locally reasonable, added up to a suite that spent
+every slot on themes at most one kata needs — and had nothing at all for types,
+collections or strings. A file per theme hides that. One page with one budget cannot.
+
+There is no separate smoke test. The first assertion proves the toolchain runs; a test
+asserting `1 + 1 == 2` earns nothing.
+
+What is *not* here is as deliberate as what is. Equality, operators and the primitive
+types get a passing mention inside another section at most. Fifteen slots do not stretch
+to a language tour, and a reader who wants one has the language's own documentation.
 
 ## Coverage is traceable to the katas
 
@@ -85,9 +102,12 @@ reference material.
 
 ## Failure is expressed natively
 
-The rule that makes `09_errors` worth shipping: **do not port the JavaScript version
-into twenty-six languages.** Each template represents failure the way its community
-does.
+The rule that makes the errors slot worth spending: **do not port the JavaScript version
+into twenty-six languages.** Each template represents failure the way its community does.
+
+One slot, so it carries both halves at once: the idiom, and how a test asserts it. The
+second half is the one people reach for, because asserting a refusal is the red step of
+the TDD loop for every invalid input a kata has.
 
 | Language                | Failure idiom                                                     |
 | ----------------------- | ----------------------------------------------------------------- |
@@ -119,8 +139,14 @@ does.
 
 ## Gotchas are deliberately not uniform
 
-`10_gotchas` is the one file that differs completely between templates. It carries the
-four to six things that actually bite someone arriving from another language.
+Gotchas is the one section that differs completely between templates. It carries the
+thing most likely to bite someone arriving from another language.
+
+**It is one slot now, down from a file of four to six.** That is the sharpest cut the
+fifteen-assertion budget makes, and it deserves saying plainly: most of a language's
+quirks no longer ship. The table below is candidates, not a checklist. Pick the one that
+would cost a newcomer the most time and leave the rest to folklore. For javascript that
+is lexicographic `sort()`, which quietly produces a wrong answer instead of an error.
 
 | Language   | The sort of thing that belongs here                                                            |
 | ---------- | ---------------------------------------------------------------------------------------------- |
@@ -136,51 +162,55 @@ four to six things that actually bite someone arriving from another language.
 | Java       | `==` on boxed `Integer`, autoboxing a `null`, `String` interning, erased generics              |
 | PHP        | `==` vs `===`, string-to-number comparison rules, arrays being list and map at once            |
 
-The remaining templates follow the same bar: a surprise, not a syntax reminder. If an
-assertion would not surprise anyone, it belongs in one of the other nine files.
+The bar is the same everywhere: a surprise, not a syntax reminder. If an assertion would
+not surprise anyone, it belongs in another section or nowhere.
 
-## When a theme doesn't fit the language
+## When a section doesn't fit the language
 
-Every template has all ten files. Where the language genuinely lacks a construct, **the
-file asserts what the language does instead, and says so.** The absence is the lesson.
+Every template has every section. Where the language genuinely lacks a construct, **the
+section asserts what the language does instead, and says so.** The absence is the lesson.
 
-- **C `01_values`** — manual memory is the lesson the other 25 templates cannot teach.
-  Assert stack versus heap, `malloc`/`free`, and what a pointer actually holds.
-- **C `08_types`** — no sum types, no generics, no namespaces, no methods. Assert
-  `struct`, `enum` as plain integer constants, and a tagged union built by hand out of a
-  `struct` with a discriminant. The amount of machinery this takes *is* the point.
-- **C `09_errors`** — no exceptions and no `Result`. Assert the return-code convention
-  and `errno`, including the part everyone forgets: `errno` is only meaningful after a
-  call that actually failed.
-- **Prolog `01_values`** — no mutable variables. Assert unification, singleton warnings,
-  and `assertz`/`retract` as the escape hatch for state.
-- **Prolog `04_control_flow`** — no loops. Assert recursion, `between/3`, `forall/2`,
-  `findall/3`, and what cut does to backtracking.
-- **Prolog `07_functions`** — predicates, not functions. Assert arity, multiple
-  solutions, and `call/N`.
-- **Go `08_types`** — no sum types and no exhaustive match. Assert interface dispatch and
-  a type switch, and note that the compiler will not check you covered every case.
-- **Elm `09_errors`** — no exceptions and no `try`. `Result` and `Maybe` are the whole
-  story, and that is worth one assertion of its own.
-- **Gleam, Elm, Haskell `04_control_flow`** — no `while` or `until`. Assert recursion and
-  folds in their place.
+- **C types** — no sum types, no generics, no namespaces, no methods. Assert `struct`,
+  `enum` as plain integer constants, and a tagged union built by hand from a `struct`
+  with a discriminant. The amount of machinery this takes *is* the point.
+- **C collections** — no map and no set in the standard library. Assert the array, and
+  that this absence is why a kata solution in C is longer than the same one elsewhere.
+- **C errors** — no exceptions and no `Result`. Assert the return-code convention and
+  `errno`, including the part everyone forgets: `errno` is only meaningful after a call
+  that actually failed.
+- **Prolog iteration** — no loops. Assert recursion, `between/3`, `forall/2` and
+  `findall/3`.
+- **Prolog functions** — predicates, not functions. Assert arity, multiple solutions,
+  and `call/N`.
+- **Go types** — no sum types and no exhaustive match. Assert interface dispatch and a
+  type switch, and note that the compiler will not check you covered every case.
+- **JavaScript types** — the same absence. A lookup table makes the cases obvious, and
+  the fallback is the reader's to remember.
+- **Elm errors** — no exceptions and no `try`. `Result` and `Maybe` are the whole story.
+- **Gleam, Elm, Haskell iteration** — no `while` or `until`. Assert recursion and folds
+  in their place.
 
-Do not skip a file, and do not leave it near-empty. A reader comparing Go to Gleam
-should be able to open `08_types` in both and see exactly what changed.
+Do not skip a section and do not leave one near-empty. A reader comparing Go to Gleam
+should be able to find the types section in both and see exactly what changed.
 
 ## It is meant to be deleted
 
-The suite lives in `kitchen-sink/` alongside `KITCHEN-SINK.md`, and nothing else in the
-project depends on it. When you start real work:
+The suite is one file and nothing else in the project depends on it. When you start real
+work:
 
 ```console
-$ rm -r kitchen-sink KITCHEN-SINK.md
+$ rm kitchen-sink.test.js
 $ make test
 ```
 
-still builds and passes. That is why the explanation lives in `KITCHEN-SINK.md` and not
-in the generated `README.md` — the README is about the project you are building, not the
-scaffolding you were handed, and it should survive the deletion unchanged.
+still builds and passes.
+
+There is no companion `KITCHEN-SINK.md`. An earlier design had one, to keep the
+explanation out of the generated `README.md` — the README is about the project you are
+building, not the scaffolding you were handed, and it must survive the deletion
+unchanged. That constraint still holds; the orientation just moved somewhere that leaves
+no file behind at all. `bootstrap.sh` prints it as the last thing it does, naming the
+file and linking the kata list.
 
 ## Test conventions
 
@@ -208,8 +238,10 @@ Applied in every template, adapted to the language's runner:
   surprise and drop the rest.
 - **One assertion, one idea.** These files are read far more often than they are run. A
   quirk and the spelling that avoids it are one idea, so they share a body.
-- **Flat, with no grouping block.** The file is the grouping. A `describe` wrapper invites
-  a name that only parses next to its parent, which is exactly the fragment the rule
-  above bans — and the leaf is what CI output, `grep` and failure reports show.
-- Tests live where the language puts them: beside the source in Rust and Zig, in `test/`
-  in Erlang and Gleam, in `tests/` in Python.
+- **Flat, with no grouping block.** Sections are plain comments, never nested blocks. A
+  `describe` wrapper invites a name that only parses next to its parent, which is exactly
+  the fragment the rule above bans — and the leaf is what CI output, `grep` and failure
+  reports show.
+- The file lives where the language puts tests: the project root in JavaScript, beside
+  the source in Rust and Zig, `test/` in Erlang and Gleam, `tests/` in Python. It is one
+  file wherever that is.

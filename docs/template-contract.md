@@ -54,8 +54,7 @@ Every template's `files/` must contain:
 | `Makefile`                 | `test`, `lint`, `fmt`, `build`, `shell`, `help`                    |
 | `.dockerignore`            | `.git`, build output, `.env`                                       |
 | `README.md`                | What this is, how to run it, the prerequisites                     |
-| `KITCHEN-SINK.md`          | What the kitchen sink is, and the kata list to apply it to         |
-| `kitchen-sink/`            | The ten themed test files — see [kitchen-sink.md](kitchen-sink.md) |
+| `kitchen-sink.test.js`     | The one-page suite — see [kitchen-sink.md](kitchen-sink.md)        |
 | `.gitignore`               | Build artefacts for this language, plus `.env`                     |
 | `.editorconfig`            | Indentation and line endings matching the language's convention    |
 | `LICENSE`                  | MIT, with `{{AUTHOR}}` and `{{YEAR}}` substituted                  |
@@ -77,7 +76,7 @@ All six, in every template, even where two are the same command:
 
 | Target  | Must                                                           |
 | ------- | -------------------------------------------------------------- |
-| `test`  | Run the suite — without naming `kitchen-sink/`, see below      |
+| `test`  | Run the suite — without naming the kitchen sink, see below     |
 | `lint`  | Be non-mutating, and exit non-zero on a violation — CI runs it |
 | `fmt`   | Reformat in place                                              |
 | `build` | Compile, or be a documented no-op for interpreted languages    |
@@ -86,11 +85,11 @@ All six, in every template, even where two are the same command:
 
 A language with no separate linter uses its formatter in check mode for `lint`.
 
-**`test` must not name the kitchen-sink directory.** The suite is meant to be deleted, so
-a target that points at it breaks the moment someone does. Use whatever spelling of the
-runner discovers tests for itself and succeeds when it finds none. In `javascript` this is
-load-bearing twice over: `node --test kitchen-sink/` treats the path as a module to load
-and exits `1` even when every assertion passes.
+**`test` must not name the kitchen sink.** The suite is meant to be deleted, so a target
+that points at it breaks the moment someone does. Use whatever spelling of the runner
+discovers tests for itself and succeeds when it finds none. In `javascript` this is
+load-bearing twice over: `node --test <path>` treats the path as a module to load and
+exits `1` even when every assertion passes.
 
 Targets must not call host shell tools beyond `docker` — no `grep`, `awk`, `sed` or
 `id`. Windows `make` runs through `cmd.exe` and has none of them. The reasoning and the
@@ -149,10 +148,11 @@ is ever needed, the contract gains an exclusion list and not before.
    targeting the directories this toolchain actually writes to.
 5. Build `files/` by hand, as a real working project. Write it in the target directory
    first, get `make test` green, *then* copy it into `files/` and tokenise.
-6. Write all ten `kitchen-sink/` files against [kitchen-sink.md](kitchen-sink.md), using
-   the language's real idiom rather than a port of another template's.
-7. Write `KITCHEN-SINK.md`, and confirm `rm -r kitchen-sink KITCHEN-SINK.md` leaves a
-   project that still builds and passes.
+6. Write `kitchen-sink` against [kitchen-sink.md](kitchen-sink.md) — every section, at
+   most fifteen assertions, in the language's real idiom rather than a port of another
+   template's.
+7. Confirm that deleting the kitchen-sink file leaves a project that still builds and
+   passes.
 8. Add the row to [languages.md](languages.md).
 9. `./bootstrap.sh <id> /tmp/check` from a cold image and confirm `make test` is green.
 10. Run `make test` a second time. It must be materially faster — if it isn't, the cache

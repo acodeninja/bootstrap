@@ -65,7 +65,7 @@ module's own idiom, and flatness is what keeps the names readable on their own â
 [kitchen-sink.md](kitchen-sink.md#test-conventions).
 
 Its `make test` is a bare `node --test` with no path, and that is not an oversight.
-`node --test kitchen-sink/` treats the argument as a module to load and exits `1` with
+`node --test <path>` treats the argument as a module to load and exits `1` with
 `MODULE_NOT_FOUND` even when the suite is green. Bare, node walks the tree itself and
 exits `0` when it finds nothing â€” which is what makes the suite safe to delete.
 
@@ -95,8 +95,8 @@ work, and a kata set that cannot show you plain Java has a hole in it.
 
 **`c` and `cpp` are separate templates on one image.** Combining them was considered and
 rejected. C has no sum types, no generics, no namespaces, no RAII and no exceptions, so
-`08_types` and `09_errors` have almost nothing in common between the two. A single
-template would have to hedge every theme, which is precisely what the
+their types and errors sections have almost nothing in common. A single
+template would have to hedge every section, which is precisely what the
 "idiomatic, not lowest-common-denominator" rule in
 [kitchen-sink.md](kitchen-sink.md) forbids.
 

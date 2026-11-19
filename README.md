@@ -18,11 +18,11 @@ Run either with no arguments to be prompted instead. No clone, nothing installed
 [docs/install.md](docs/install.md).
 
 One command gets you a project with a pinned toolchain, a formatter, a linter, CI, and
-a test suite that runs immediately. That suite is a kitchen sink: ten short themed files
-of passing assertions covering the language's variables, operators, equality, control
-flow, collections, strings, functions, types, errors and quirks — everything you need to
-go and solve a [kata](https://learn.madetech.com/technology/katas/), and nothing you
-don't. Delete it in one move when you start real work.
+a test suite that runs immediately. That suite is a kitchen sink: one page of fifteen
+passing assertions covering the collections, strings, types, iteration, functions and
+error handling you need to go and solve a
+[kata](https://learn.madetech.com/technology/katas/), plus the one quirk most likely to
+cost you an hour — and nothing else. Delete the file when you start real work.
 
 ## Prerequisites
 
