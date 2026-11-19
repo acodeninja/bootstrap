@@ -84,7 +84,7 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | ruby                   | `ruby:4.0-slim-trixie`                       | official    |
 | elixir                 | `elixir:1.20-otp-29-slim`                    | official    |
 | php                    | `php:8.6-cli-trixie` + `composer:2`          | official    |
-| swift                  | `swift:6.4-trixie-slim`                      | official    |
+| swift                  | `swift:6.4-trixie`                      | official    |
 | dart                   | `dart:3.14-sdk`                              | official    |
 | c, cpp                 | `gcc:16-trixie`                              | official    |
 | erlang                 | `erlang:29-slim`                             | official    |
@@ -130,9 +130,10 @@ Three cases, recorded here so they are not rediscovered per template:
   multi-stage copy rather than piping an installer script:
   `COPY --from=composer:2 /usr/bin/composer /usr/bin/composer`.
 - **c, cpp** — `gcc:16-trixie` ships no `clang-format`; one `apt-get install`.
-- **swift** — `swift format` became a toolchain subcommand in Swift 6.0. Confirm it is
-  actually present in `swift:6.4-trixie-slim` before writing the lint task, and fall back to
-  installing `swift-format` separately if not.
+- **swift** — `swift format` is a toolchain subcommand since Swift 6.0, and it **is**
+  present in `swift:6.4-trixie`, reporting the compiler's own version, with
+  `/usr/bin/swift-format` alongside it. No separate install is needed. Use the full image:
+  the `-slim` tags are runtime-only and carry no `swift` binary at all.
 
 Every reference above was resolved against the registry on 2026-11-19, tags included.
 `zig`, `lua` and `elm` returned `errors:` — no Docker Official Image exists for any of

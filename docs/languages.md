@@ -26,7 +26,7 @@ patches, so an old minor can outrank a current one. See
 | `ruby`       | `ruby:4.0.10-slim-trixie`                      | `minitest`                   | `rubocop` / `rubocop -a`             | 1    |
 | `elixir`     | `elixir:1.20.5-otp-29-slim`                    | `ExUnit`                     | `mix credo` / `mix format`           | 1    |
 | `php`        | `php:8.6.0-cli-trixie` + `composer:2.11.2`     | `PHPUnit`                    | `phpstan` / `php-cs-fixer`           | 1    |
-| `swift`      | `swift:6.4.2-trixie-slim`                      | `XCTest`                     | `swift format lint` / `swift format` | 1    |
+| `swift`      | `swift:6.4.2-trixie`                      | `XCTest`                     | `swift format lint` / `swift format` | 1    |
 | `dart`       | `dart:3.14.1-sdk`                              | `package:test`               | `dart analyze` / `dart format`       | 1    |
 | `erlang`     | `erlang:29.1.2.0-slim`                         | `eunit`                      | `dialyzer` / `erlfmt`                | 2    |
 | `gleam`      | `ghcr.io/gleam-lang/gleam:v1.19.2-erlang-slim` | `gleeunit`                   | `gleam check` / `gleam format`       | 2    |
@@ -58,6 +58,16 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
   test framework because the language has no stdlib one.
 
 ## Notes on individual rows
+
+**`swift` must use the full image, not `-slim`.** Swift's `-slim` tags are runtime-only:
+in `swift:6.4.2-trixie-slim` there is no `swift` binary on `PATH` at all, only the runtime
+libraries for deploying an already-built binary. The Debian-variant rule that picks `-slim`
+everywhere else is wrong here.
+
+`swift format` is confirmed present as a toolchain subcommand in 6.4.2, reporting the same
+version as the compiler, and `/usr/bin/swift-format` exists alongside it — so no separate
+install is needed. Both `XCTest.swiftmodule` and `Testing.swiftmodule` ship, so
+swift-testing is available even though the row specifies XCTest.
 
 **`nim` is the first template where `lint` and `fmt` check genuinely different things.**
 `nim check` is a type check and is blind to whitespace; `nimpretty` has no check mode at
