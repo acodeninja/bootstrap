@@ -166,6 +166,22 @@ a hyphen. Use the slug for package names and URLs, the snake for module and file
 no partials. If a template needs logic, it needs to be two templates. This is the
 constraint that keeps `bootstrap.sh` short enough to be obviously correct.
 
+**A project named after a reserved word in the target language will not build.** The tokens
+are substituted literally, and `{{PROJECT_SNAKE}}` becomes a module or package *identifier*
+in most languages — so `./bootstrap.sh nim ../out` once produced `import out`, which is a
+syntax error because `out` is a Nim keyword. `out` is also a keyword in C# and a modifier in
+Kotlin.
+
+This is inherent to literal substitution and is accepted rather than solved: detecting
+twenty-six languages' reserved words would mean per-language logic in `bootstrap.sh`, which
+is exactly what the paragraph above forbids. Where a language offers a free escape, take it
+— `nim` imports `"../src/{{PROJECT_SNAKE}}"` as a string literal, which bypasses the
+keyword check at no cost in readability. Where it does not, the failure is immediate and
+the message names the offending identifier, which is a tolerable outcome for a rare input.
+
+CI bootstraps into `../scaffold` rather than `../out` for this reason: the matrix should
+exercise a realistic project name, not an adversarial one.
+
 Substitution is applied to every file in `files/`. Binary files are not expected; if one
 is ever needed, the contract gains an exclusion list and not before.
 
