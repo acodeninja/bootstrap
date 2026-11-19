@@ -59,6 +59,23 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 
 ## Notes on individual rows
 
+**`elixir` redirects its lock file with `mix.exs` itself.** `Mix.Project`'s `:lockfile`
+key takes an absolute path, so `mix.lock`, `deps/` and `_build/` all move into `/cache`
+and credo stays an ordinary dependency — a third answer to the lock-file problem, cleaner
+than `ruby`'s manifest-free route or `rust`'s pre-generated lock. The manifest-free route
+was tried and **does not work here**: `mix archive.install hex credo` exits 0 and installs
+only credo's own ebin, omitting `bunt`, `jason` and `file_system`, so `mix credo` then dies
+with `UndefinedFunctionError`.
+
+`MIX_HOME` also has to move off `~/.mix`. The slim image has no passwd entry for the
+calling uid, so `$HOME` resolves to `/` and the default archive location is unreadable at
+run time — the first `make test` fails with "Could not find an SCM for dependency".
+
+Elixir 1.20's set-theoretic type checker is new enough to be worth knowing about: it warns
+at compile time on literal cross-type comparisons, which is exactly what the `==` versus
+`===` gotcha demonstrates. The suite threads values through variables so the lesson still
+lands without the compiler pre-empting it.
+
 **`dart` is the one template where the container's uid is load-bearing.** `dart pub`
 refreshes `.dart_tool/package_config.json` by setting its mtime, and Linux requires
 *ownership* for that, not merely write permission — so a `chmod 777` is not enough. The
