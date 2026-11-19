@@ -1,0 +1,67 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        template: [javascript]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: docker/setup-buildx-action@v3
+      - run: ./bootstrap.sh ${{ matrix.template }} ../out
+
+  # Asserting which failure happened, not merely that one did.
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: exit codes
+        run: |
+          expect() {
+            local want=$1
+            shift
+            set +e
+            "$@" >/dev/null 2>&1
+            local got=$?
+            set -e
+            if [ "$got" -ne "$want" ]; then
+              echo "expected $want from '$*', got $got" >&2
+              exit 1
+            fi
+          }
+          expect 1 ./bootstrap.sh
+          expect 1 ./bootstrap.sh --nosuchflag javascript ../out
+          expect 2 ./bootstrap.sh nosuchlang ../out
+          expect 3 ./bootstrap.sh javascript .
+          expect 0 ./bootstrap.sh javascript ../out --dry-run
+
+      - name: dry-run writes nothing
+        run: |
+          ./bootstrap.sh javascript ../out --dry-run
+          test ! -e ../out
+
+      - name: no token survives substitution
+        run: |
+          ./bootstrap.sh javascript ../out --no-build
+          ! grep -rn '{{[A-Z_]\{2,\}}}' ../out
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: shellcheck bootstrap.sh
