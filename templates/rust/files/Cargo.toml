@@ -1,0 +1,8 @@
+[package]
+name = "{{PROJECT_SLUG}}"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+name = "{{PROJECT_SNAKE}}"
+path = "src/{{PROJECT_SNAKE}}.rs"
