@@ -72,10 +72,17 @@ Every template's `files/` must contain:
 `.env` is **not** in `files/`. The bootstrap script generates it — see
 [containers.md](containers.md#file-ownership).
 
-`src/` is not required, but every template should have one: a module and a test beside
-it. Deleting the kitchen sink is supposed to leave a working project, and without `src/`
-it leaves an empty one. It is also the only place a template exercises token
-substitution in a *filename*.
+`src/` is not required, but every template should have one: a module, plus a test
+**wherever that language puts tests**. Deleting the kitchen sink is supposed to leave a
+working project, and without a surviving test it leaves an empty one. `src/` is also the
+only place a template exercises token substitution in a *filename*.
+
+"Beside it" is deliberately not the rule. It is right for JavaScript, Zig and Go, and
+wrong for every language with a separate test tree — Ruby, Elixir, Kotlin, Java, Erlang,
+Gleam, OCaml, PHP — where a test inside `src/` would be the one un-idiomatic thing in the
+template, against [kitchen-sink.md](kitchen-sink.md)'s own instruction to write in the
+language's real idiom. `ruby` puts its module at `src/{{PROJECT_SNAKE}}.rb` and its test at
+`test/{{PROJECT_SNAKE}}_test.rb`, which is what a Ruby project looks like.
 
 ### The Makefile targets
 
