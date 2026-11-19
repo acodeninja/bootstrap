@@ -41,6 +41,14 @@ nim, prolog, elm, lua, c, cpp.
 
 ## Status
 
-Design stage — the scripts and templates don't exist yet, and the commands above will
-404 until this repo is public. The design is written up in **[docs/](docs/README.md)**;
-start there.
+One template of twenty-six. `javascript` works end to end from a clone:
+
+```console
+$ git clone git@github.com:acodeninja/bootstrap.git && cd bootstrap
+$ ./bootstrap.sh javascript ../my-js
+```
+
+`bootstrap.ps1` is not written yet, and the one-liners above 404 until this repo is
+public — so remote mode is unimplemented and clone mode is the way in. The design is
+written up in **[docs/](docs/README.md)**; [roadmap.md](docs/roadmap.md) has the order
+the rest land in.
