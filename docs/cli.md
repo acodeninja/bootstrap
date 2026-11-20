@@ -38,12 +38,18 @@ error and exit `1` as normal.
 | `--force`       | Scaffold into a non-empty directory, overwriting colliding files.    |
 | `--no-git`      | Skip `git init` and the initial commit.                              |
 | `--no-build`    | Skip `docker compose build` and the verification test run.           |
+| `--no-pull`     | Build the image locally instead of pulling the published one.        |
 | `--dry-run`     | Print the files that would be written and exit `0`. Touches nothing. |
 | `--list`        | Print available templates and exit `0`.                              |
 | `--help`        | Print usage and exit `0`.                                            |
 
 `--dry-run` implies `--no-git` and `--no-build`. Flags may appear before or after the
 positional arguments. `--` ends flag parsing.
+
+The image step pulls `ghcr.io/acodeninja/bootstrap/<template-id>:main` when it can and
+builds the `Dockerfile` when it cannot, reporting which in its step line. `--no-pull`
+forces the build: this repository's own CI passes it, because a pull would test the
+previous commit's toolchain against the current commit's templates.
 
 PowerShell accepts the same spellings. Do not add `-Force`-style aliases: one spelling
 per flag keeps the docs, the tests and the two implementations honest.

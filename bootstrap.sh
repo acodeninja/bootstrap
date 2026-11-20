@@ -23,6 +23,7 @@ OPT_NAME=
 OPT_FORCE=0
 OPT_NO_GIT=0
 OPT_NO_BUILD=0
+OPT_NO_PULL=0
 OPT_DRY=0
 OPT_LIST=0
 TEMPLATE_ID=
@@ -57,6 +58,7 @@ usage() {
     '  --force         Scaffold into a non-empty directory, overwriting collisions.' \
     '  --no-git        Skip git init and the initial commit.' \
     '  --no-build      Skip the image build and the verification test run.' \
+    '  --no-pull       Build the image locally instead of pulling the published one.' \
     '  --dry-run       Print the files that would be written and exit 0.' \
     '  --list          Print available templates and exit 0.' \
     '  --help          Print this and exit 0.' \
@@ -93,6 +95,7 @@ parse_args() {
       --force) OPT_FORCE=1 ;;
       --no-git) OPT_NO_GIT=1 ;;
       --no-build) OPT_NO_BUILD=1 ;;
+      --no-pull) OPT_NO_PULL=1 ;;
       --dry-run)
         OPT_DRY=1
         OPT_NO_GIT=1
@@ -453,6 +456,32 @@ git_init() {
   fi
 }
 
+# Read back rather than rebuilt from TEMPLATE_ID, so the name in the step line
+# cannot drift from the one compose will actually run.
+compose_image() {
+  local line value=
+  while IFS= read -r line || [ -n "$line" ]; do
+    case $line in
+      *'image: '*)
+        value=${line#*image: }
+        break
+        ;;
+    esac
+  done <"$TARGET/compose.yaml"
+  printf '%s' "$value"
+}
+
+# A published image turns the first run into a download instead of a toolchain
+# build. Quiet and discarded: a failure here is not an error, it is the ordinary
+# path when no image has been published for this template or architecture yet,
+# and the Dockerfile beside it remains authoritative either way.
+pull_image() {
+  (
+    cd "$TARGET" || exit 1
+    docker compose pull --quiet
+  ) >/dev/null 2>&1
+}
+
 # docs/cli.md wants the build streamed unmodified, and wants toomanyrequests
 # named when it happens. Reading the stream at all costs the TTY renderer, so
 # --progress plain keeps it line-oriented rather than emitting redraws.
@@ -557,8 +586,12 @@ main() {
   if [ "$OPT_NO_GIT" -eq 0 ]; then git_init; fi
 
   if [ "$OPT_NO_BUILD" -eq 0 ]; then
-    build_image
-    step image "built $PROJECT_SLUG-dev"
+    if [ "$OPT_NO_PULL" -eq 0 ] && pull_image; then
+      step image "pulled $(compose_image)"
+    else
+      build_image
+      step image "built $(compose_image)"
+    fi
     run_tests
   fi
 

@@ -21,6 +21,7 @@ $script:OptName = ''
 $script:OptForce = $false
 $script:OptNoGit = $false
 $script:OptNoBuild = $false
+$script:OptNoPull = $false
 $script:OptDryRun = $false
 $script:OptList = $false
 $script:TemplateId = ''
@@ -61,6 +62,7 @@ function Write-Usage {
         '  --force         Scaffold into a non-empty directory, overwriting collisions.'
         '  --no-git        Skip git init and the initial commit.'
         '  --no-build      Skip the image build and the verification test run.'
+        '  --no-pull       Build the image locally instead of pulling the published one.'
         '  --dry-run       Print the files that would be written and exit 0.'
         '  --list          Print available templates and exit 0.'
         '  --help          Print this and exit 0.'
@@ -84,8 +86,8 @@ function Write-Note {
 }
 
 # Carries the exit code out through the one catch in Invoke-Main. `exit` cannot
-# do it: under [scriptblock]::Create the script was never a file, so exit
-# returns from the block instead of leaving the process.
+# do it: under [scriptblock]::Create there is no process of our own to leave, so
+# exiting here would end the caller's session. See the foot of this file.
 function Stop-Bootstrap {
     param([int]$Code, [string]$Message, [string[]]$Hints = @())
     $e = New-Object System.Management.Automation.ErrorRecord(
@@ -111,6 +113,7 @@ function Read-Args {
             '--force' { $script:OptForce = $true }
             '--no-git' { $script:OptNoGit = $true }
             '--no-build' { $script:OptNoBuild = $true }
+            '--no-pull' { $script:OptNoPull = $true }
             '--dry-run' {
                 $script:OptDryRun = $true
                 $script:OptNoGit = $true
@@ -461,6 +464,31 @@ function Initialize-Repository {
     }
 }
 
+# Read back rather than rebuilt from the template id, so the name in the step
+# line cannot drift from the one compose will actually run.
+function Get-ComposeImage {
+    foreach ($line in [IO.File]::ReadAllLines((Join-Path $script:Target 'compose.yaml'))) {
+        $at = $line.IndexOf('image: ', [StringComparison]::Ordinal)
+        if ($at -ge 0) { return $line.Substring($at + 7) }
+    }
+    return ''
+}
+
+# A published image turns the first run into a download instead of a toolchain
+# build. Quiet and discarded: a failure here is not an error, it is the ordinary
+# path when no image has been published for this template or architecture yet,
+# and the Dockerfile beside it remains authoritative either way.
+function Test-ImagePull {
+    Push-Location -LiteralPath $script:Target
+    try {
+        & docker compose pull --quiet *> $null
+        return ($LASTEXITCODE -eq 0)
+    }
+    finally {
+        Pop-Location
+    }
+}
+
 function Invoke-ImageBuild {
     # The analyzer reads $rateLimited as write-only: its check does not follow
     # the read into the ForEach-Object block below. The read is real, and so is
@@ -594,8 +622,13 @@ function Invoke-Main {
     if (-not $script:OptNoGit) { Initialize-Repository }
 
     if (-not $script:OptNoBuild) {
-        Invoke-ImageBuild
-        Write-Step 'image' "built $($script:ProjectSlug)-dev"
+        if ((-not $script:OptNoPull) -and (Test-ImagePull)) {
+            Write-Step 'image' "pulled $(Get-ComposeImage)"
+        }
+        else {
+            Invoke-ImageBuild
+            Write-Step 'image' "built $(Get-ComposeImage)"
+        }
         Invoke-TestRun
     }
 

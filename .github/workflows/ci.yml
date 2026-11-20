@@ -44,7 +44,10 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - uses: docker/setup-buildx-action@v4
-      - run: ./bootstrap.sh ${{ matrix.template }} ../scaffold
+      # --no-pull because the point of this job is the Dockerfile. Pulling the
+      # published image would test the previous commit's toolchain against this
+      # commit's templates, and a broken Dockerfile would go green.
+      - run: ./bootstrap.sh ${{ matrix.template }} ../scaffold --no-pull
 
   # Asserting which failure happened, not merely that one did.
   contract:
