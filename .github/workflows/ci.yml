@@ -31,27 +31,23 @@ jobs:
   scope:
     runs-on: ubuntu-latest
     outputs:
-      ids: ${{ steps.ids.outputs.ids }}
-      build: ${{ steps.diff.outputs.build }}
-      publish: ${{ steps.diff.outputs.publish }}
+      ids: ${{ steps.select.outputs.ids }}
+      build: ${{ steps.select.outputs.build }}
+      publish: ${{ steps.select.outputs.publish }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      # The same glob bootstrap.sh discovers templates with, so adding one needs
-      # no edit here.
-      - id: ids
-        run: |
-          ids=$(for f in templates/*/template.env; do d=${f%/template.env}; printf '"%s",' "${d##*/}"; done)
-          echo "ids=[${ids%,}]" >> "$GITHUB_OUTPUT"
-
-      # An image can only change when a template, the script that scaffolds it,
-      # or this pipeline changes. Docs, the README and bootstrap.ps1 cannot, and
-      # fifty-one builds proving that is pure waste. This is the paths filter the
-      # publish workflow used to carry on its trigger; it has to be a job now,
-      # because a trigger filter would skip the script's own tests too.
-      - id: diff
+      # Which templates to build, rather than whether to build at all. A
+      # template's image can only change when that template changes, so a push
+      # that adds one has no business rebuilding the other thirty-two -- and
+      # docs, the README and bootstrap.ps1 cannot change any image.
+      #
+      # Drift is what building everything used to catch: a base image tag that
+      # moved, an apt package that stopped existing. The weekly run does that
+      # now, which is what makes this gate safe.
+      - id: select
         env:
           event: ${{ github.event_name }}
           ref: ${{ github.ref }}
@@ -62,23 +58,46 @@ jobs:
           base=$before
           if [ "$event" = pull_request ]; then base=$pr_base; fi
 
-          # Build is the answer when the question cannot be asked -- a new
+          # Everything is the answer when the question cannot be asked -- a new
           # branch, a force push, or the weekly run, which has nothing to diff
-          # and exists to rebuild everything.
-          build=true
-          if [ "$event" != schedule ] && git cat-file -e "${base}^{commit}" 2>/dev/null; then
-            if [ -z "$(git diff --name-only "$base" "$after" -- templates bootstrap.sh .github/workflows/ci.yml)" ]; then
-              build=false
+          # and exists to rebuild the lot.
+          everything=no
+          changed=
+          if [ "$event" = schedule ] || ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            everything=yes
+          else
+            changed=$(git diff --name-only "$base" "$after")
+            # These two feed every image: the script that scaffolds each project
+            # before it is built, and the workflow that does the building.
+            if printf '%s\n' "$changed" | grep -qxF -e bootstrap.sh -e .github/workflows/ci.yml; then
+              everything=yes
             fi
           fi
+
+          if [ "$everything" = yes ]; then
+            selected=$(for f in templates/*/template.env; do d=${f%/template.env}; echo "${d##*/}"; done)
+          else
+            selected=$(printf '%s\n' "$changed" | sed -n 's|^templates/\([^/]*\)/.*|\1|p' | sort -u)
+          fi
+
+          # A deleted template is in the diff and has nothing left to build.
+          ids=$(printf '%s\n' "$selected" | while IFS= read -r id; do
+            if [ -n "$id" ] && [ -f "templates/$id/template.env" ]; then printf '"%s",' "$id"; fi
+          done)
+
+          build=false
+          if [ -n "$ids" ]; then build=true; fi
 
           publish=false
           if [ "$build" = true ] && [ "$event" != pull_request ] && [ "$ref" = refs/heads/main ]; then
             publish=true
           fi
 
-          echo "build=$build" >> "$GITHUB_OUTPUT"
-          echo "publish=$publish" >> "$GITHUB_OUTPUT"
+          {
+            echo "ids=[${ids%,}]"
+            echo "build=$build"
+            echo "publish=$publish"
+          } >> "$GITHUB_OUTPUT"
 
   # The bootstrap builds the image and runs the suite, the same two commands a
   # developer runs, and what it built is then what gets pushed -- so a published

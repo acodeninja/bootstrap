@@ -57,11 +57,11 @@ image it just tested.
 One workflow:
 
 ```
-scope ─┬─> image-amd64 (26 legs, cap 8) ─┬─> manifest (26 legs)
-lint  ─┴─> image-arm64 (26 legs, cap 8) ─┘   merge :main
+scope ─┬─> image-amd64 (one leg per changed template, cap 8) ─┬─> manifest
+lint  ─┴─> image-arm64 (one leg per changed template, cap 8) ─┘   merge :main
            build, test, push
 
-contract, remote                             (ungated, every push)
+contract, remote                                   (ungated, every push)
 ```
 
 Each `image` leg is one template on one architecture:
@@ -95,34 +95,44 @@ tag pushed here cannot drift from the one `compose` will pull.
 
 ### What gates what
 
-- **`scope` gates building, by path.** An image can only change when a template, the
-  script that scaffolds it, or this pipeline changes; docs, the README and `bootstrap.ps1`
-  cannot. So `scope` diffs the pushed range under `templates/`, `bootstrap.sh` and
-  `.github/workflows/ci.yml`, and if nothing there moved, no image is built. It answers
-  "build" whenever the question cannot be asked — a new branch, a force push.
+- **`scope` chooses which templates to build, not whether to build.** A template's image
+  can only change when that template changes, so `scope` diffs the pushed range and selects
+  the `templates/<id>/` directories in it. A push that adds one template builds one
+  template; docs, the README and `bootstrap.ps1` build nothing at all.
 
-  This started as a `paths` filter on the old publish workflow's trigger. Merged, it has
-  to be a job: a trigger filter would skip the script's own tests too. It is also what
-  stops the thing that prompted it — a push that touched one workflow file and three docs
-  built twenty-six images that could not possibly have changed, and skipped the
-  architecture that would actually have shipped.
-- **`scope` gates publishing too**, on the same diff plus two more conditions: the event
-  is not a pull request, and the ref is `main`. A PR builds and tests; it never pushes.
+  Two paths are the exception, because they feed every image: `bootstrap.sh`, which
+  scaffolds each project before it is built, and this workflow, which does the building. A
+  change to either selects everything.
+
+  It answers "everything" whenever the question cannot be asked — a new branch, a force
+  push, the weekly run. A template that appears in the diff but no longer has a
+  `template.env` is dropped, so deleting one builds nothing.
+
+  **This replaced building everything on every push**, which had been doing two jobs: it
+  gated by path, and it caught drift — a base image tag that moved under us, an apt package
+  that stopped existing. [The weekly run](#the-weekly-rebuild) took over the second job,
+  which is what makes selecting by path safe. Before that, landing one template rebuilt
+  sixty-six legs to prove that thirty-two of them had not changed.
+
+  This started as a `paths` filter on the old publish workflow's trigger. Merged, it has to
+  be a job: a trigger filter would skip the script's own tests too.
+- **`scope` gates publishing too**, on the same selection plus two more conditions: the
+  event is not a pull request, and the ref is `main`. A PR builds and tests; it never
+  pushes.
 - **A template gates itself.** One red test stops that template's push and nothing else.
   Gating the whole matrix was the objection to testing before publishing at all — it would
   put the slowest template in front of every other template's release — and a per-template
   gate answers it, because `manifest` was already per-template.
 - **`lint` gates publishing, not testing.** It is in `needs`, so the image jobs wait for
   it, but they run under `!cancelled()` and only the push steps require
-  `needs.lint.result == 'success'`. A shellcheck nit should not stop twenty-six templates
-  being tested; it should stop a release.
+  `needs.lint.result == 'success'`. A shellcheck nit should not stop a template being
+  tested; it should stop a release.
 
 `lint`, `contract` and `remote` are not gated at all. They cost minutes rather than
 builds, and a green check on every push is worth that.
 
 `packages: write` is granted to the three jobs that push, never at workflow level, so the
 `lint`, `contract` and `remote` jobs keep read-only tokens.
-
 ### The commit path
 
 A runner has no `user.name` or `user.email`, and `bootstrap.sh` treats that as
@@ -158,7 +168,8 @@ leg either way — and Docker Hub's limit is counted per account over six hours 
 per instant, which is why the `concurrency` group that stopped successive pushes stacking
 whole matrices is the thing that actually fixed the `429`. 16 is also a long way below the
 51 in flight when one appeared. If one shows up again, the dial is `max-parallel: 4` in
-both jobs.
+both jobs. Most runs now select one or two templates and come nowhere near either
+cap; the weekly one is what fills them.
 
 Each leg pushes its own `:main-<arch>` tag and a per-template `manifest` job merges them
 into the `:main` index `compose.yaml` names. The merge takes whichever architectures it
@@ -185,11 +196,16 @@ requires.
     - cron: '17 4 * * 1'
 ```
 
-Gating builds on changed paths means nothing tests a template unless it changes, and
+Selecting templates by path means nothing builds a template unless it changes, and
 "build everything on every push" had been accidentally serving as drift detection — a
 moved base-image tag, an apt repository that stopped carrying a version, a Hackage
 outage. Monday morning replaces the accident with something deliberate, off the hour
 because scheduled runs on the hour are the ones GitHub delays.
+
+**It is now the only run that builds everything**, which makes it load-bearing rather
+than belt-and-braces: a template nobody has touched since it landed is proven on Monday
+or not at all. If it ever stops running, the first symptom will be a template that has
+been broken for a while.
 
 **It publishes.** That is a decision rather than an oversight, and it has a consequence
 worth stating: `:main` can move with no commit behind it. This is consistent with the
@@ -339,5 +355,5 @@ failure. This repository's `image` jobs authenticate first with `docker/login-ac
 generated project's CI does the same when the secrets are set.
 
 Each leg logs in to both registries, for opposite reasons: Docker Hub because every
-`FROM` comes from there and fifty-one builds off shared runner IPs are well past the
+`FROM` comes from there and a weekly run off shared runner IPs is well past the
 anonymous limit, ghcr with `GITHUB_TOKEN` because that is where the image goes.
