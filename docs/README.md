@@ -25,15 +25,15 @@ $ /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/acodeninja/bootst
 ==> fetch        acodeninja/bootstrap @ main (35 templates)
 ==> template     Zig
 ==> preflight    docker 29.9.3, make 4.4.1
-==> scaffold     21 files -> ../my-zig
+==> scaffold     14 files -> ../my-zig
 ==> git          initialised, 1 commit
-==> image        built my-zig-dev (debian:trixie-slim + zig 0.17.1)
-==> test         All 61 tests passed.
+==> image        pulled ghcr.io/acodeninja/bootstrap/zig:main
+Build Summary: 5/5 steps succeeded; 16/16 tests passed
 
 Ready. Next:
   cd ../my-zig
   make test
-  read kitchen-sink.test.js for the language, then pick a kata:
+  read src/kitchen_sink.zig for the language, then pick a kata:
   https://learn.madetech.com/technology/katas/
 ```
 

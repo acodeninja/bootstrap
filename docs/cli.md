@@ -43,6 +43,10 @@ error and exit `1` as normal.
 | `--list`        | Print available templates and exit `0`.                              |
 | `--help`        | Print usage and exit `0`.                                            |
 
+Both scripts also accept `--name=<name>` and `-h`. Those are the spellings a hand
+reaches for out of habit, so they work; the table lists the ones to reach for on
+purpose.
+
 `--dry-run` implies `--no-git` and `--no-build`. Flags may appear before or after the
 positional arguments. `--` ends flag parsing.
 
@@ -97,11 +101,13 @@ Progress goes to stdout, one line per step, labelled:
 ==> fetch        acodeninja/bootstrap @ main (35 templates)
 ==> template     Zig
 ==> preflight    docker 29.9.3, make 4.4.1
-==> scaffold     21 files -> ../my-zig
+==> scaffold     14 files -> ../my-zig
 ==> git          initialised, 1 commit
-==> image        built my-zig-dev (debian:trixie-slim + zig 0.17.1)
-==> test         All 61 tests passed.
+==> image        pulled ghcr.io/acodeninja/bootstrap/zig:main
 ```
+
+There is no `test` step: the suite's own output is streamed in its place, which is
+the rule below applied to the one case where it matters most.
 
 Errors go to stderr, prefixed `error:`, and say what to do next:
 
