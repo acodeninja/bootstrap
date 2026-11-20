@@ -40,6 +40,19 @@ the no-argument bash form does:
 PS> iex (irm https://raw.githubusercontent.com/acodeninja/bootstrap/main/bootstrap.ps1)
 ```
 
+The remote form reads its exit code from `$LASTEXITCODE` rather than the process, so a
+script that needs to act on a failure asks for it:
+
+```powershell
+PS> powershell -Command "& ([scriptblock]::Create((irm https://raw.githubusercontent.com/acodeninja/bootstrap/main/bootstrap.ps1))) zig ..\my-zig; exit `$LASTEXITCODE"
+```
+
+Interactive use needs none of that. The reason is that a script block built from a string
+runs *in the caller's own process*, where `exit` would end the session rather than the
+script — closing the user's shell on every run, a successful one included. The
+`bash -c "$(curl ...)"` form has no equivalent problem because it is a child process.
+Run from a clone, `bootstrap.ps1` is a file invoked for its status and exits normally.
+
 Two Windows PowerShell 5.1 details the script must handle itself, because a user hitting
 either of them has no way to know what went wrong:
 
