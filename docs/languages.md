@@ -26,7 +26,7 @@ patches, so an old minor can outrank a current one. See
 | `ruby`       | `ruby:4.0.10-slim-trixie`                      | `minitest`                   | `rubocop` / `rubocop -a`             | 1    |
 | `elixir`     | `elixir:1.20.5-otp-29-slim`                    | `ExUnit`                     | `mix credo` / `mix format`           | 1    |
 | `php`        | `php:8.6.0-cli-trixie` + `composer:2.11.2`     | `PHPUnit`                    | `phpstan` / `php-cs-fixer`           | 1    |
-| `swift`      | `swift:6.4.2-trixie`                      | `XCTest`                     | `swift format lint` / `swift format` | 1    |
+| `swift`      | `swift:6.4.2-trixie`                           | `swift-testing` + `XCTest`   | `swift format lint --strict` / `swift format` | 1    |
 | `dart`       | `dart:3.14.1-sdk`                              | `package:test`               | `dart analyze` / `dart format`       | 1    |
 | `erlang`     | `erlang:29.1.2.0-slim`                         | `eunit`                      | `dialyzer` / `erlfmt`                | 2    |
 | `gleam`      | `ghcr.io/gleam-lang/gleam:v1.19.2-erlang-slim` | `gleeunit`                   | `gleam check` / `gleam format`       | 2    |
@@ -58,6 +58,31 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
   test framework because the language has no stdlib one.
 
 ## Notes on individual rows
+
+**`swift` is the one template whose lint cannot gate on the tool's own exit code.**
+`swift format lint` reports every finding as a *warning* and exits 0 regardless, so
+`make lint` needs `--strict` to be able to go red at all. swift-format also indents by
+**2 spaces** by default, not the 4 most Swift style guides use, and the template follows the
+tool rather than shipping a `.swift-format`.
+
+Its kitchen sink is **swift-testing**, not XCTest, and that is the one place a template
+moved off the row's chosen runner. `kitchen-sink.md` asks for flat tests with no grouping
+block and names that are complete sentences; XCTest can express neither, because discovery
+*is* subclassing `XCTestCase` and names are method identifiers. swift-testing's
+`@Test("a sentence")` on a free function gives both, ships in the toolchain, and needs no
+Makefile change — `swift test` runs both libraries in one invocation and reports
+`15 tests in 0 suites`. The surviving `src/` test deliberately stays on XCTest: `swift test`
+exits 2 on a test target with nothing in it, so keeping one XCTest case is what makes the
+kitchen sink safe to delete.
+
+`ENV HOME=/cache/home` is load-bearing rather than tidiness: SwiftPM has no environment
+variable for its cache, config or security paths and derives all three from `$HOME`, so at
+`/` even manifest compilation fails. SwiftPM also guards `--scratch-path` with a lock file
+in `/tmp` named after it, which the priming layer leaves root-owned — the Dockerfile clears
+`/tmp` in its last layer, the same trap `nim` records.
+
+Swift's backtick escape does work for a reserved-word module name, verified both ways with a
+module named `static`, so this is one of the templates where a keyword project name builds.
 
 **`java` reaches the contract's flat `src/` layout with a package-private class.** Java
 enforces that a *public* class matches its filename, and there is no CamelCase token to
