@@ -257,8 +257,9 @@ the bind-mounted project.
 **A named volume seeds from the image while it is still empty**, and for an immutable,
 content-addressed cache that is a feature rather than the staleness trap it is for
 `node_modules`. `zig` uses it: the Dockerfile compiles the project's own build runner so
-it is already in `/cache` when the volume is created. Without it the first `make test` on
-any machine costs seventy-two seconds; with it, three.
+it is already in `/cache` when the volume is created. That takes the first `make test`
+from seventy-two seconds to three — on a machine that built the image itself, which is
+not the machine most people are on. See the second rule below.
 
 **Prime what the project will actually ask for.** A content-addressed cache answers only
 for the inputs it was filled with, so a prime built from a throwaway project can be an
@@ -267,6 +268,15 @@ image layer nothing ever reads. `zig` shipped exactly that for a while: it prime
 `make test` still paid its full seventy-two seconds, because the runner it wanted was
 compiled from a different `build.zig`. Nothing anywhere reports a miss. The only check is
 the first run against the second.
+
+**And prime work that is not about the machine priming it.** The published image is built
+on a GitHub runner and run on a developer's laptop, so a cache entry keyed to anything
+about the builder cannot be read by the consumer. `zig` cannot win this one: its build
+runner has to execute on the host, so it is compiled for the native target, the target is
+part of the key, and a runner compiled for a GitHub runner's CPU is unreachable from a
+`znver5` laptop — measured, the primed image and no prime at all cost the same 73s.
+Dependency downloads, package indexes and bytecode are machine-independent and travel
+fine. Compiled native artefacts do not.
 
 **The check:** no run may repeat work an earlier one did.
 
@@ -286,6 +296,7 @@ developer actually takes — timing `make test` twice:
 
 | Template | first | second |
 | -------- | ----- | ------ |
+| zig      | 73.2s | 0.9s   |
 | kotlin   | 19.8s | 7.0s   |
 | java     | 10.0s | 5.8s   |
 | cpp      |  9.5s | 0.9s   |
@@ -294,18 +305,20 @@ developer actually takes — timing `make test` twice:
 | csharp   |  5.6s | 2.7s   |
 | fsharp   |  5.1s | 2.6s   |
 | swift    |  4.6s | 1.9s   |
-| zig      |  3.0s | 1.0s   |
 
 The other seventeen sit within a second of each other, on a floor of about 0.9s of
 container startup.
 
-Two of these gaps have been traced. `zig`'s was a prime that never hit, and is fixed.
-`kotlin`'s is three seconds of build-script compilation, which Gradle caches against the
-script's contents while `settings.gradle.kts` carries the project name — so the primed
-copy is never the one asked for, and keeping the name is worth three seconds. Its other
-nine seconds are the project's own first Kotlin compile, which lands in `/cache/build`;
-seeding that from the image would mean shipping a foreign project's outputs at root
-ownership — see [seed directories, never files](#seed-directories-never-files).
+Two of these gaps have been traced. `zig`'s is the one rule above, and it is the only
+entry here that is *not* the project's own work: 71 of those seconds are `std.Build`, and
+they are paid because a native artefact cannot cross machines. Built locally the same
+template measures 3.0s. `kotlin`'s is three seconds of build-script compilation, which
+Gradle caches against the script's contents while `settings.gradle.kts` carries the
+project name — so the primed copy is never the one asked for, and keeping the name is
+worth three seconds. Its other nine seconds are the project's own first Kotlin compile,
+which lands in `/cache/build`; seeding that from the image would mean shipping a foreign
+project's outputs at root ownership — see
+[seed directories, never files](#seed-directories-never-files).
 
 The rest are untraced, and `cpp` is the one with an obvious lead: its 8.6s is compiling
 vendored doctest, byte-identical in every generated project. Priming it needs a compiler
