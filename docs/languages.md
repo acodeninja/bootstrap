@@ -591,18 +591,27 @@ the package name, so a hardcoded one in a template would reject every project no
 after the template. Omitting the file sidesteps a problem that literal token substitution
 cannot solve.
 
-Its **image primes its own cache**. `zig build` compiles `build.zig` into a runner before
-it builds anything, which is about seventy seconds of `std.Build` against a cold cache.
-The Dockerfile copies the project's own `build.zig` and runs `zig build --help`, which
-compiles that runner and nothing else — first `make test` measures 3.0s against 72.1s
-unprimed.
+Its **image primes its own cache, and the prime only survives on the machine that built
+the image.** `zig build` compiles `build.zig` into a runner before it builds anything,
+which is about seventy seconds of `std.Build` against a cold cache. The Dockerfile copies
+the project's own `build.zig` and runs `zig build --help`, which compiles that runner and
+nothing else. Built locally — clone mode, CI, `--no-pull` — the first `make test` then
+measures 3.0s against 72.1s.
 
-It took two goes. The first primed a throwaway `zig init && zig build test` and bought
-nothing at all: the runner is cached against the contents of `build.zig`, so a project's
-own build script never asks for one compiled from a different script, and the first
-`make test` still measured the full 72.1s. A differently *named* project does hit the
-primed runner — a name costs 1.4s of test-binary recompilation, not seventy seconds of
-`std.Build`. See [containers.md](containers.md#caching-is-mandatory).
+From the **published** image it measures 73.2s, which is to say it buys nothing. The
+runner has to run on the host, so it is compiled for the native target, and the target is
+part of the cache key: adding `-mcpu baseline` to an otherwise identical compile produces
+a second cache manifest. The 28 MB runner GitHub's hardware compiled is therefore
+unreachable from a `znver5` laptop, and sits unread in the volume. `zig build` has no flag
+that pins the runner's target — checked against 0.17.1's `--help` — so this is structural
+rather than a thing to fix.
+
+The prime is kept because clone mode and this repo's own CI do hit it, and because the
+version it replaced was worse: a throwaway `zig init && zig build test` cached a runner
+compiled from a *different* `build.zig`, which no project asks for on any machine. A
+differently *named* project does hit a locally built prime — a name costs 1.4s of
+test-binary recompilation, not seventy seconds of `std.Build`. See
+[containers.md](containers.md#caching-is-mandatory).
 
 **`erlang` and `prolog` are no longer platform-restricted.** Under mise they were
 linux+macos only because the toolchains were unreliable elsewhere. In a Linux container
