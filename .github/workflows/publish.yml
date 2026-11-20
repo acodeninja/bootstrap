@@ -38,6 +38,14 @@ jobs:
             arch: amd64
           - runner: ubuntu-24.04-arm
             arch: arm64
+        exclude:
+          # nim:2.4.0 publishes amd64 only, so there is no arm64 base to build
+          # from -- buildkit reports "no match for platform in manifest". See
+          # docs/languages.md.
+          - template: nim
+            platform:
+              runner: ubuntu-24.04-arm
+              arch: arm64
     steps:
       - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
@@ -84,11 +92,21 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # Whichever architectures exist, rather than both by name: nim has no
+      # arm64 build, and a template that gains or loses one should not need an
+      # edit here.
       - name: merge the per-architecture tags
         run: |
           image=ghcr.io/${{ github.repository }}/${{ matrix.template }}
-          docker buildx imagetools create \
-            --tag "$image:main" \
-            "$image:main-amd64" \
-            "$image:main-arm64"
+          set --
+          for arch in amd64 arm64; do
+            if docker buildx imagetools inspect "$image:main-$arch" >/dev/null 2>&1; then
+              set -- "$@" "$image:main-$arch"
+            fi
+          done
+          if [ "$#" -eq 0 ]; then
+            echo "no per-architecture tags published for $image" >&2
+            exit 1
+          fi
+          docker buildx imagetools create --tag "$image:main" "$@"
           docker buildx imagetools inspect "$image:main"

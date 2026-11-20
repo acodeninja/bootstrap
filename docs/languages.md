@@ -451,6 +451,13 @@ last layer. And `nim`'s cache only skips the C-compiler step, not its own fronte
 warm-run speedup is real but modest: measured in isolation, 22 `gcc` invocations cold
 against 0 warm.
 
+**`nim` is the one template with no `arm64` image.** `nim:2.4.0` publishes `amd64`
+only — buildkit reports `no match for platform in manifest` — so `publish.yml` excludes
+that combination and the merged manifest carries a single architecture. Nothing arm64 can
+be produced from an amd64-only base, so an Apple Silicon or arm64 Linux host runs `nim`
+under emulation whichever path it takes. Every other template publishes both. Untested on
+arm64 hardware: this repository's only arm64 coverage is the publish runner.
+
 **`kotlin` and `java` pin the newest *LTS* JDK, not the newest JDK.** `gradle:9.9.1`
 publishes jdk17, jdk21, jdk25 and jdk27 variants. 21 and 25 are LTS; 27 is an interim
 release, and the Kotlin Gradle plugin, Checkstyle and Spotless all lag interim JDKs. A
