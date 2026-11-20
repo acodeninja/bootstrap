@@ -179,6 +179,15 @@ that follows: if a template's amd64 leg fails and its arm64 leg passes, `:main` 
 fresh arm64 beside the previous commit's amd64. That was already true of a failed *build*
 and is now also true of a failed test; the run is red either way.
 
+**The first push of a new template is a race, and the push step retries because of it.**
+ghcr creates the package when a template is published for the first time, and both
+architectures try to create the same one at once. The loser is denied — after every layer
+has already uploaded, so the log looks like a permissions problem rather than a collision.
+`ada` landed that way: its amd64 leg was denied, its arm64 leg was not, and `manifest` did
+exactly what it is told to and published an arm64-only `:main`. Three attempts ten seconds
+apart cost nothing when nothing is wrong, and re-running the failed leg by hand confirmed
+the cause: the identical push succeeded once the package existed.
+
 Both architectures build and test on a pull request; neither pushes. arm64 was the
 architecture nothing had ever run, so it is worth the runner time to find out before the
 merge rather than after.

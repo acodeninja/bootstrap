@@ -163,7 +163,22 @@ jobs:
         run: |
           image=$(sed -n 's/^ *image: *//p' ../scaffold/compose.yaml)
           docker tag "$image" "${image}-amd64"
-          docker push "${image}-amd64"
+
+          # ghcr creates the package on a template's first ever push, and the
+          # two architectures race to do it. The loser is denied after every
+          # layer has already uploaded, which is what left one template with
+          # an arm64-only :main. Retrying costs nothing when nothing is wrong.
+          pushed=no
+          for attempt in 1 2 3; do
+            if docker push "${image}-amd64"; then
+              pushed=yes
+              break
+            fi
+            echo "push failed; ghcr may still be creating the package" >&2
+            sleep $((attempt * 10))
+          done
+
+          [ "$pushed" = yes ]
 
   # The same steps on arm hardware, beside the amd64 matrix rather than behind
   # it, and gated on the same two jobs. A published arm64 image has now been run
@@ -219,7 +234,22 @@ jobs:
         run: |
           image=$(sed -n 's/^ *image: *//p' ../scaffold/compose.yaml)
           docker tag "$image" "${image}-arm64"
-          docker push "${image}-arm64"
+
+          # ghcr creates the package on a template's first ever push, and the
+          # two architectures race to do it. The loser is denied after every
+          # layer has already uploaded, which is what left one template with
+          # an arm64-only :main. Retrying costs nothing when nothing is wrong.
+          pushed=no
+          for attempt in 1 2 3; do
+            if docker push "${image}-arm64"; then
+              pushed=yes
+              break
+            fi
+            echo "push failed; ghcr may still be creating the package" >&2
+            sleep $((attempt * 10))
+          done
+
+          [ "$pushed" = yes ]
 
   # The per-architecture tags above are the inputs; this is the tag compose
   # pulls, and it has to be an index covering both or an arm64 host gets an
