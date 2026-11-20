@@ -390,7 +390,8 @@ jobs:
       && needs.scope.outputs.publish == 'true'
       && needs.manifest.result == 'success' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Slack, not a limit: the cap inside the prune is what keeps it finite.
+    timeout-minutes: 20
     permissions:
       contents: read
       packages: write
@@ -413,9 +414,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           owner: ${{ github.repository_owner }}
         run: |
+          limit=25
           cutoff=$(date -u -d '1 hour ago' +%s)
           gone=0
           kept=0
+          endpoint=
 
           for dir in templates/*/; do
             id=${dir#templates/}
@@ -426,12 +429,17 @@ jobs:
               "users/$owner/packages/container/$package/versions" \
               --jq '.[] | select(.metadata.container.tags | length == 0)
                         | "\(.id) \(.created_at) \(.name)"' \
-              > untagged.txt; then
+              > newest-first.txt; then
               # A template that has never published has no package to list.
               echo "no package yet for $id"
               continue
             fi
 
+            # Oldest first. The API answers newest first, and a capped run
+            # pruning from that end would leave the ancient digests forever.
+            sort -k2 newest-first.txt > untagged.txt
+
+            here=0
             while read -r vid created digest; do
               [ -n "$vid" ] || continue
               if [ "$(date -u -d "$created" +%s)" -gt "$cutoff" ]; then
@@ -439,20 +447,35 @@ jobs:
                 continue
               fi
 
-              # A refused delete removes nothing, so trying the second spelling
-              # costs a line. The risk of removing the wrong thing lives
-              # entirely in the filter above, not here.
-              if gh api -X DELETE "user/packages/container/$package/versions/$vid" ||
-                 gh api -X DELETE "users/$owner/packages/container/$package/versions/$vid"; then
-                gone=$((gone + 1))
+              # A cap, not a longer timeout. The first run of this found a
+              # backlog of a thousand from a day of rebuilds and ran out of
+              # minutes; steady state is three per template, so the cap only
+              # bites while a backlog drains.
+              if [ "$here" -ge "$limit" ]; then
+                echo "$id: stopping at $limit, more remain"
+                break
+              fi
+
+              # Which spelling a repository-scoped token may use for a
+              # user-namespace package is not something the docs settle, and a
+              # refused delete removes nothing. The winner is logged once so the
+              # loser can be dropped.
+              if gh api -X DELETE "user/packages/container/$package/versions/$vid" 2>/dev/null; then
+                [ -n "$endpoint" ] || endpoint=user/packages
+              elif gh api -X DELETE "users/$owner/packages/container/$package/versions/$vid"; then
+                [ -n "$endpoint" ] || endpoint=users/$owner/packages
               else
                 echo "could not delete $id ${digest#sha256:}" >&2
                 exit 1
               fi
+
+              gone=$((gone + 1))
+              here=$((here + 1))
             done < untagged.txt
           done
 
           echo "deleted $gone superseded versions, kept $kept under an hour old"
+          echo "deletes went through ${endpoint:-nothing to delete}"
 
       # The markers have done their job once every manifest has read them, and
       # a day of retention is a day of clutter. Only when nothing failed,
