@@ -88,7 +88,7 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | dart                   | `dart:3.14-sdk`                              | official    |
 | c, cpp                 | `gcc:16-trixie`                              | official    |
 | erlang                 | `erlang:29-slim`                             | official    |
-| clojure                | `clojure:temurin-27-tools-deps-trixie`       | official    |
+| clojure                | `clojure:temurin-25-tools-deps-trixie-slim`  | official    |
 | haskell                | `haskell:9.14-slim-bookworm`                 | official    |
 | prolog                 | `swipl:11.0`                                 | official    |
 | kotlin, java           | `gradle:9.9-jdk25`                           | official    |

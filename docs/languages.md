@@ -30,7 +30,7 @@ patches, so an old minor can outrank a current one. See
 | `dart`       | `dart:3.14.1-sdk`                              | `package:test`               | `dart analyze` / `dart format`       | 1    |
 | `erlang`     | `erlang:29.1.2.0-slim`                         | `eunit`                      | `dialyzer` / `erlfmt`                | 2    |
 | `gleam`      | `ghcr.io/gleam-lang/gleam:v1.19.2-erlang-slim` | `gleeunit`                   | `gleam check` / `gleam format`       | 2    |
-| `clojure`    | `clojure:temurin-27-tools-deps-trixie`         | `clojure.test`               | `clj-kondo` / `cljfmt`               | 2    |
+| `clojure`    | `clojure:temurin-25-tools-deps-1.12.7.1681-trixie-slim` | `clojure.test`               | `clj-kondo` / `cljfmt`               | 2    |
 | `haskell`    | `haskell:9.14.1-slim-bookworm`                 | `hspec`                      | `hlint` / `ormolu`                   | 2    |
 | `kotlin`     | `gradle:9.9.1-jdk25`                           | `kotlin.test`                | `ktlint` / `ktlint -F`               | 2    |
 | `java`       | `gradle:9.9.1-jdk25`                           | `JUnit 5`                    | `checkstyle` / `spotless`            | 2    |
