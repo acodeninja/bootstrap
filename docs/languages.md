@@ -38,7 +38,7 @@ patches, so an old minor can outrank a current one. See
 | `csharp`     | `mcr.microsoft.com/dotnet/sdk:10.0.404`        | `xUnit v3`                   | `dotnet format --verify-no-changes`  | 2    |
 | `ocaml`      | `ocaml/opam:debian-13-ocaml-5.6`               | `alcotest` via `dune test`   | `dune build @lint` / `ocamlformat`   | 2    |
 | `nim`        | `nim:2.4.0`                                    | `unittest`                   | `nim check` / `nimpretty`            | 2    |
-| `prolog`     | `swipl:11.0.0`                                 | `plunit`                     | load check / —                       | 2    |
+| `prolog`     | `swipl:11.0.0`                                 | `plunit`                     | `check` + status flags / —           | 2    |
 | `elm`        | `node:26.13.1-trixie-slim` + elm               | `elm-test`                   | `elm-format --validate`              | 3    |
 | `lua`        | `debian:trixie-20261104-slim` + lua, luarocks  | `busted`                     | `luacheck` / `stylua`                | 3    |
 | `c`          | `gcc:16.2.0-trixie` + Unity (vendored)         | `Unity`                      | `clang-format` check / in place      | 3    |
@@ -58,6 +58,26 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
   test framework because the language has no stdlib one.
 
 ## Notes on individual rows
+
+**`swipl -g make -t halt` is not a lint, and this row used to claim it was.** `make/0`
+reloads files that are *already* loaded, and a fresh process has loaded none, so the goal is
+a no-op that exits 0 over a file with a syntax error in it. The gate that actually works is
+`swipl --on-error=status --on-warning=status -g check -t halt <files>`, and the two halves
+split unexpectedly: loading alone catches a syntax error and a singleton variable, while an
+undefined predicate loads silently and needs `check/0` on top, which reports it as a
+*warning* rather than an error. All four faults — including one planted inside the kitchen
+sink — were verified red, and green again on restore.
+
+Both `test` and `lint` go through wrapper scripts baked into the image, because `swipl`
+takes files rather than directories and plunit has no directory discovery. That is the same
+sanctioned pattern `nim` and `go` use. `run_tests/0` with nothing loaded prints
+"No tests to run" and exits 0, so deleting the whole `tests/` directory still leaves
+`make test` green — better than `pytest`'s exit 5.
+
+`SWIPL_PACK_PATH` is also load-bearing: `swipl pack install` fails at any non-root uid with
+"Cannot find a place to create a package directory", because it considers only the pack
+directories on `file_search_path(pack, …)` — the one root-owned path in the image — and does
+**not** fall back to `$HOME`.
 
 **`csharp` inherits every .NET answer from `fsharp` and differs in exactly one place.**
 `dotnet format` *does* support C#, so it stays as both `lint` and `fmt` — verified red on a
@@ -347,7 +367,7 @@ linux+macos only because the toolchains were unreliable elsewhere. In a Linux co
 the host stops mattering, which is most of the argument for this design.
 
 **`prolog` has no formatter.** SWI-Prolog ships nothing worth wiring in. `make lint`
-runs a load-time check (`swipl -g make -t halt`) and `make fmt` is a no-op that says so
+runs a real load check (see below) and `make fmt` is a no-op that says so
 — the contract requires all six targets to exist, not all six to do work.
 
 **`haskell` is the only row not on trixie.** Upstream publishes no `slim-trixie` variant,
