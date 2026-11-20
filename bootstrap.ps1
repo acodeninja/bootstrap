@@ -25,7 +25,11 @@ $script:OptNoPull = $false
 $script:OptDryRun = $false
 $script:OptList = $false
 $script:TemplateId = ''
+# Target as the user typed it, because that is what the output prints.
+# TargetRoot absolute, for the .NET file APIs: they resolve a relative path
+# against the process working directory, which Set-Location does not move.
 $script:Target = ''
+$script:TargetRoot = ''
 $script:TemplateRoot = ''
 $script:TemplateDir = ''
 $script:Display = ''
@@ -424,7 +428,7 @@ function Copy-TemplateTree {
                 # 5.1's cmdlets add a BOM and rewrite line endings, which breaks
                 # the eol=lf the templates ship.
                 $content = Expand-Tokens ([IO.File]::ReadAllText($entry.FullName))
-                [IO.File]::WriteAllText((Join-Path $script:Target $dest), $content, $script:Utf8NoBom)
+                [IO.File]::WriteAllText((Join-Path $script:TargetRoot $dest), $content, $script:Utf8NoBom)
             }
         }
     }
@@ -467,7 +471,7 @@ function Initialize-Repository {
 # Read back rather than rebuilt from the template id, so the name in the step
 # line cannot drift from the one compose will actually run.
 function Get-ComposeImage {
-    foreach ($line in [IO.File]::ReadAllLines((Join-Path $script:Target 'compose.yaml'))) {
+    foreach ($line in [IO.File]::ReadAllLines((Join-Path $script:TargetRoot 'compose.yaml'))) {
         $at = $line.IndexOf('image: ', [StringComparison]::Ordinal)
         if ($at -ge 0) { return $line.Substring($at + 7) }
     }
@@ -607,6 +611,7 @@ function Invoke-Main {
 
     try {
         New-Item -ItemType Directory -Path $script:Target -Force | Out-Null
+        $script:TargetRoot = (Resolve-Path -LiteralPath $script:Target).ProviderPath
     }
     catch {
         Stop-Bootstrap 3 "could not create '$($script:Target)'"
