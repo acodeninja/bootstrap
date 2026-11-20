@@ -58,7 +58,7 @@ One workflow:
 
 ```
 scope ─┬─> image-amd64 (26 legs, cap 8) ─┬─> manifest (26 legs)
-lint  ─┴─> image-arm64 (25 legs, cap 8) ─┘   merge :main
+lint  ─┴─> image-arm64 (26 legs, cap 8) ─┘   merge :main
            build, test, push
 
 contract, remote                             (ungated, every push)
@@ -157,15 +157,16 @@ concurrent builds rather than 8. The pull count per run does not change — one 
 leg either way — and Docker Hub's limit is counted per account over six hours rather than
 per instant, which is why the `concurrency` group that stopped successive pushes stacking
 whole matrices is the thing that actually fixed the `429`. 16 is also a long way below the
-51 that produced it. If one shows up again, the dial is `max-parallel: 4` in both jobs.
+51 in flight when one appeared. If one shows up again, the dial is `max-parallel: 4` in
+both jobs.
 
 Each leg pushes its own `:main-<arch>` tag and a per-template `manifest` job merges them
 into the `:main` index `compose.yaml` names. The merge takes whichever architectures it
-finds rather than naming both, because `nim` has no `arm64` base — see
-[languages.md](languages.md) — and because a template whose tests failed has no new tag
-to merge. The edge that follows: if a template's amd64 leg fails and its arm64 leg passes,
-`:main` indexes a fresh arm64 beside the previous commit's amd64. That was already true of
-a failed *build* and is now also true of a failed test; the run is red either way.
+finds rather than naming both, because a template that gains or loses one should not need
+an edit here and because a template whose tests failed has no new tag to merge. The edge
+that follows: if a template's amd64 leg fails and its arm64 leg passes, `:main` indexes a
+fresh arm64 beside the previous commit's amd64. That was already true of a failed *build*
+and is now also true of a failed test; the run is red either way.
 
 Both architectures build and test on a pull request; neither pushes. arm64 was the
 architecture nothing had ever run, so it is worth the runner time to find out before the

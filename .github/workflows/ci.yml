@@ -169,11 +169,6 @@ jobs:
       max-parallel: 8
       matrix:
         template: ${{ fromJSON(needs.scope.outputs.ids) }}
-        exclude:
-          # nim:2.4.0 publishes amd64 only, so there is no arm64 base to build
-          # from -- buildkit reports "no match for platform in manifest". See
-          # docs/languages.md.
-          - template: nim
     env:
       BUILDX_NO_DEFAULT_ATTESTATIONS: 1
     steps:
@@ -232,9 +227,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Whichever architectures exist, rather than both by name: nim has no
-      # arm64 build, a template that gains or loses one should not need an edit
-      # here, and a template whose tests failed has no new tag to merge.
+      # Whichever architectures exist, rather than both by name: a template that
+      # gains or loses one should not need an edit here, and a template whose
+      # tests failed has no new tag to merge.
       - name: merge the per-architecture tags
         run: |
           image=ghcr.io/${{ github.repository }}/${{ matrix.template }}
