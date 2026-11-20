@@ -1,0 +1,45 @@
+plugins {
+  id 'java'
+  id 'checkstyle'
+  id 'com.diffplug.spotless' version '8.11.0'
+}
+
+layout.buildDirectory = file('/cache/build')
+
+// Gradle's own layout is src/main/java and src/test/java. The template puts
+// the module at src/ so its filename can carry the project name.
+sourceSets {
+  main {
+    java.setSrcDirs(['src'])
+  }
+  test {
+    java.setSrcDirs(['test'])
+  }
+}
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  testImplementation platform('org.junit:junit-bom:6.1.3')
+  testImplementation 'org.junit.jupiter:junit-jupiter'
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+  useJUnitPlatform()
+}
+
+checkstyle {
+  toolVersion = '14.4.0'
+  configFile = file('config/checkstyle/checkstyle.xml')
+  configProperties = ['org.checkstyle.google.severity': 'error']
+}
+
+spotless {
+  java {
+    target 'src/**/*.java', 'test/**/*.java'
+    googleJavaFormat('2.0.0')
+  }
+}

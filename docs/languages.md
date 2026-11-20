@@ -59,6 +59,24 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 
 ## Notes on individual rows
 
+**`java` reaches the contract's flat `src/` layout with a package-private class.** Java
+enforces that a *public* class matches its filename, and there is no CamelCase token to
+build `{{PROJECT_SNAKE}}.java` a matching class name from. A non-public class carries no
+such rule, so `src/{{PROJECT_SNAKE}}.java` legally holds `class Greeter`. That also turned
+out to need no Javadoc suppressions: Google's checks already exempt members of a non-public
+top-level class.
+
+Two of Google's shipped checks are removed, each with a comment where it stood:
+`OuterTypeFilename`, which has no visibility exception and so rejects the arrangement above,
+and `PackageDeclaration`, which demands a package tree the flat `src/` has no room for.
+Everything else in `google_checks.xml` is intact and was proven to catch a real violation.
+
+Test names use `@DisplayName` with a short camelCase method name, because Java identifiers
+cannot contain spaces — the standard JUnit idiom for exactly this gap, and the nearest thing
+to the complete sentences [kitchen-sink.md](kitchen-sink.md) asks for. The strings section
+substitutes `String#formatted` for interpolation: JEP 430's string templates were withdrawn
+and Java 25 has no interpolation syntax at all.
+
 **`kotlin` redirects three project-root writes, not one.** `build/` needs
 `layout.buildDirectory`, `.gradle/` needs `--project-cache-dir` on *every* invocation, and
 `.kotlin/` needs the `kotlin.project.persistent.dir` Gradle property. Dropping that last
