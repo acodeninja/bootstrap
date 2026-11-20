@@ -4,10 +4,11 @@ The bootstrap runs two ways from the same script: straight off the internet with
 clone, or out of a local checkout. The remote form is the headline — one line, nothing
 installed, nothing left behind.
 
-> **Pending the repo going public.** `raw.githubusercontent.com` serves nothing for a
-> private repository, so every command on this page returns 404 until
-> `acodeninja/bootstrap` is public — which is planned, not a blocker on the design. Use
-> the [clone form](#from-a-clone) until then; it exercises the same code path minus the
+> **Remote mode is not implemented yet.** The repository is public and
+> `raw.githubusercontent.com` serves `bootstrap.sh` fine, so the fetch half of every
+> command on this page works — but the script then exits `6` rather than downloading
+> templates, and `bootstrap.ps1` does not exist at all. Use the
+> [clone form](#from-a-clone) until both land; it exercises the same code path minus the
 > download.
 
 ## macOS and Linux

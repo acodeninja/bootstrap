@@ -35,16 +35,15 @@ The same whichever language you pick:
 You do not install the language. The toolchain lives in a container, so trying Zig costs
 you nothing on your machine and leaves nothing behind.
 
-Planned targets, 26 of them: javascript, typescript, zig, go, rust, python, ruby, elixir,
-php, swift, dart, erlang, gleam, clojure, haskell, kotlin, java, fsharp, csharp, ocaml,
-nim, prolog, elm, lua, c, cpp.
+All twenty-six: javascript, typescript, zig, go, rust, python, ruby, elixir, php, swift,
+dart, erlang, gleam, clojure, haskell, kotlin, java, fsharp, csharp, ocaml, nim, prolog,
+elm, lua, c, cpp.
 
 ## Status
 
-Twenty-one templates of twenty-six — `javascript`, `typescript`, `zig`, `go`, `rust`,
-`python`, `ruby`, `dart`, `elixir`, `php`, `nim`, `erlang`, `kotlin`, `java`, `swift`,
-`fsharp`, `csharp`, `clojure`, `prolog`, `ocaml` and `lua` — each green in CI from a cold
-registry:
+All twenty-six templates work. Each one scaffolds from a cold Docker cache, runs its own
+suite green, keeps the generated project's git tree clean, and still builds when you
+delete the kitchen sink:
 
 ```console
 $ git clone git@github.com:acodeninja/bootstrap.git && cd bootstrap
@@ -52,7 +51,10 @@ $ ./bootstrap.sh --list
 $ ./bootstrap.sh rust ../my-rust
 ```
 
-`bootstrap.ps1` is not written yet, and the one-liners above 404 until this repo is
-public — so remote mode is unimplemented and clone mode is the way in. The design is
-written up in **[docs/](docs/README.md)**; [roadmap.md](docs/roadmap.md) has the order
-the rest land in.
+Every template is covered by CI on every push, one job each. `ocaml` is the slowest at
+around four and a half minutes; the median is under a minute.
+
+`bootstrap.ps1` is not written yet, so Windows users run `bootstrap.sh` under Git Bash.
+Remote mode — the `curl`-into-`bash` one-liner at the top of this file — is also
+unimplemented, so clone mode is the way in. The design is written up in
+**[docs/](docs/README.md)**; [roadmap.md](docs/roadmap.md) has what is left.
