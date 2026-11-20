@@ -1,6 +1,6 @@
 # Languages
 
-The 33 targets, their chosen tooling, and when each lands. This is the implementer's
+The 34 targets, their chosen tooling, and when each lands. This is the implementer's
 worksheet: one row is one template.
 
 Test runners are chosen **stdlib-first**. A built-in runner is one less dependency to
@@ -50,6 +50,7 @@ patches, so an old minor can outrank a current one. See
 | `basic`      | `debian:trixie-20261104-slim` + bwbasic 2.20   | TAP                          | — / —                                | 4    |
 | `lolcode`    | `debian:trixie-20261104-slim` + lci 1.3        | TAP                          | — / —                                | 4    |
 | `intercal`   | `debian:trixie-20261104-slim` + C-INTERCAL     | TAP from Roman numerals      | `ick -c` / —                         | 4    |
+| `r`          | `debian:trixie-20261104-slim` + R 4.5.0        | `testthat`                   | `lintr` / `formatR`                  | 4    |
 
 ## Waves
 
@@ -884,6 +885,34 @@ which leaves the subroutines after it reachable only by `NEXT`. `src/` therefore
 labelled subroutines and never a `GIVE UP`, labels are global, and arguments are shared
 variables because `NEXT` has no parameters.
 
+**`r` is the one row that has an official image and does not use it.** `r-base:4.6.2`
+exists, is multi-architecture, and installs in seconds — but it is built on Debian
+*testing*, so the package set moves under a fixed tag. That leaves two bad options and no
+good one: pin `r-cran-testthat` and friends and watch the pin rot as testing rotates the
+versions out, or leave them unpinned and have the template scaffold differently next month.
+Neither is the pin this repo is built on, so `r` sits on the datestamped stable base the
+other hand-rolled rows use, which fixes R and all three libraries at once. The cost is
+R 4.5.0 rather than 4.6.2 and each library a minor version back, and nothing a kata does
+goes near the difference.
+
+It needs no CRAN at all, which was the reason it was declined ("slow CRAN installs"):
+`r-cran-testthat`, `r-cran-lintr` and `r-cran-formatr` are all packaged, and the three
+install in about twenty seconds together. `styler` is the formatter the R world reaches for
+and is *not* packaged, which is why `formatR` is here instead.
+
+**The two tools disagree, and the shipped code is written for both.** `lintr` enforces the
+tidyverse's two-space indent and eighty-column lines; `formatR` indents by four unless told
+otherwise, and it will join a `switch` onto an eighty-one column line that `lint` then
+rejects. `make fmt` therefore passes `indent = 2`, and the kitchen sink's branching case is
+written with braces and a short `switch` so that `fmt` changes nothing and `lint` finds
+nothing. That conflict is real and was hit, not anticipated: the first version of the case
+failed `make lint` immediately after `make fmt` produced it.
+
+The project is not an R package, so nothing would load `src/` for the tests. `make test`
+sources every `src/*.R` before handing the directory to `testthat`, which is the job a
+package's `NAMESPACE` would otherwise do — and it keeps the suite from naming any file, so
+deleting the kitchen sink leaves the rest discovered.
+
 **`elixir` is the third BEAM template, and not redundant.** `erlang` shows the runtime
 raw, `gleam` shows a static type system on top of it, and `elixir` shows the ergonomic
 mainstream dialect with the best test tooling of the three — ExUnit is in the stdlib,
@@ -895,13 +924,12 @@ Frameworks are out of the first cut, but the ID namespace reserves them:
 `javascript-react`, `python-fastapi`, `rust-axum`, `go-chi`. They are additional
 template directories under the same contract, not a new mechanism.
 
-Five more languages have official images, verified on 2026-11-19, and were declined for
+Four more languages have official images, verified on 2026-11-19, and were declined for
 now rather than ruled out — adding one is a mechanical job:
 
 | id       | image              | test runner         | why it was declined                      |
 | -------- | ------------------ | ------------------- | ---------------------------------------- |
 | `julia`  | `julia:1.11`       | `Test` (stdlib)     | array-scientific, not kata-shaped        |
-| `r`      | `r-base:4.4.2`     | `testthat`          | as above, plus slow CRAN installs        |
 | `groovy` | `groovy:4.0-jdk21` | `Spock`             | duplicates a JVM already covered twice   |
 | `raku`   | `rakudo-star`      | `Test` (core)       | distinct, but very small audience        |
 | `haxe`   | `haxe:4.3`         | `utest`             | cross-compilation is the draw, not idiom |

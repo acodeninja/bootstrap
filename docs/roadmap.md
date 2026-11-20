@@ -85,6 +85,9 @@ splices src and the test into one program and feeds it to the interpreter.
 `intercal` — C-INTERCAL from Debian. An assertion is an array subscript that ends the
 program when it does not match, and the runner turns the Roman numerals into TAP.
 
+`r` — testthat, lintr and formatR, all three as Debian packages. The official r-base image
+is built on Debian testing, so this one is not: see its row for why.
+
 ## Per-template definition of done
 
 1. `make test`, `make lint` and `make fmt` all work from a cold image.
@@ -126,7 +129,7 @@ change.
 
 ## Not in scope yet
 
-Framework templates (`javascript-react`, `python-fastapi`), and the five further
+Framework templates (`javascript-react`, `python-fastapi`), and the four further
 languages with verified official images listed under "Deferred" in
 [languages.md](languages.md). Both are additions under the existing contract, not
 changes to it.

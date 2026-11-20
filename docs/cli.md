@@ -94,7 +94,7 @@ error: image build failed for 'zig'
 Progress goes to stdout, one line per step, labelled:
 
 ```
-==> fetch        acodeninja/bootstrap @ main (33 templates)
+==> fetch        acodeninja/bootstrap @ main (34 templates)
 ==> template     Zig
 ==> preflight    docker 29.9.3, make 4.4.1
 ==> scaffold     21 files -> ../my-zig
@@ -108,7 +108,7 @@ Errors go to stderr, prefixed `error:`, and say what to do next:
 ```
 error: no template 'ziglang'
        did you mean: zig
-       run --list to see all 33 templates
+       run --list to see all 34 templates
 ```
 
 Subprocess output (`docker compose build`, the test run) is streamed through unmodified.
