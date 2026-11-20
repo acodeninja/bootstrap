@@ -41,9 +41,9 @@ nim, prolog, elm, lua, c, cpp.
 
 ## Status
 
-Thirteen templates of twenty-six — `javascript`, `typescript`, `zig`, `go`, `rust`,
-`python`, `ruby`, `dart`, `elixir`, `php`, `nim`, `erlang` and `kotlin` — each green in CI
-from a cold registry:
+Sixteen templates of twenty-six — `javascript`, `typescript`, `zig`, `go`, `rust`,
+`python`, `ruby`, `dart`, `elixir`, `php`, `nim`, `erlang`, `kotlin`, `java`, `swift` and
+`fsharp` — each green in CI from a cold registry:
 
 ```console
 $ git clone git@github.com:acodeninja/bootstrap.git && cd bootstrap
