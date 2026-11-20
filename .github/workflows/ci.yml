@@ -726,13 +726,30 @@ jobs:
       sha: ${{ github.sha }}
     steps:
       - name: scaffold through the documented one-liner
+        if: ${{ runner.os != 'Windows' }}
         run: |
           BOOTSTRAP_REF=$sha /bin/bash -c \
             "$(curl -fsSL "https://raw.githubusercontent.com/acodeninja/bootstrap/$sha/bootstrap.sh")" \
             -- javascript ../out --no-git --no-build
           test -f ../out/package.json
 
+      # The form docs/install.md documents for Windows: iex cannot pass
+      # arguments to the code it runs, so the text is compiled into a script
+      # block and invoked instead.
+      - name: scaffold through the documented one-liner
+        if: ${{ runner.os == 'Windows' }}
+        shell: powershell
+        run: |
+          $url = "https://raw.githubusercontent.com/acodeninja/bootstrap/$env:sha/bootstrap.ps1"
+          $env:BOOTSTRAP_REF = $env:sha
+          & ([scriptblock]::Create((irm $url))) javascript ..\out --no-git --no-build
+          if (-not (Test-Path ..\out\package.json)) {
+            Write-Output 'the one-liner scaffolded nothing'
+            exit 1
+          }
+
       - name: a bad ref exits 6 and leaves no temporary directory
+        if: ${{ runner.os != 'Windows' }}
         run: |
           # Where mktemp -d actually writes, which is not /tmp on macOS.
           tmp=${TMPDIR:-/tmp}
@@ -747,3 +764,47 @@ jobs:
           test ! -e ../bad
           after=$(find "$tmp" -maxdepth 1 -name 'tmp.*' -type d | wc -l)
           if [ "$before" -ne "$after" ]; then echo "a temporary directory survived" >&2; exit 1; fi
+
+
+      # The exit code has to come from a child process. A script block built
+      # from a string runs in the caller's own process, where exit would end
+      # the step rather than the script -- which is why docs/install.md gives
+      # this longer form for anything that needs to act on a failure.
+      - name: a bad ref exits 6 and leaves no temporary directory
+        if: ${{ runner.os == 'Windows' }}
+        shell: powershell
+        run: |
+          # The child writes its error to stderr, and this shell's default
+          # ErrorActionPreference of Stop would make that terminating before
+          # the exit code could be read.
+          $ErrorActionPreference = 'Continue'
+
+          $url = "https://raw.githubusercontent.com/acodeninja/bootstrap/$env:sha/bootstrap.ps1"
+          $temp = [IO.Path]::GetTempPath()
+          $count = { @(Get-ChildItem $temp -Directory -Filter 'bootstrap-*' -ErrorAction SilentlyContinue).Count }
+          $before = & $count
+
+          # Through the environment, not inside the command string: powershell
+          # -Command strips the quotes around an assignment, so the ref would be
+          # run as a command, left unset, and the script would quietly fetch
+          # main and succeed. A child inherits the variable instead.
+          $env:BOOTSTRAP_REF = 'refs/heads/no-such-branch'
+          $inner = '& ([scriptblock]::Create((irm ' + $url + '))) javascript ..\bad --no-git --no-build'
+          & powershell -NoProfile -Command "$inner; exit `$LASTEXITCODE" *> $null
+
+          if ($LASTEXITCODE -ne 6) {
+            Write-Output "expected 6 from a bad ref, got $LASTEXITCODE"
+            exit 1
+          }
+          if (Test-Path ..\bad) {
+            Write-Output 'a bad ref wrote a target'
+            exit 1
+          }
+          if ((& $count) -ne $before) {
+            Write-Output 'a temporary directory survived'
+            exit 1
+          }
+
+          # The child's 6 is still in LASTEXITCODE, and the shell Actions wraps
+          # this in exits with whatever it holds.
+          exit 0
