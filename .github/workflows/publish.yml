@@ -1,0 +1,87 @@
+name: publish
+
+on:
+  push:
+    branches: [main]
+
+# The only workflow here with write scope of any kind, and it writes packages
+# only. GITHUB_TOKEN rather than a PAT: the packages live under this repository.
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  # The same glob bootstrap.sh uses, so adding a template needs no edit here.
+  templates:
+    runs-on: ubuntu-latest
+    outputs:
+      ids: ${{ steps.ids.outputs.ids }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: ids
+        run: |
+          ids=$(for f in templates/*/template.env; do d=${f%/template.env}; printf '"%s",' "${d##*/}"; done)
+          echo "ids=[${ids%,}]" >> "$GITHUB_OUTPUT"
+
+  # One job per template and architecture, each pushing its own tag. Native
+  # runners rather than QEMU: emulating a toolchain build costs more than the
+  # whole matrix, and public repositories get the arm runner free.
+  image:
+    needs: templates
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        template: ${{ fromJSON(needs.templates.outputs.ids) }}
+        platform:
+          - runner: ubuntu-latest
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: templates/${{ matrix.template }}/files
+          platforms: linux/${{ matrix.platform.arch }}
+          push: true
+          tags: ghcr.io/${{ github.repository }}/${{ matrix.template }}:main-${{ matrix.platform.arch }}
+          cache-from: type=gha,scope=${{ matrix.template }}-${{ matrix.platform.arch }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.template }}-${{ matrix.platform.arch }}
+          # An attestation is a second entry in the index, which imagetools
+          # would then carry into the merged manifest as a bogus platform.
+          provenance: false
+
+  # The per-architecture tags above are the inputs; this is the tag compose
+  # pulls, and it has to be an index covering both or an arm64 host gets an
+  # amd64 image.
+  manifest:
+    needs: [templates, image]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        template: ${{ fromJSON(needs.templates.outputs.ids) }}
+    steps:
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: merge the per-architecture tags
+        run: |
+          image=ghcr.io/${{ github.repository }}/${{ matrix.template }}
+          docker buildx imagetools create \
+            --tag "$image:main" \
+            "$image:main-amd64" \
+            "$image:main-arm64"
+          docker buildx imagetools inspect "$image:main"
