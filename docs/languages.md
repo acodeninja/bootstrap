@@ -1,6 +1,6 @@
 # Languages
 
-The 29 targets, their chosen tooling, and when each lands. This is the implementer's
+The 30 targets, their chosen tooling, and when each lands. This is the implementer's
 worksheet: one row is one template.
 
 Test runners are chosen **stdlib-first**. A built-in runner is one less dependency to
@@ -46,6 +46,7 @@ patches, so an old minor can outrank a current one. See
 | `fortran`    | `gcc:16.2.0-trixie` + fpm 0.14.0               | `test-drive` via `fpm test`  | `fprettify --diff` / `fprettify`     | 4    |
 | `pascal`     | `debian:trixie-20261104-slim` + fpc 3.2.2      | `fpcunit`                    | `fpc -Sew` / —                       | 4    |
 | `perl`       | `perl:5.44.0-slim-trixie`                      | `Test::More` via `prove`     | `perlcritic` / `perltidy`            | 4    |
+| `cobol`      | `debian:trixie-20261104-slim` + GnuCOBOL 3.2   | TAP + `RETURN-CODE`          | `cobc -fsyntax-only -Wall` / —       | 4    |
 
 ## Waves
 
@@ -744,6 +745,39 @@ The kitchen sink's own first run found one more: `reduce`'s `&@` prototype swall
 follows it, so `is( reduce { $a * $b } @values, 24 )` passes one argument to `is` and dies
 at compile time. The fold is assigned first, which is what the act phase of the test wanted
 anyway.
+
+**`cobol` is the first template with no test framework, and the reason is licensing rather
+than absence.** Two exist. `gcblunit` is the real one, and it is GPL-2 with copybooks that
+compile *into* the program under test, so a project scaffolded from an MIT template would
+come out GPL. `cobol-check`, under the Open Mainframe Project, is Apache-2 and would be
+fine — but its repository is archived, its last release was 0.1.0 in March 2021, and it is
+Java, so it would put a JVM in a COBOL image. Nothing else pushed since 2024 has more than
+two stars.
+
+So a test is a program, which is how COBOL has always tested COBOL: it exercises the code,
+reports each case as a line of [TAP](https://testanything.org), and sets `RETURN-CODE` to
+the failure count. The idiom and the protocol agree rather than competing — the exit status
+is right when the suite is run by hand, and the TAP gives a readable line per case when it
+is run by `make test`. The runner in the image fails on a `not ok`, on a plan that does not
+match the number of results, and on a non-zero exit, and succeeds when it finds no tests at
+all. All three were tested by breaking them.
+
+**Free format, declared in the source.** Fixed format confines code to columns 8 through 72
+and is still GnuCOBOL's default, which cannot hold a test name long enough to be a sentence
+without continuation lines. Every file therefore opens with `>>SOURCE FORMAT IS FREE` — at
+column 8, because the compiler reads that first line in the format it has not yet been told
+to change. At column 1 it works too, by detection, but then says so on every compile.
+
+**`-Wall` earned its place twice while the kitchen sink was being written.** It rejected
+`FUNCTION LENGTH(WS-BUILT) = 32` as constant-folded — true at compile time, so asserting
+nothing — and it warned about `MOVE 123 TO WS-TWO-DIGITS`, which disproved the gotcha the
+case was making. The honest version is now in the file: a *literal* too large for its
+target draws a warning, and a *field* too large for its target does not. `COMPUTE` without
+`ON SIZE ERROR` discards the high-order digits in silence, which is what the errors case
+and the gotcha case now show from either side.
+
+There is no formatter, so `make lint` is `cobc -fsyntax-only -Wall` and `make fmt` is
+`prolog`'s documented no-op.
 
 **`elixir` is the third BEAM template, and not redundant.** `erlang` shows the runtime
 raw, `gleam` shows a static type system on top of it, and `elixir` shows the ergonomic

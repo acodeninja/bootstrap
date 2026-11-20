@@ -14,7 +14,7 @@ Read in this order:
 | [template-contract.md](template-contract.md) | What is inside `templates/<id>/`, and how do I add one?         |
 | [containers.md](containers.md)               | How the language gets installed, and which image each one uses  |
 | [kitchen-sink.md](kitchen-sink.md)           | What is in the shipped test, and why that?                      |
-| [languages.md](languages.md)                 | The 29 targets, their tooling, and when each lands              |
+| [languages.md](languages.md)                 | The 30 targets, their tooling, and when each lands              |
 | [ci.md](ci.md)                               | CI in the generated project, and CI that proves this repo works |
 | [roadmap.md](roadmap.md)                     | Build order                                                     |
 
@@ -22,7 +22,7 @@ Read in this order:
 
 ```console
 $ /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/acodeninja/bootstrap/main/bootstrap.sh)" -- zig ../my-zig
-==> fetch        acodeninja/bootstrap @ main (29 templates)
+==> fetch        acodeninja/bootstrap @ main (30 templates)
 ==> template     Zig
 ==> preflight    docker 29.9.3, make 4.4.1
 ==> scaffold     21 files -> ../my-zig
