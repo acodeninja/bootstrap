@@ -41,7 +41,7 @@ patches, so an old minor can outrank a current one. See
 | `prolog`     | `swipl:11.0.0`                                 | `plunit`                     | `check` + status flags / —           | 2    |
 | `elm`        | `node:26.13.1-trixie-slim` + elm 0.19.3-0      | `elm-test`                   | `elm-format --validate` / `--yes`    | 3    |
 | `lua`        | `debian:trixie-20261104-slim` + lua5.4, luarocks | `busted`                     | `luacheck` / `stylua`                | 3    |
-| `c`          | `gcc:16.2.0-trixie` + Unity (vendored)         | `Unity`                      | `clang-format` check / in place      | 3    |
+| `c`          | `gcc:16.2.0-trixie` + Unity 2.7.0 (vendored)   | `Unity`                      | `clang-format` check / in place      | 3    |
 | `cpp`        | `gcc:16.2.0-trixie` + doctest (vendored)       | `doctest`                    | `clang-format` check / in place      | 3    |
 
 ## Waves
@@ -58,6 +58,35 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
   test framework because the language has no stdlib one.
 
 ## Notes on individual rows
+
+**`c` is the first template to vendor a test framework, and it sets the precedent.** Unity is
+**committed** into `files/vendor/unity/` rather than fetched in a `RUN` layer, and that choice
+is the point: the contract's vendoring rule is written about the *generated project* — lives
+in `vendor/`, version and upstream URL in a header on every file, excluded from lint and fmt,
+licence named in the README — and a fetch into the image satisfies none of it, because the
+code would then be somewhere the reader of a failing assertion cannot see. It costs 294 KB.
+
+It also avoided zig's concession. Unity has no discovery — the idiom is a `main` naming every
+test, and its own `generate_test_runner.rb` needs a Ruby the `gcc` image does not ship. An
+image-baked `unity-discover` writes that `main` from the `test/*.c` files `build.mk` globs,
+emitting `UnitySetTestFile` and a `#line` per test so a failure reports the real file and
+line rather than the generated runner in `/cache`.
+
+**The subtle part is when to regenerate.** Depending on the test sources' mtimes is not
+enough: deleting the kitchen sink changes the *set* of files without touching any survivor,
+so make skips the regeneration and the link then fails on undefined references to the
+deleted tests. The runner is rewritten every run and kept only when the bytes differ.
+
+**`gcc` 16.2.0 under `-Wall -Wextra -Werror` refuses to compile three of the four classic C
+footguns** — `sizeof` on an array parameter, a signed/unsigned comparison and a provably
+truncating `snprintf` all become errors. Shipping any of them would have needed a
+`#pragma GCC diagnostic ignored`, which reads exactly like suppressing a warning to go green,
+so the gotcha is array-versus-struct argument semantics instead: standard-guaranteed,
+warning-free, and nothing a flag can save you from.
+
+The real compile rules live in the project's own `build.mk`, run inside the container. C has
+no build tool, so they have to live somewhere, and keeping them in the project means a reader
+can change `CFLAGS` without rebuilding the image.
 
 **`elm` spends its token on a directory, because no Elm module can be named from it.** A
 module's name must match its path below a source directory *and* start with a capital, and
