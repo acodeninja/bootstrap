@@ -1,0 +1,13 @@
+{
+  "name": "{{PROJECT_SLUG}}",
+  "version": "0.1.0",
+  "description": "{{PROJECT_NAME}}",
+  "license": "MIT",
+  "author": "{{AUTHOR}}",
+  "private": true,
+  "devDependencies": {
+    "elm": "0.19.3-0",
+    "elm-format": "0.8.8",
+    "elm-test": "0.19.3-0"
+  }
+}

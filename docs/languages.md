@@ -39,7 +39,7 @@ patches, so an old minor can outrank a current one. See
 | `ocaml`      | `ocaml/opam:debian-13-ocaml-5.5` + digest      | `alcotest` via `dune test`   | `dune build @fmt` / `dune fmt`       | 2    |
 | `nim`        | `nim:2.4.0`                                    | `unittest`                   | `nim check` / `nimpretty`            | 2    |
 | `prolog`     | `swipl:11.0.0`                                 | `plunit`                     | `check` + status flags / —           | 2    |
-| `elm`        | `node:26.13.1-trixie-slim` + elm               | `elm-test`                   | `elm-format --validate`              | 3    |
+| `elm`        | `node:26.13.1-trixie-slim` + elm 0.19.3-0      | `elm-test`                   | `elm-format --validate` / `--yes`    | 3    |
 | `lua`        | `debian:trixie-20261104-slim` + lua5.4, luarocks | `busted`                     | `luacheck` / `stylua`                | 3    |
 | `c`          | `gcc:16.2.0-trixie` + Unity (vendored)         | `Unity`                      | `clang-format` check / in place      | 3    |
 | `cpp`        | `gcc:16.2.0-trixie` + doctest (vendored)       | `doctest`                    | `clang-format` check / in place      | 3    |
@@ -58,6 +58,32 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
   test framework because the language has no stdlib one.
 
 ## Notes on individual rows
+
+**`elm` spends its token on a directory, because no Elm module can be named from it.** A
+module's name must match its path below a source directory *and* start with a capital, and
+`{{PROJECT_SNAKE}}` is lowercase — so `src/{{PROJECT_SNAKE}}.elm` can hold no legal module at
+all. `java`'s package-private escape has no analogue here, because the rule binds every
+module rather than only exposed ones. So `source-directories` is `["src/{{PROJECT_SNAKE}}"]`
+holding a fixed `Greeter`, following `clojure`'s precedent of putting the token in a path
+segment.
+
+**It pins its compiler twice, and only `make build` notices when the two disagree.** elm
+0.19.3 rejects an `elm.json` whose `elm-version` is `0.19.1`, while `elm-test` ignores the
+field entirely and runs green against a mismatched one. `elm make` is the fussier half
+throughout: it demands an `elm/json` dependency nothing imports and the exact transitive
+closure, rejecting any extra or missing entry as "edited by hand" without saying which.
+
+The node slim image **carries no root certificates and elm links its own TLS stack**, so the
+first package fetch fails with `certificate has unknown CA` under a message asking whether
+you are on a slow connection. `elm-stuff` also has no flag or environment variable, making
+this the third template needing a named volume nested inside the bind mount — and the
+valuable thing to prime is `ELM_HOME`, not `elm-stuff`, because compiled package artefacts
+live there.
+
+`make build` compiles to `--output=/dev/null`: a library module has no `main`, `elm make`
+refuses to emit without one, and that is the compiler's own documented answer rather than a
+dodge. `elm-format` needs `--yes` to rewrite without prompting, and `elm-test` exits 1 on an
+empty `tests/`.
 
 **`gleam format` sorts a module's imports, and that quietly makes the obvious test entry
 module name-dependent.** With `import {{PROJECT_SNAKE}}` beside `import gleeunit`, exactly

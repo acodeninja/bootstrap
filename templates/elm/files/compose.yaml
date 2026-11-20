@@ -1,0 +1,17 @@
+name: {{PROJECT_SLUG}}
+
+services:
+  dev:
+    build: .
+    image: {{PROJECT_SLUG}}-dev
+    working_dir: /work
+    init: true
+    user: '${DOCKER_UID:-1000}:${DOCKER_GID:-1000}'
+    volumes:
+      - .:/work
+      - cache:/cache
+      - elm-stuff:/work/elm-stuff
+
+volumes:
+  cache:
+  elm-stuff:
