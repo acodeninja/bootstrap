@@ -256,10 +256,17 @@ the bind-mounted project.
 
 **A named volume seeds from the image while it is still empty**, and for an immutable,
 content-addressed cache that is a feature rather than the staleness trap it is for
-`node_modules`. `zig` uses it: the Dockerfile runs a throwaway `zig init && zig build
-test` so the compiled build runner is already in `/cache` when the volume is created.
-Without it the first `make test` on any machine costs seventy seconds; with it, under
-three.
+`node_modules`. `zig` uses it: the Dockerfile compiles the project's own build runner so
+it is already in `/cache` when the volume is created. Without it the first `make test` on
+any machine costs seventy-two seconds; with it, three.
+
+**Prime what the project will actually ask for.** A content-addressed cache answers only
+for the inputs it was filled with, so a prime built from a throwaway project can be an
+image layer nothing ever reads. `zig` shipped exactly that for a while: it primed
+`zig init`'s build script, the volume seeded from the image correctly, and the first
+`make test` still paid its full seventy-two seconds, because the runner it wanted was
+compiled from a different `build.zig`. Nothing anywhere reports a miss. The only check is
+the first run against the second.
 
 **The check:** no run may repeat work an earlier one did.
 
