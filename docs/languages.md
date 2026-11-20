@@ -59,6 +59,30 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 
 ## Notes on individual rows
 
+**`clojure` was expected to need a second zig-style concession and does not.** `clojure.test`
+has no discovering CLI, and both obvious routes break a rule: a third-party runner in
+`deps.edn` fights stdlib-first, and `-M -e` naming namespaces fights "`test` must not name
+the kitchen sink". The way out is a forty-line `clojure.test` harness baked into the
+**image** at `/opt/clojure-test-runner` and reached from the `:test` alias with
+`:local/root`. It reads each file's own `(ns …)` form under `test/` — reading it rather than
+deriving it, because munging a hyphen to an underscore does not reverse — so `deps.edn`
+carries `:paths`, one alias and nothing else, `make test` is a bare `clojure -M:test`, and
+nothing anywhere names the suite. The same shape as `go`'s `gofmt-check` and `nim`'s
+wrapper scripts.
+
+Two environment facts cost a debugging cycle each, and both contradict what the obvious
+variable name suggests. **`CLJ_CACHE` does not move `.cpcache`**: the CLI writes
+`./.cpcache` whenever a project `deps.edn` exists and the directory is writable, and
+`CLJ_CACHE` is only the fallback for when it cannot — there is no flag. And **`HOME=/cache`
+does not move `~/.m2`**, because the JVM takes `user.home` from the passwd entry when one
+exists, so priming as root filled `/root/.m2` while the mapped uid looked in `/cache` and
+re-downloaded everything. `:mvn/local-repo` in an image-level `deps.edn` makes build time
+and run time agree.
+
+`{{PROJECT_SLUG}}` and `{{PROJECT_SNAKE}}` turn out to be exactly the namespace and path
+forms of one name, so `(ns {{PROJECT_SLUG}}.greeter)` at `src/{{PROJECT_SNAKE}}/greeter.clj`
+always corresponds — the free escape the missing sixth token would otherwise have needed.
+
 **`swipl -g make -t halt` is not a lint, and this row used to claim it was.** `make/0`
 reloads files that are *already* loaded, and a fresh process has loaded none, so the goal is
 a no-op that exits 0 over a file with a syntax error in it. The gate that actually works is

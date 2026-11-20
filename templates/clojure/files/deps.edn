@@ -1,0 +1,9 @@
+{:paths ["src"]
+
+ :aliases
+ ;; The runner is a clojure.test harness baked into the image. It reads the
+ ;; (ns ...) form of every file under test/ and runs what it finds, so neither
+ ;; this file nor the Makefile has to name a suite.
+ {:test {:extra-paths ["test"]
+         :extra-deps {bootstrap/test-runner {:local/root "/opt/clojure-test-runner"}}
+         :main-opts ["-m" "bootstrap.test-runner" "test"]}}}

@@ -1,0 +1,8 @@
+.git
+.github
+.env
+.cpcache
+.clj-kondo
+src
+test
+*.md
