@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  # The weekly rebuild is load-bearing and was previously untestable without
+  # waiting for Monday.
+  workflow_dispatch:
   # Nothing tests a template unless it changes, so upstream breakage -- a moved
   # base tag, an apt or Hackage outage -- would otherwise surface on whoever
   # next edits one. Off the hour, because scheduled runs on the hour are the
@@ -59,11 +62,12 @@ jobs:
           if [ "$event" = pull_request ]; then base=$pr_base; fi
 
           # Everything is the answer when the question cannot be asked -- a new
-          # branch, a force push, or the weekly run, which has nothing to diff
-          # and exists to rebuild the lot.
+          # branch, a force push, or the weekly and manual runs, which have
+          # nothing to diff and exist to rebuild the lot.
           everything=no
           changed=
-          if [ "$event" = schedule ] || ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+          if [ "$event" = schedule ] || [ "$event" = workflow_dispatch ] ||
+            ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
             everything=yes
           else
             changed=$(git diff --name-only "$base" "$after")
