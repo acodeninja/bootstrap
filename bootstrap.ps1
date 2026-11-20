@@ -203,7 +203,17 @@ function Expand-RemoteTemplates {
     }
 
     $count = @(Get-ChildItem -LiteralPath (Join-Path $root.FullName 'templates') -Directory).Count
-    Write-Step 'fetch' "acodeninja/bootstrap @ $ref ($count templates)"
+    # docs/cli.md prints the ref's short name, so a default main reads as
+    # `@ main` rather than `@ refs/heads/main`. A BOOTSTRAP_REF given as a bare
+    # branch or a sha has no prefix to drop and shows as itself.
+    $display = $ref
+    foreach ($prefix in @('refs/heads/', 'refs/tags/')) {
+        if ($display.StartsWith($prefix, [StringComparison]::Ordinal)) {
+            $display = $display.Substring($prefix.Length)
+            break
+        }
+    }
+    Write-Step 'fetch' "acodeninja/bootstrap @ $display ($count templates)"
     $script:RemoteRoot = $root.FullName
 }
 
