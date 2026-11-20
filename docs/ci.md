@@ -57,12 +57,12 @@ image it just tested.
 One workflow, in this order:
 
 ```
-templates ─┐
-changed   ─┼─> image-amd64 ─────> image-arm64 ─────> manifest
-lint      ─┘   26 legs            25 legs            26 legs
-               build, test, push  build, test, push  merge :main
+scope ─┐
+lint  ─┴─> image-amd64 ─────> image-arm64 ─────> manifest
+           26 legs            25 legs            26 legs
+           build, test, push  build, test, push  merge :main
 
-contract, remote                                     (independent)
+contract, remote                                 (independent)
 ```
 
 Each `image` leg is one template on one architecture:
@@ -104,13 +104,13 @@ tag pushed here cannot drift from the one `compose` will pull.
   it, but they run under `!cancelled()` and only the push steps require
   `needs.lint.result == 'success'`. A shellcheck nit should not stop twenty-six templates
   being tested; it should stop a release.
-- **`changed` gates publishing by path.** A docs-only commit cannot change an image, and
+- **`scope` gates publishing by path.** A docs-only commit cannot change an image, and
   rebuilding all fifty-one for one of those is what answered `429` once already. This was
   a `paths` filter on the old publish workflow's trigger; merged, it has to be a job,
   because a trigger filter would skip the tests too. It diffs
   `github.event.before..github.sha` under `templates/`, and answers "publish" whenever the
   question cannot be asked — a new branch, a force push.
-- **Nothing publishes from a pull request.** `changed` returns `false` for any event that
+- **Nothing publishes from a pull request.** `scope` returns `false` for any event that
   is not a push, so a PR builds and tests amd64 and stops there.
 
 `packages: write` is granted to the three jobs that push, never at workflow level, so the
@@ -156,7 +156,7 @@ Running arm64 only when publishing is deliberate. It is the architecture nothing
 tested, it is in the pipeline to validate what is about to ship, and a pull request should
 not pay for it.
 
-The template list is **generated**, not written out: a `templates` job globs
+The template list is **generated**, not written out: the `scope` job globs
 `templates/*/template.env` into a JSON array and all three matrices consume it via
 `fromJSON`. That is the same glob `bootstrap.sh` discovers templates with, so adding a
 language needs no CI edit — which is what the contract's "no registry to update" promise
@@ -251,7 +251,7 @@ Not a workflow of its own any more — the last three steps of each `image` leg,
 Four things keep the pipeline inside Docker Hub's limit, which is counted **per account**
 and shared by every leg in flight. The first three were added after a run answered `429`:
 
-- `changed`, because a docs-only commit cannot change an image and was rebuilding all
+- `scope`, because a docs-only commit cannot change an image and was rebuilding all
   fifty-one
 - a `concurrency` group, because successive pushes stacked whole matrices
 - `max-parallel: 8`, because every build resolves its `FROM` and fifty-one at once is past

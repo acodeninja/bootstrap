@@ -18,31 +18,31 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # The matrix is whatever is in templates/, discovered with the same glob
-  # bootstrap.sh uses, so adding a template needs no edit here.
-  templates:
+  # What is in templates/, and whether anything worth building changed. Both
+  # questions are a checkout and an output, so they are one job. No hyphen in
+  # the name: `-` is subtraction in a GitHub expression, so a hyphenated job id
+  # forces needs['like-this'] at every reference.
+  scope:
     runs-on: ubuntu-latest
     outputs:
       ids: ${{ steps.ids.outputs.ids }}
-    steps:
-      - uses: actions/checkout@v7
-      - id: ids
-        run: |
-          ids=$(for f in templates/*/template.env; do d=${f%/template.env}; printf '"%s",' "${d##*/}"; done)
-          echo "ids=[${ids%,}]" >> "$GITHUB_OUTPUT"
-
-  # A docs-only commit cannot change an image, and republishing all fifty-one
-  # for one of those is what answered 429 once already. This is the paths filter
-  # the publish workflow used to carry on its trigger; it has to be a job now,
-  # because a trigger filter would skip the tests too.
-  changed:
-    runs-on: ubuntu-latest
-    outputs:
       templates: ${{ steps.diff.outputs.templates }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+
+      # The same glob bootstrap.sh discovers templates with, so adding one needs
+      # no edit here.
+      - id: ids
+        run: |
+          ids=$(for f in templates/*/template.env; do d=${f%/template.env}; printf '"%s",' "${d##*/}"; done)
+          echo "ids=[${ids%,}]" >> "$GITHUB_OUTPUT"
+
+      # A docs-only commit cannot change an image, and republishing all fifty-one
+      # for one of those is what answered 429 once already. This is the paths
+      # filter the publish workflow used to carry on its trigger; it has to be a
+      # job now, because a trigger filter would skip the tests too.
       - id: diff
         env:
           event: ${{ github.event_name }}
@@ -66,10 +66,10 @@ jobs:
   # image is the one the tests passed against rather than a second build of the
   # same Dockerfile.
   image-amd64:
-    needs: [templates, changed, lint]
+    needs: [scope, lint]
     # Lint gates publishing, not testing: a shellcheck nit should not stop
     # twenty-six templates being tested, but it should stop a push.
-    if: ${{ !cancelled() && needs.templates.result == 'success' }}
+    if: ${{ !cancelled() && needs.scope.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -81,7 +81,7 @@ jobs:
       # workflow holds both architectures.
       max-parallel: 8
       matrix:
-        template: ${{ fromJSON(needs.templates.outputs.ids) }}
+        template: ${{ fromJSON(needs.scope.outputs.ids) }}
     env:
       # An attestation is a second entry in the index, which imagetools would
       # then carry into the merged manifest as a bogus platform.
@@ -108,7 +108,7 @@ jobs:
       - run: ./bootstrap.sh ${{ matrix.template }} ../scaffold --no-pull
 
       - name: ghcr login
-        if: ${{ needs.changed.outputs.templates == 'true' && needs.lint.result == 'success' }}
+        if: ${{ needs.scope.outputs.templates == 'true' && needs.lint.result == 'success' }}
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -119,7 +119,7 @@ jobs:
       # template id, for the reason bootstrap.sh reads it back too: the tag
       # pushed here cannot then drift from the one compose will pull.
       - name: push what the tests passed
-        if: ${{ needs.changed.outputs.templates == 'true' && needs.lint.result == 'success' }}
+        if: ${{ needs.scope.outputs.templates == 'true' && needs.lint.result == 'success' }}
         run: |
           image=$(sed -n 's/^ *image: *//p' ../scaffold/compose.yaml)
           docker tag "$image" "${image}-amd64"
@@ -131,10 +131,10 @@ jobs:
   # !cancelled() rather than plain needs, so one template's red test does not
   # hold back the other twenty-five.
   image-arm64:
-    needs: [templates, changed, lint, image-amd64]
+    needs: [scope, lint, image-amd64]
     if: >-
-      ${{ !cancelled() && needs.templates.result == 'success'
-      && needs.changed.outputs.templates == 'true'
+      ${{ !cancelled() && needs.scope.result == 'success'
+      && needs.scope.outputs.templates == 'true'
       && needs.lint.result == 'success' }}
     runs-on: ubuntu-24.04-arm
     permissions:
@@ -144,7 +144,7 @@ jobs:
       fail-fast: false
       max-parallel: 8
       matrix:
-        template: ${{ fromJSON(needs.templates.outputs.ids) }}
+        template: ${{ fromJSON(needs.scope.outputs.ids) }}
         exclude:
           # nim:2.4.0 publishes amd64 only, so there is no arm64 base to build
           # from -- buildkit reports "no match for platform in manifest". See
@@ -185,10 +185,10 @@ jobs:
   # pulls, and it has to be an index covering both or an arm64 host gets an
   # amd64 image.
   manifest:
-    needs: [templates, changed, lint, image-amd64, image-arm64]
+    needs: [scope, lint, image-amd64, image-arm64]
     if: >-
-      ${{ !cancelled() && needs.templates.result == 'success'
-      && needs.changed.outputs.templates == 'true'
+      ${{ !cancelled() && needs.scope.result == 'success'
+      && needs.scope.outputs.templates == 'true'
       && needs.lint.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
@@ -197,7 +197,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        template: ${{ fromJSON(needs.templates.outputs.ids) }}
+        template: ${{ fromJSON(needs.scope.outputs.ids) }}
     steps:
       - uses: docker/setup-buildx-action@v4
       - uses: docker/login-action@v4
