@@ -443,6 +443,13 @@ write_env() {
 }
 
 git_init() {
+  # Nested repositories are nobody's intent, and with --force the add -A below
+  # would commit the whole scaffold into the surrounding repo's history.
+  if [ "$(git -C "$TARGET" rev-parse --is-inside-work-tree 2>/dev/null)" = true ]; then
+    step git 'skipped (already inside a git repository)'
+    return 0
+  fi
+
   if ! git -C "$TARGET" init -q 2>/dev/null; then
     warn 'git init failed; the project is scaffolded but not under version control'
     return 0

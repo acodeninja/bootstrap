@@ -452,6 +452,21 @@ function Invoke-Scaffold {
 }
 
 function Initialize-Repository {
+    # Nested repositories are nobody's intent, and with --force the add -A
+    # below would commit the whole scaffold into the surrounding repo's history.
+    $inside = ''
+    try {
+        $answer = & git -C $script:Target rev-parse --is-inside-work-tree 2>$null
+        if ($LASTEXITCODE -eq 0 -and $null -ne $answer) { $inside = ([string]$answer).Trim() }
+    }
+    catch {
+        $inside = ''
+    }
+    if ($inside -eq 'true') {
+        Write-Step 'git' 'skipped (already inside a git repository)'
+        return
+    }
+
     & git -C $script:Target init -q *> $null
     if ($LASTEXITCODE -ne 0) {
         Write-Note 'git init failed; the project is scaffolded but not a repository'
