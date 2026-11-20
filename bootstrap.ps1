@@ -627,8 +627,11 @@ finally {
     }
 }
 
-# Set both: `exit` leaves the process when this ran as a file, and returns from
-# the block when it was created from a string, where $LASTEXITCODE is all the
-# caller has to read.
+# `exit` inside a scriptblock built from a string does not return from the block,
+# it ends the host process -- and in remote mode that process is the user's own
+# session, so the documented one-liner would close their shell on every run,
+# success included. bash has no equivalent problem: `bash -c` is a child.
+# A file was invoked for its exit status, so exit; a scriptblock leaves the code
+# in $LASTEXITCODE, which is what a scripted caller reads. See docs/install.md.
 $global:LASTEXITCODE = $script:Code
-exit $script:Code
+if (-not [string]::IsNullOrEmpty($PSScriptRoot)) { exit $script:Code }
