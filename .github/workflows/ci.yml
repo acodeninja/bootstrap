@@ -198,6 +198,7 @@ jobs:
             fi
             echo "push failed; ghcr may still be creating the package" >&2
             sleep $((attempt * 10))
+            checked=$((checked + 1))
           done
 
           [ "$pushed" = yes ]
@@ -296,6 +297,7 @@ jobs:
             fi
             echo "push failed; ghcr may still be creating the package" >&2
             sleep $((attempt * 10))
+            checked=$((checked + 1))
           done
 
           [ "$pushed" = yes ]
@@ -357,6 +359,7 @@ jobs:
             if [ -f "pushed/pushed-$arch" ]; then
               set -- "$@" "$image:main-$arch"
             fi
+            checked=$((checked + 1))
           done
 
           # Nothing to do rather than an error: a marker is missing only when
@@ -462,6 +465,7 @@ jobs:
           for f in templates/*/files/Dockerfile; do
             echo "== $f"
             docker run --rm -i hadolint/hadolint:v2.15.1 < "$f"
+            checked=$((checked + 1))
           done
 
       # Explicit paths: actionlint only discovers .github/workflows at the repo
@@ -470,6 +474,90 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 \
             -color .github/workflows/*.yml templates/*/files/.github/workflows/ci.yml
+
+  # bootstrap.ps1 had no job at all: six hundred lines of the product that
+  # nothing ran, beside a twin that every push exercised. The parity step is
+  # the one that matters, because the two are kept in step by hand.
+  powershell:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: psscriptanalyzer
+        run: |
+          if (-not (Get-Module -ListAvailable -Name PSScriptAnalyzer)) {
+            Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+            Install-Module PSScriptAnalyzer -RequiredVersion 1.25.0 -Force
+          }
+          $found = Invoke-ScriptAnalyzer -Path .\bootstrap.ps1 -Settings .\PSScriptAnalyzerSettings.psd1
+          if ($found.Count -gt 0) {
+            $found | Format-Table RuleName, Line, Message -AutoSize | Out-String -Width 200
+            exit 1
+          }
+
+      # The same codes the contract job asserts of bootstrap.sh. No arguments
+      # exits 1 here too: a runner's stdin is redirected, so the prompt both
+      # scripts now have is correctly skipped.
+      - name: exit codes
+        run: |
+          function Expect {
+            param([int]$Want, [string[]]$Arguments)
+            & powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1 @Arguments *> $null
+            if ($LASTEXITCODE -ne $Want) {
+              Write-Output "expected $Want from 'bootstrap.ps1 $Arguments', got $LASTEXITCODE"
+              exit 1
+            }
+          }
+          Expect 1 @()
+          Expect 1 @('--nosuchflag', 'javascript', '..\out')
+          Expect 2 @('nosuchlang', '..\out')
+          Expect 3 @('javascript', '.')
+          Expect 0 @('javascript', '..\out', '--dry-run')
+
+      - name: dry-run writes nothing
+        run: |
+          & powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1 javascript ..\out --dry-run
+          if (Test-Path ..\out) {
+            Write-Output 'dry-run created the target'
+            exit 1
+          }
+
+      # Each side writes its own file list in its own shell, because `bash` from
+      # PowerShell is whatever is first on PATH -- WSL's, on a machine that has
+      # it, which is not the shell bootstrap.sh runs under.
+      - name: list every template as powershell sees it
+        run: |
+          New-Item -ItemType Directory -Force -Path ..\parity | Out-Null
+          foreach ($id in (Get-ChildItem templates -Directory).Name) {
+            $lines = & powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1 --dry-run $id ..\scaffold
+            $files = @($lines | Select-Object -Skip 1 | Select-Object -SkipLast 1 |
+              ForEach-Object { $_.TrimEnd() })
+            [IO.File]::WriteAllLines((Resolve-Path ..\parity).Path + "\$id.txt", $files)
+          }
+
+      # The file lists only. The step line either side of them names the target,
+      # whose separator differs by shell, and that difference is meant to exist.
+      - name: the two entry points agree on every template
+        shell: bash
+        run: |
+          drift=0
+          checked=0
+          for dir in templates/*/; do
+            id=${dir#templates/}
+            id=${id%/}
+            ./bootstrap.sh --dry-run "$id" ../scaffold | sed '1d;$d' > "../parity/$id.sh.txt"
+            if ! diff -u "../parity/$id.sh.txt" <(tr -d '\r' < "../parity/$id.txt"); then
+              echo "the two entry points disagree on $id" >&2
+              drift=$((drift + 1))
+            fi
+            checked=$((checked + 1))
+          done
+          echo "checked $checked templates"
+          [ "$drift" -eq 0 ]
 
   # The matrix above only exercises clone mode. Remote mode has its own failure
   # surface -- the ref, the download, the extract, the cleanup -- and no file on
