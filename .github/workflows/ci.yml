@@ -208,7 +208,7 @@ jobs:
       # marker is how it tells the two apart.
       - name: record that this architecture published
         if: ${{ needs.scope.outputs.publish == 'true' && needs.lint.result == 'success' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pushed-${{ matrix.template }}-amd64
           path: pushed-amd64
@@ -306,7 +306,7 @@ jobs:
       # marker is how it tells the two apart.
       - name: record that this architecture published
         if: ${{ needs.scope.outputs.publish == 'true' && needs.lint.result == 'success' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pushed-${{ matrix.template }}-arm64
           path: pushed-arm64
@@ -343,7 +343,7 @@ jobs:
       # legs both failed it re-merged the previous digests and reported a green
       # publish that nothing had tested.
       - continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: pushed-${{ matrix.template }}-*
           path: pushed
