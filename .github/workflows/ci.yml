@@ -378,11 +378,10 @@ jobs:
   # manifest merges them -- and attestations are off, so nothing else is
   # untagged either. Untagged here means exactly one thing: superseded.
   #
-  # This job deletes nothing yet. The packages sit under the *user* namespace,
-  # and the user-scoped REST endpoints normally want a PAT: the repo-scoped
-  # path works with packages: write only where the package inherits access from
-  # the repository. One run of this says which, before anything irreversible is
-  # written against a guess.
+  # The packages sit under the *user* namespace, where the REST endpoints normally
+  # want a PAT. Not here: these inherit access from the repository, so
+  # GITHUB_TOKEN lists them at users/<owner>/... and deletes them at user/... --
+  # established by a read-only probe, then by 426 deletions that all went through.
   cleanup:
     needs: [scope, image-amd64, image-arm64, manifest]
     if: >-
@@ -399,10 +398,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # users/<owner>/... rather than user/... or orgs/...: a probe run showed
-      # the first two readable with GITHUB_TOKEN and the third a 404, so these
-      # packages inherit access from the repository and no PAT is needed.
-      #
       # The hour's grace is not about the tagging argument above. It is for a
       # run this one overlapped, whose index is minutes old.
       #
@@ -418,7 +413,6 @@ jobs:
           cutoff=$(date -u -d '1 hour ago' +%s)
           gone=0
           kept=0
-          endpoint=
 
           for dir in templates/*/; do
             id=${dir#templates/}
@@ -456,15 +450,11 @@ jobs:
                 break
               fi
 
-              # Which spelling a repository-scoped token may use for a
-              # user-namespace package is not something the docs settle, and a
-              # refused delete removes nothing. The winner is logged once so the
-              # loser can be dropped.
-              if gh api -X DELETE "user/packages/container/$package/versions/$vid" 2>/dev/null; then
-                [ -n "$endpoint" ] || endpoint=user/packages
-              elif gh api -X DELETE "users/$owner/packages/container/$package/versions/$vid"; then
-                [ -n "$endpoint" ] || endpoint=users/$owner/packages
-              else
+              # user/packages/... is the spelling a repository-scoped token may use
+              # for a user-namespace package: the first real run went through it
+              # 426 times and never needed the users/<owner>/... fallback that
+              # used to sit behind it.
+              if ! gh api -X DELETE "user/packages/container/$package/versions/$vid"; then
                 echo "could not delete $id ${digest#sha256:}" >&2
                 exit 1
               fi
@@ -475,7 +465,6 @@ jobs:
           done
 
           echo "deleted $gone superseded versions, kept $kept under an hour old"
-          echo "deletes went through ${endpoint:-nothing to delete}"
 
       # The markers have done their job once every manifest has read them, and
       # a day of retention is a day of clutter. Only when nothing failed,
