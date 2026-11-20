@@ -18,6 +18,9 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -59,22 +62,33 @@ One workflow:
 ```
 scope ─┬─> image-amd64 (one leg per changed template, cap 8) ─┬─> manifest
 lint  ─┴─> image-arm64 (one leg per changed template, cap 8) ─┘   merge :main
-           build, test, push
+           build, lint, test, push
 
-contract, remote                                   (ungated, every push)
+contract (ubuntu, macos, windows), remote (same three),
+lint, powershell                                   (ungated, every push)
 ```
 
 Each `image` leg is one template on one architecture:
 
 ```yaml
       - run: ./bootstrap.sh ${{ matrix.template }} ../scaffold --no-pull
+      - name: lint the scaffold
+        working-directory: ../scaffold
+        run: make lint
       - name: push what the tests passed
-        if: ${{ needs.changed.outputs.templates == 'true' && needs.lint.result == 'success' }}
+        if: ${{ needs.scope.outputs.publish == 'true' && needs.lint.result == 'success' }}
         run: |
           image=$(sed -n 's/^ *image: *//p' ../scaffold/compose.yaml)
           docker tag "$image" "${image}-amd64"
-          docker push "${image}-amd64"
+          docker push "${image}-amd64"      # retried; see the first-push race below
+          printf '%s\n' "$image" > pushed-amd64
 ```
+
+The marker file is the last line for a reason. `manifest` runs per template and cannot
+see a matrix sibling's result, and `imagetools inspect` cannot tell a `:main-amd64` this
+run wrote from one left behind weeks ago — so a template whose both legs failed had the
+previous digests re-merged and published green. Each leg uploads its marker as an
+artifact and the merge needs both before it touches `:main`.
 
 That is the whole idea: **the bootstrap builds it, the bootstrap tests it, and the thing
 that passed is the thing that ships.** `--no-pull` because the point is the `Dockerfile`;
@@ -153,7 +167,8 @@ already says which half failed.
 ### Two architectures, in parallel
 
 Containers are Linux whatever the host is, so running the matrix on three operating
-systems would test Docker Desktop, not the templates. There is no Windows or macOS leg.
+systems would test Docker Desktop, not the templates. No Windows or macOS leg builds
+an image; they test the script instead, which is a different job.
 
 There are two *architectures*, on native runners rather than under QEMU: emulating a
 toolchain build costs more than the whole matrix, and public repositories get
@@ -203,6 +218,7 @@ requires.
 ```yaml
   schedule:
     - cron: '17 4 * * 1'
+  workflow_dispatch:
 ```
 
 Selecting templates by path means nothing builds a template unless it changes, and
@@ -215,6 +231,10 @@ because scheduled runs on the hour are the ones GitHub delays.
 than belt-and-braces: a template nobody has touched since it landed is proven on Monday
 or not at all. If it ever stops running, the first symptom will be a template that has
 been broken for a while.
+
+`workflow_dispatch` is there because a run that matters this much should not be
+testable only by waiting for Monday. It selects every template for the same
+reason the schedule does: it has nothing to diff against.
 
 **It publishes.** That is a decision rather than an oversight, and it has a consequence
 worth stating: `:main` can move with no commit behind it. This is consistent with the
@@ -256,11 +276,22 @@ installing its linters from apt took it from never finishing to 99s. The slowest
 
 ### Script quality
 
-Separate job, Linux only, and a gate on publishing:
+Two jobs, and a gate on publishing. On Linux:
 
 - `shellcheck bootstrap.sh`
 - `actionlint` over this repo's workflows and every template's `files/.github/workflows/`
 - `hadolint` over every template's `Dockerfile`
+
+and on `windows-latest`, which is where Windows PowerShell 5.1 is:
+
+- `PSScriptAnalyzer` over `bootstrap.ps1`, with the repo's own settings file
+- the same exit codes `contract` asserts of `bootstrap.sh`
+- a diff of both scripts' `--dry-run` file list, for every template
+
+That last one is the only thing that has ever compared the two entry points. They
+are kept in step by hand, and a drift between them is invisible to every other job
+here. Each side generates its list in its own shell: `bash` from PowerShell is
+whatever is first on `PATH`, which on a developer machine with WSL is not Git Bash.
 
 ### The remote path
 
@@ -270,7 +301,10 @@ the extract, and the temp-directory cleanup.
 
 ```yaml
   remote:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     env:
       sha: ${{ github.sha }}
     steps:
@@ -287,25 +321,31 @@ ref fetches templates from another.
 
 A second step asserts the failure path, which is the half with something to clean up: a
 `BOOTSTRAP_REF` naming no branch must exit `6`, write nothing to the target, and leave no
-temporary directory behind.
+temporary directory behind. `mktemp -d` does not write to `/tmp` on macOS, so the
+check asks `$TMPDIR` where it did.
 
-This covers `bootstrap.sh` only. `bootstrap.ps1` implements the same contract and is
-hand-tested — see [what is not covered](#what-is-not-covered).
+This covers `bootstrap.sh` only, in both modes and on all three platforms.
+`bootstrap.ps1` has its own job — see [script quality](#script-quality).
 
 ### Failure-mode assertions
 
 Negative tests asserting the exit codes in [cli.md](cli.md) rather than just "it failed":
 
-| Command                                                     | Expect               |
-| ----------------------------------------------------------- | -------------------- |
-| `bootstrap.sh`                                              | `1`                  |
-| `bootstrap.sh nosuchlang ../out`                            | `2`                  |
-| `bootstrap.sh zig .` (non-empty)                            | `3`                  |
-| `bootstrap.sh zig ../out --dry-run` then `test ! -e ../out` | `0`, nothing written |
-| `BOOTSTRAP_REF=refs/heads/no-such-branch` remote run        | `6`                  |
+| Command                                                            | Expect               |
+| ------------------------------------------------------------------ | -------------------- |
+| `bootstrap.sh`                                                     | `1`                  |
+| `bootstrap.sh --nosuchflag javascript ../out`                      | `1`                  |
+| `bootstrap.sh nosuchlang ../out`                                   | `2`                  |
+| `bootstrap.sh javascript .` (non-empty)                            | `3`                  |
+| `bootstrap.sh javascript ../out --dry-run` then `test ! -e ../out` | `0`, nothing written |
+| `BOOTSTRAP_REF=refs/heads/no-such-branch` remote run               | `6`                  |
 
 Codes `4` and `5` are not asserted — faking an absent Docker daemon or a failing
 generated test costs more than it proves.
+
+`javascript` throughout, not `zig`: one template is enough to assert a script's
+exit code, and the one with the fastest image is the one to use. The same five run
+against `bootstrap.ps1` on `windows-latest`.
 
 ## Publishing images
 
@@ -344,25 +384,33 @@ is a promise.
 
 Stated plainly, because the gaps are real:
 
-- **`bootstrap.ps1` has no CI at all.** Linux-only CI means nothing exercises the
-  PowerShell script. A regression surfaces when a Windows user hits it. Any change to
-  `bootstrap.sh` is a change to both, and the PowerShell side must be tested by hand.
+- **No Windows or macOS leg builds an image.** Neither runner can run a Linux container,
+  so the toolchains are proven on Linux only. What those runners do cover is the script:
+  `contract` and `remote` run on all three, because every assertion in both is
+  `--dry-run` or `--no-build`.
 - **The Windows `make` path is untested**, including the `cmd.exe`-shell constraint that
   bans `grep`/`awk`/`sed` from Makefile targets. Nothing will catch a violation
-  automatically; it is a review responsibility.
-- **macOS is untested.** Lower risk, since it runs the same Linux containers through the
-  same POSIX scripts.
-
-These follow from running one operating system. The alternative was 54 jobs mostly
-re-proving that Docker is Docker.
+  automatically; it is a review responsibility. The constraint is about `make` itself,
+  which the Windows legs never invoke.
+- **`make fmt` is never run.** `lint` and `test` are; a formatter that mangles the file
+  it formats would be caught by a developer, not here.
+- **No test asserts the interactive prompt.** Both scripts ask for a missing template
+  only when stdin is a terminal, and a runner has none, so `contract` can assert the
+  usage error and nothing else. The prompt is hand-tested.
 
 ## Rate limits
 
 Docker Hub limits anonymous pulls, and GitHub Actions runners share IP addresses, so
 unauthenticated CI hits the limit routinely and reports it as an unrelated-looking build
-failure. This repository's `image` jobs authenticate first with `docker/login-action`; a
-generated project's CI does the same when the secrets are set.
+failure. This repository's `image` jobs authenticate first with `docker/login-action`
+when the secrets are there, and build anyway when they are not — a fork's pull
+request gets none, and used to fail all seventy legs at that step. A generated
+project's CI has always had the same guard.
 
 Each leg logs in to both registries, for opposite reasons: Docker Hub because every
 `FROM` comes from there and a weekly run off shared runner IPs is well past the
 anonymous limit, ghcr with `GITHUB_TOKEN` because that is where the image goes.
+
+The `lint` job is the exception: it pulls `hadolint` and `actionlint` from Docker
+Hub anonymously. Two pulls against a six-hour allowance is not worth a login, and
+an image-free job has no scaffold to push.

@@ -131,13 +131,10 @@ Nothing is written outside the target directory and that temp directory.
 
 ### Pinning a version
 
-`$REF` defaults to a value baked into the script. On `main` it is `refs/heads/main`; on
-a release tag it is that tag, so **the script always fetches templates from the same ref
-it was itself served from.** A script downloaded from `v1.2.0` that pulled `main`
-templates would be a genuinely confusing bug.
-
-Keeping those in step is a release step: when tagging, the tag's copy of both scripts
-carries its own tag as the default ref.
+`$REF` defaults to a value baked into the script: `refs/heads/main`. **The script always
+fetches templates from the ref it was itself served from**, so a copy served from one ref
+that pulled another's templates would be a genuinely confusing bug — and CI asserts it,
+by running the one-liner with both URLs pinned to the commit under test.
 
 Override for testing:
 
@@ -145,16 +142,21 @@ Override for testing:
 $ BOOTSTRAP_REF=refs/heads/my-branch /bin/bash -c "$(curl -fsSL .../bootstrap.sh)" -- zig ../out
 ```
 
-Pin the whole thing by using a tag in the URL, which is the recommended form for anything
+Pin the whole thing by using a **commit sha** in the URL, which is the form for anything
 repeatable — CI, a workshop, a README someone else follows:
 
 ```console
-$ /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/acodeninja/bootstrap/v1.2.0/bootstrap.sh)" -- zig ../my-zig
+$ /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/acodeninja/bootstrap/9945cab/bootstrap.sh)" -- zig ../my-zig
 ```
 
+A sha is immutable and needs nothing of this repository. **There are no release tags**,
+so a tag is not the thing to reach for yet; when there are, keeping the baked default ref
+in step with the tag will be a release step in both scripts, and nothing currently
+enforces it.
+
 Note that `raw.githubusercontent.com` caches branch URLs for about five minutes. A push
-to `main` is not visible to the one-liner immediately; tag URLs are immutable and have
-no such lag.
+to `main` is not visible to the one-liner immediately; a sha URL is immutable and has no
+such lag.
 
 ## Prerequisites
 
@@ -174,8 +176,8 @@ worth being straight about rather than quiet about.
 - **Read it first if you want to.** It is one file, and swapping `bash -c "$(...)"` for
   a pager shows exactly what would run:
   `curl -fsSL https://raw.githubusercontent.com/acodeninja/bootstrap/main/bootstrap.sh | less`
-- **Pin a tag** for anything that matters. A branch URL is whatever was pushed most
-  recently; a tag is fixed.
+- **Pin a commit sha** for anything that matters. A branch URL is whatever was
+  pushed most recently; a sha is fixed.
 - **The script's own fetches use HTTPS and a pinned ref**, so it cannot be redirected to
   a different repository by anything short of compromising GitHub.
 - It does not need and does not ask for elevation. If something prompts you for `sudo` or

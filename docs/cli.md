@@ -149,9 +149,10 @@ the other. They must agree on:
 
 They are free to differ in how they do it.
 
-**Nothing enforces this.** CI runs on Linux only, so `bootstrap.ps1` has no automated
-coverage at all — a regression there surfaces when a Windows user hits it. Treat any
-change to one script as a change to both, and test the PowerShell side by hand. See
+**Two of those three are enforced.** A `windows-latest` job asserts the exit codes
+and diffs the file lists for every template, so the two cannot drift apart
+unnoticed. `--list` is not compared, and neither is anything that needs a
+container: no Windows runner can run one. See
 [ci.md](ci.md#what-is-not-covered).
 
 ## Explicit implementation constraints
@@ -174,4 +175,6 @@ change to one script as a change to both, and test the PowerShell side by hand. 
   stdin on the TTY. Never document the pipe form.
 - **Shell out, don't parse.** The scripts invoke `docker` and `make` and read nothing
   from them but the exit code, except for detecting `toomanyrequests` in build output.
-- **`bootstrap.sh` is shellcheck-clean**, `bootstrap.ps1` is PSScriptAnalyzer-clean.
+- **`bootstrap.sh` is shellcheck-clean and `bootstrap.ps1` is PSScriptAnalyzer-clean**,
+  both enforced by CI — and a job diffs the two scripts' `--dry-run` output across every
+  template, because nothing else would notice them drifting apart.
