@@ -42,7 +42,7 @@ patches, so an old minor can outrank a current one. See
 | `elm`        | `node:26.13.1-trixie-slim` + elm 0.19.3-0      | `elm-test`                   | `elm-format --validate` / `--yes`    | 3    |
 | `lua`        | `debian:trixie-20261104-slim` + lua5.4, luarocks | `busted`                     | `luacheck` / `stylua`                | 3    |
 | `c`          | `gcc:16.2.0-trixie` + Unity 2.7.0 (vendored)   | `Unity`                      | `clang-format` check / in place      | 3    |
-| `cpp`        | `gcc:16.2.0-trixie` + doctest (vendored)       | `doctest`                    | `clang-format` check / in place      | 3    |
+| `cpp`        | `gcc:16.2.0-trixie` + doctest 2.5.3 (vendored) | `doctest`                    | `clang-format` check / in place      | 3    |
 
 ## Waves
 
@@ -58,6 +58,25 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
   test framework because the language has no stdlib one.
 
 ## Notes on individual rows
+
+**`cpp` follows `c`'s vendoring precedent and needs none of its machinery.** doctest is a
+single header committed to `files/vendor/doctest/`, with the same provenance header and the
+same `vendor/`-excluded-by-construction file list. But `TEST_CASE` macros self-register and
+`DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN` in one translation unit supplies `main`, so discovery is
+free: no generated runner, no glob, nothing naming the suite. Where `c` needed an image-baked
+`unity-discover` and a forced regeneration, `cpp` ships a three-line `test/main.cpp`.
+
+It is also the clearest demonstration of why these are two templates rather than one. C's
+errors slot is a return code plus `errno`; C++'s throws a `std::runtime_error` subclass and
+asserts that a destructor still runs as the stack unwinds. Its gotcha is
+`map::operator[]` inserting a default-constructed value on a read, where C's is
+array-versus-struct argument semantics. Nothing is ported.
+
+One check needed relaxing rather than the template: a brace-elided aggregate initialiser —
+`std::map<std::string, int> counts{{"a", 1}}` — matches a bare `{{` grep, and in C++ that is
+simply how you write it. The contract's actual pattern is `{{[A-Z_]\{2,\}}}`, which requires
+two or more uppercase-or-underscore characters and does not match brace init at all. The bare
+`{{` form was an over-strict convenience check, not the contract.
 
 **`c` is the first template to vendor a test framework, and it sets the precedent.** Unity is
 **committed** into `files/vendor/unity/` rather than fetched in a `RUN` layer, and that choice
