@@ -1,6 +1,6 @@
 # Languages
 
-The 34 targets, their chosen tooling, and when each lands. This is the implementer's
+The 35 targets, their chosen tooling, and when each lands. This is the implementer's
 worksheet: one row is one template.
 
 Test runners are chosen **stdlib-first**. A built-in runner is one less dependency to
@@ -51,6 +51,7 @@ patches, so an old minor can outrank a current one. See
 | `lolcode`    | `debian:trixie-20261104-slim` + lci 1.3        | TAP                          | — / —                                | 4    |
 | `intercal`   | `debian:trixie-20261104-slim` + C-INTERCAL     | TAP from Roman numerals      | `ick -c` / —                         | 4    |
 | `r`          | `debian:trixie-20261104-slim` + R 4.5.0        | `testthat`                   | `lintr` / `formatR`                  | 4    |
+| `ada`        | `debian:trixie-20261104-slim` + GNAT 14.2      | `AUnit`                      | `gnatc` + `gnatwae` / —              | 4    |
 
 ## Waves
 
@@ -912,6 +913,43 @@ The project is not an R package, so nothing would load `src/` for the tests. `ma
 sources every `src/*.R` before handing the directory to `testthat`, which is the job a
 package's `NAMESPACE` would otherwise do — and it keeps the suite from naming any file, so
 deleting the kitchen sink leaves the rest discovered.
+
+**`ada` has a real xUnit and real static checking, and its one missing piece is the
+formatter.** Debian carries GNAT 14.2, gprbuild and AUnit, so nothing is vendored and
+nothing is fetched. `gnatpp` is the formatter Ada people use and it is not packaged — it
+ships with AdaCore's own distribution — so `make fmt` is `prolog`'s documented no-op and
+`.editorconfig` holds the three-space indent GNAT's own style checks expect.
+
+**Every test is one procedure body, which is the whole reason the template works.** A
+package would need a spec beside it, so deleting one test would mean deleting two files and
+the project would not compile until both were gone. A library-level procedure is a complete
+compilation unit on its own: it declares its fixture, its `AUnit.Test_Caller` instance, its
+test procedures and its suite in one declarative part, then runs them. Nothing has to be
+generated to find them either — `make test` hands each `tests/*.adb` to gprbuild as a main,
+one at a time, which is simpler than the harness `pascal` needs.
+
+Two things that only work because of that nesting: `Test_X'Access` matches the
+`Test_Method` access type because both are declared at the same level, and
+`Test_Runner_With_Status` is instantiated with a local `Suite` function. Put the fixture in
+a package and the accessibility rules stop both. `Test_Runner_With_Status` rather than
+`Test_Runner` is also what makes a failure reach `make`: the plain runner prints its report
+and exits zero.
+
+**`make lint` is the Ada front end, and two switches earn their place.** `-gnatc` checks
+without generating code and `-gnatwae` makes every warning an error; between them they
+caught a missing case arm and a type error when those were introduced deliberately. `-f` is
+there because gprbuild is incremental and `make test` compiles the same sources with
+different switches — without it, lint reuses objects that were never checked and passes by
+saying nothing, which it did until that was noticed. `-gnatwC` drops "condition is always
+True", which a suite full of assertions about static properties trips constantly; that is a
+fact about tests rather than a fault in them.
+
+The compiler also rejected two things while the suite was being written, both now in it:
+`Natural'Last + 1` will not compile at all, because a static overflow is an error rather
+than a warning, and the same expression through an ordinary variable warns instead — so the
+errors case reaches `Natural'Last` through `'Value` to put the overflow out of the
+compiler's reach. And with more than one `"="` in scope, comparing a `String` expression is
+"ambiguous", which is why the strings case names each result before asserting on it.
 
 **`elixir` is the third BEAM template, and not redundant.** `erlang` shows the runtime
 raw, `gleam` shows a static type system on top of it, and `elixir` shows the ergonomic

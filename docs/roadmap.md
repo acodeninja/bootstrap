@@ -88,6 +88,9 @@ program when it does not match, and the runner turns the Roman numerals into TAP
 `r` — testthat, lintr and formatR, all three as Debian packages. The official r-base image
 is built on Debian testing, so this one is not: see its row for why.
 
+`ada` — GNAT, gprbuild and AUnit, all from Debian. Each test is one procedure body, so a
+suite is a single file and nothing has to be generated to find it.
+
 ## Per-template definition of done
 
 1. `make test`, `make lint` and `make fmt` all work from a cold image.

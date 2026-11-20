@@ -144,6 +144,7 @@ the TDD loop for every invalid input a kata has.
 | LOLCODE                 | nothing catches anything; guard before the operation              |
 | INTERCAL                | nothing is raised; overflow lands in a variable, or it stops      |
 | R                       | `stop`, matched by message with `expect_error`                    |
+| Ada                     | `raise`, caught by name in an exception handler                   |
 
 ## Gotchas are deliberately not uniform
 
