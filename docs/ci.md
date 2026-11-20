@@ -84,7 +84,7 @@ commit's templates, and a broken `Dockerfile` would go green.
 It used to be two workflows that did not know about each other. `ci` built twenty-six
 images, tested them and threw them away; `publish` built fifty-one more and pushed those,
 untested. Seventy-seven builds to ship fifty-one images, and the fifty-one that shipped
-were not the ones that passed. Merging them removes twenty-six builds from every push.
+were not the ones that passed. Merging them removes a whole matrix of builds from every push.
 
 `fail-fast: false` matters: when an upstream image bumps and breaks three languages, you
 want all three in one run.
@@ -252,7 +252,7 @@ ones anyway.
 
 The sting has also mostly been drawn: `haskell` was the one leg that made this urgent, and
 installing its linters from apt took it from never finishing to 99s. The slowest leg is now
-`ocaml` at about four minutes.
+`ocaml` at about four and a half minutes.
 
 ### Script quality
 
@@ -319,7 +319,7 @@ and shared by every leg in flight. All three were added after a run answered `42
 - `scope`, because a docs-only commit cannot change an image and was rebuilding all
   fifty-one
 - a `concurrency` group, because successive pushes stacked whole matrices
-- `max-parallel: 8`, because every build resolves its `FROM` and fifty-one at once is past
+- `max-parallel: 8`, because every build resolves its `FROM` and fifty-one at once was past
   the limit however well authenticated
 
 That cap is per job and there are two matrices, so the peak is sixteen rather than eight —

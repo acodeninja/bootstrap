@@ -1,7 +1,7 @@
 # Template contract
 
 A template is a directory under `templates/`. The directory name is the template ID.
-Adding language number 27 means satisfying this contract and nothing else — no
+Adding language number 36 means satisfying this contract and nothing else — no
 registry to update, no script to edit, no case statement to extend.
 
 ## Layout
@@ -180,7 +180,7 @@ syntax error because `out` is a Nim keyword. `out` is also a keyword in C# and a
 Kotlin.
 
 This is inherent to literal substitution and is accepted rather than solved: detecting
-twenty-six languages' reserved words would mean per-language logic in `bootstrap.sh`, which
+thirty-five languages' reserved words would mean per-language logic in `bootstrap.sh`, which
 is exactly what the paragraph above forbids. Where a language offers a free escape, take it
 — `nim` imports `"../src/{{PROJECT_SNAKE}}"` as a string literal, which bypasses the
 keyword check at no cost in readability. Where it does not, the failure is immediate and

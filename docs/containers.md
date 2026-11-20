@@ -110,9 +110,11 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | ada                    | `debian:trixie-slim` + GNAT 14, AUnit        | hand-rolled |
 
 Across 35 templates that is **21 official, 4 vendor, 10 hand-rolled**. The hand-rolled
-set — zig, lua, elm, pascal, cobol, basic, lolcode, intercal, r and ada — stayed at three
+set — zig, lua, elm, pascal, cobol, basic, lolcode, intercal, r and ada — held at three
 from 18 templates to 26, because every language added in between built on an official
-image and merely added a package. Under mise, six languages had no usable pin at all.
+image and merely added a package. Wave 4 added the other seven, which are the
+languages with no official image to build on at all. Under mise, six languages had
+no usable pin.
 
 ### One image, several templates
 
@@ -314,7 +316,7 @@ Either way it is part of the definition of done for every template.
 
 ### What the first run still costs
 
-Measured on all twenty-six against a pulled image and a fresh volume — the path a
+Measured on the first twenty-six against a pulled image and a fresh volume — the path a
 developer actually takes — timing `make test` twice:
 
 | Template | first | second |
@@ -430,7 +432,7 @@ use — writing this document exhausted it after three `docker manifest inspect`
 before `docker login` cleared it. Two places it matters:
 
 - **This repository's CI** builds from shared runner IPs — two images per changed
-  template, one per architecture, and all sixty-six of them on the weekly run — and
+  template, one per architecture, and all seventy of them on the weekly run — and
   `--no-pull` means it really does build them. Authenticate with `docker/login-action`
   before any build. See [ci.md](ci.md).
 - **First run on a developer machine** now pulls from ghcr, which has no such limit, so

@@ -30,8 +30,8 @@ before the reader has started. Name the variables after nothing: `items`, `count
 Koans are fill-in-the-blank exercises that start red and go green as you work through
 them. This suite is the opposite: **every assertion is filled in and passing on the
 first run.** It is reference material that happens to be executable, which is what keeps
-it from rotting — CI runs it on every supported platform, so a wrong claim about the
-language fails the build.
+it from rotting — CI runs it on both published architectures, so a wrong claim about
+the language fails the build.
 
 A red suite on a fresh bootstrap would also contradict the whole promise of the tool.
 
@@ -251,7 +251,7 @@ Applied in every template, adapted to the language's runner:
 - **Parametrise over a table** rather than copy-pasting near-identical bodies — `t.Run`
   loops in Go, `@pytest.mark.parametrize`, `forAll`, or a plain loop over a list of cases
   inside one test. But a table must not spend the file's whole budget: a nine-row
-  `typeof` table is nine of the eight assertions you are allowed. Assert the rows that
+  `typeof` table is nine of the fifteen assertions you are allowed. Assert the rows that
   surprise and drop the rest.
 - **One assertion, one idea.** These files are read far more often than they are run. A
   quirk and the spelling that avoids it are one idea, so they share a body.

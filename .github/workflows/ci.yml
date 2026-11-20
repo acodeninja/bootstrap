@@ -45,7 +45,7 @@ jobs:
 
       # Which templates to build, rather than whether to build at all. A
       # template's image can only change when that template changes, so a push
-      # that adds one has no business rebuilding the other thirty-two -- and
+      # that adds one has no business rebuilding the other thirty-four -- and
       # docs, the README and bootstrap.ps1 cannot change any image.
       #
       # Drift is what building everything used to catch: a base image tag that
@@ -111,7 +111,7 @@ jobs:
   image-amd64:
     needs: [scope, lint]
     # Lint gates publishing, not testing: a shellcheck nit should not stop
-    # twenty-six templates being tested, but it should stop a push.
+    # thirty-five templates being tested, but it should stop a push.
     if: >-
       ${{ !cancelled() && needs.scope.result == 'success'
       && needs.scope.outputs.build == 'true' }}
