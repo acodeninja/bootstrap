@@ -3,6 +3,17 @@ name: publish
 on:
   push:
     branches: [main]
+    # Nothing to publish when no image can have changed. Without this a
+    # docs-only commit rebuilt all fifty-one, and Docker Hub answered 429.
+    paths:
+      - templates/*/files/**
+      - .github/workflows/publish.yml
+
+# Several pushes in a row would otherwise stack whole matrices of builds against
+# the same Docker Hub account limit, and only the newest result is wanted.
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: true
 
 # The only workflow here with write scope of any kind, and it writes packages
 # only. GITHUB_TOKEN rather than a PAT: the packages live under this repository.
@@ -31,6 +42,10 @@ jobs:
     runs-on: ${{ matrix.platform.runner }}
     strategy:
       fail-fast: false
+      # Every build resolves its FROM from Docker Hub, which rate-limits per
+      # account, not per runner. Fifty-one at once answered 429; a window this
+      # size spreads them out instead. Nothing here is urgent.
+      max-parallel: 8
       matrix:
         template: ${{ fromJSON(needs.templates.outputs.ids) }}
         platform:
