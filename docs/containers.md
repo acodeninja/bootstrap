@@ -202,6 +202,23 @@ Per language, the volume targets the directory that actually holds the artefacts
 wrong is not a subtle performance problem: it is the difference between a two-second
 loop and a ninety-second one.
 
+Where the toolchain hard-codes a **project-relative** cache path and offers no flag at all,
+mount a second named volume *inside* the bind mount. `clojure` needs this: the CLI writes
+`./.cpcache` whenever a project `deps.edn` exists and the directory is writable, and
+`CLJ_CACHE` is only the fallback for when it cannot — so there is nothing to redirect.
+
+```yaml
+    volumes:
+      - .:/work
+      - cache:/cache
+      - cpcache:/work/.cpcache
+```
+
+The host is left an empty directory at the mount point, which git does not track, so the
+clean-project check passes without gitignoring anything. Reach for this only after
+confirming no environment variable or flag exists — it is the least obvious of the three
+remedies and the only one that leaves a visible artefact in the user's project.
+
 Where the toolchain reads an environment variable for its cache location, point it
 inside the volume rather than letting it write next to the source. Zig does this with
 `ZIG_GLOBAL_CACHE_DIR` and `ZIG_LOCAL_CACHE_DIR`, which also keeps `.zig-cache` out of
