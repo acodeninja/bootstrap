@@ -63,6 +63,28 @@ $ cd bootstrap
 $ ./bootstrap.sh zig ../my-zig
 ```
 
+On Windows, with one wrinkle:
+
+```powershell
+PS> git clone git@github.com:acodeninja/bootstrap.git
+PS> cd bootstrap
+PS> powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1 zig ..\my-zig
+```
+
+`.\bootstrap.ps1` on its own fails under the default execution policy, which refuses to
+run an unsigned script **file**:
+
+```
+File C:\...\bootstrap.ps1 cannot be loaded because running scripts is disabled on this
+system. For more information, see about_Execution_Policies.
+```
+
+The remote form above never hits this, because `[scriptblock]::Create` runs text that was
+never a file and so has no policy to satisfy — the clone form is the one that needs the
+flag. `-ExecutionPolicy Bypass` applies to that one invocation and changes no machine
+setting; a user who would rather change the setting wants
+`Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`, which is theirs to decide.
+
 ## How the two modes work
 
 One script, not two. It decides which mode it is in by asking whether it exists on disk:
