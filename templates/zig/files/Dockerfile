@@ -41,17 +41,19 @@ ENV PATH=/opt/zig:$PATH
 ENV ZIG_GLOBAL_CACHE_DIR=/cache/zig-global
 ENV ZIG_LOCAL_CACHE_DIR=/cache/zig-local
 
-# zig build compiles build.zig into a runner executable before it builds
-# anything else, which is seventy seconds of std.Build against a cold cache.
-# Priming it here means the named volume seeds from the image, so the first
-# `make test` takes a second and a half rather than a minute and a half.
+# zig build compiles build.zig into a runner executable before it builds anything
+# else: seventy seconds of std.Build against a cold cache, and the runner is cached
+# against build.zig's own contents. Priming `zig init`'s build.zig therefore cached
+# a runner no real project ever asks for, and the first `make test` still measured
+# 72s. --help compiles this project's runner and not a line of src, so the image
+# build stays independent of the suite -- and .dockerignore excludes src anyway.
 WORKDIR /prime
+COPY build.zig ./
 # /cache is world-writable so the service runs as any host uid without needing a
 # passwd entry or a writable $HOME. See docs/containers.md "File ownership". The
 # chmod shares this layer deliberately: run separately it rewrites the mode of
 # every file the prime just cached, and overlayfs then copies all of it again.
-RUN zig init \
-    && zig build test \
+RUN zig build --help >/dev/null \
     && rm -rf /prime \
     && chmod -R 777 /cache
 
