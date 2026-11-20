@@ -54,7 +54,7 @@ $ ./bootstrap.sh rust ../my-rust
 Every template is covered by CI on every push, one job each. `ocaml` is the slowest at
 around four and a half minutes; the median is under a minute.
 
-`bootstrap.ps1` is not written yet, so Windows users run `bootstrap.sh` under Git Bash.
-Remote mode — the `curl`-into-`bash` one-liner at the top of this file — is also
-unimplemented, so clone mode is the way in. The design is written up in
+`bootstrap.ps1` covers Windows, including remote mode. `bootstrap.sh` has no remote mode
+yet, so the `curl`-into-`bash` one-liner at the top of this file does not work and clone
+mode is the way in on macOS and Linux. The design is written up in
 **[docs/](docs/README.md)**; [roadmap.md](docs/roadmap.md) has what is left.

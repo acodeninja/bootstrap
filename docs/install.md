@@ -4,12 +4,10 @@ The bootstrap runs two ways from the same script: straight off the internet with
 clone, or out of a local checkout. The remote form is the headline — one line, nothing
 installed, nothing left behind.
 
-> **Remote mode is not implemented yet.** The repository is public and
-> `raw.githubusercontent.com` serves `bootstrap.sh` fine, so the fetch half of every
-> command on this page works — but the script then exits `6` rather than downloading
-> templates, and `bootstrap.ps1` does not exist at all. Use the
-> [clone form](#from-a-clone) until both land; it exercises the same code path minus the
-> download.
+> **Remote mode works in `bootstrap.ps1` only.** The Windows commands below run as
+> written. `bootstrap.sh` exits `6` instead of downloading templates, so on macOS and
+> Linux use the [clone form](#from-a-clone) until it lands; it exercises the same code
+> path minus the download.
 
 ## macOS and Linux
 
