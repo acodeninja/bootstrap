@@ -40,7 +40,7 @@ patches, so an old minor can outrank a current one. See
 | `nim`        | `nim:2.4.0`                                    | `unittest`                   | `nim check` / `nimpretty`            | 2    |
 | `prolog`     | `swipl:11.0.0`                                 | `plunit`                     | `check` + status flags / —           | 2    |
 | `elm`        | `node:26.13.1-trixie-slim` + elm               | `elm-test`                   | `elm-format --validate`              | 3    |
-| `lua`        | `debian:trixie-20261104-slim` + lua, luarocks  | `busted`                     | `luacheck` / `stylua`                | 3    |
+| `lua`        | `debian:trixie-20261104-slim` + lua5.4, luarocks | `busted`                     | `luacheck` / `stylua`                | 3    |
 | `c`          | `gcc:16.2.0-trixie` + Unity (vendored)         | `Unity`                      | `clang-format` check / in place      | 3    |
 | `cpp`        | `gcc:16.2.0-trixie` + doctest (vendored)       | `doctest`                    | `clang-format` check / in place      | 3    |
 
@@ -58,6 +58,32 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
   test framework because the language has no stdlib one.
 
 ## Notes on individual rows
+
+**Debian's `luarocks` package drags in lua5.1, and that lua owns `/usr/bin/lua`.** Installing
+`lua5.4` and `liblua5.4-dev` alongside it does not win the fight: `lua -v` silently reports
+5.1 until `lua5.4` is re-symlinked onto `PATH`. Silently running the wrong interpreter is the
+worst possible failure for a template whose point is a pinned toolchain, so the Dockerfile
+pins the versioned packages and re-points `lua` explicitly.
+
+`luarocks` 3.8.0 also has an undocumented interaction: `--tree` together with
+`--lua-version` breaks `LUA_INCDIR` autodetection outright ("Failed finding Lua header
+files"), though either flag alone is fine. `--lua-dir=/usr` alongside `--tree` is what works.
+
+`luacheck` moved from `mpeterv/luacheck` to `lunarmodules/luacheck`, and the abandoned
+repository's releases list looks exactly like "no recent releases" rather than a moved
+project — the same trap `ktlint`'s org move set, by a different mechanism. It needs only
+`std = "lua54"` in `.luacheckrc`, because it already applies its busted std to `*_spec.lua`
+by itself.
+
+`busted` exits non-zero on a wholly empty `spec/`, so `lua` joins `python`, `swift` and
+`dart` as a row whose runner does not strictly succeed when it finds none. Deleting the
+kitchen sink alone is safe, since the module spec survives.
+
+The gotcha is worth noting for what it is *not*: a first version asserted `#values == 3`
+after punching a hole in a table, and the Lua manual says any border is legal there — so the
+assertion could have failed on a future point release with nobody touching the code. The
+test now asserts what the spec guarantees, that `ipairs` stops at the first `nil`, and keeps
+the unreliability of `#` in its name.
 
 **`ocaml` is the one template pinned by digest, because `ocaml/opam` publishes no patch tag
 and its minor tags are not all releases.** `debian-13-ocaml-5.6` carries
