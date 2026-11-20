@@ -1,7 +1,7 @@
 # Containers
 
 Every generated project runs its toolchain inside Docker. The host needs **Docker** and
-**make**, and that answer is the same for all 28 templates.
+**make**, and that answer is the same for all 29 templates.
 
 ## Why containers
 
@@ -93,6 +93,7 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | prolog                 | `swipl:11.0`                                 | official    |
 | kotlin, java           | `gradle:9.9-jdk25`                           | official    |
 | nim                    | `nim:2.2`                                    | official    |
+| perl                   | `perl:5.44-slim-trixie` + 2 CPAN tools       | official    |
 | fortran                | `gcc:16-trixie` + fpm 0.14                   | official    |
 | fsharp, csharp         | `mcr.microsoft.com/dotnet/sdk:10.0`          | vendor      |
 | ocaml                  | `ocaml/opam:debian-13-ocaml-5.5`             | vendor      |
@@ -102,7 +103,7 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | elm                    | `node:26-trixie-slim` + elm, elm-test        | hand-rolled |
 | pascal                 | `debian:trixie-slim` + fpc 3.2.2             | hand-rolled |
 
-Across 28 templates that is **20 official, 4 vendor, 4 hand-rolled**. The hand-rolled
+Across 29 templates that is **21 official, 4 vendor, 4 hand-rolled**. The hand-rolled
 set — zig, lua, elm and pascal — stayed at three from 18 templates to 26, because every
 language added in between builds on an official image and merely adds a package. Under
 mise, six languages had no usable pin at all.
@@ -126,7 +127,7 @@ template is the idiom.
 
 ### Images needing a package on top
 
-Four cases, recorded here so they are not rediscovered per template:
+Five cases, recorded here so they are not rediscovered per template:
 
 - **php** — `php:8.6-cli-trixie` ships no Composer. Take it from the official image in a
   multi-stage copy rather than piping an installer script:
@@ -135,6 +136,10 @@ Four cases, recorded here so they are not rediscovered per template:
 - **fortran** — the same `gcc:16-trixie`, which carries `gfortran` but neither a package
   manager nor a formatter. fpm comes from its release binary, per architecture, and
   fprettify from PyPI, which costs a `python3-pip` install for one tool.
+- **perl** — `perl:5.44-slim-trixie` has `cpanm` but no compiler, and Perl::Critic's
+  dependency tree reaches two XS modules. Build it in a stage that installs `gcc`, then
+  copy `/usr/local/lib/perl5` out: one old dual-life dependency installs into the core
+  library path rather than `site_perl`, so copying only the latter leaves it behind.
 - **swift** — `swift format` is a toolchain subcommand since Swift 6.0, and it **is**
   present in `swift:6.4-trixie`, reporting the compiler's own version, with
   `/usr/bin/swift-format` alongside it. No separate install is needed. Use the full image:

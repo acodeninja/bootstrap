@@ -70,6 +70,9 @@ for dependencies and test discovery, and a formatter.
 `pascal` — Debian carries the compiler and fpcunit. The work was generating the test
 runner, because fpcunit finds tests by RTTI but the program must name their units.
 
+`perl` — official image, `Test::More` and `prove` in core. The work was getting
+Perl::Critic built without leaving a compiler in the final image.
+
 ## Per-template definition of done
 
 1. `make test`, `make lint` and `make fmt` all work from a cold image.
@@ -111,7 +114,7 @@ change.
 
 ## Not in scope yet
 
-Framework templates (`javascript-react`, `python-fastapi`), and the six further
+Framework templates (`javascript-react`, `python-fastapi`), and the five further
 languages with verified official images listed under "Deferred" in
 [languages.md](languages.md). Both are additions under the existing contract, not
 changes to it.

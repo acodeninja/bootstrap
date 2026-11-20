@@ -1,6 +1,6 @@
 # Languages
 
-The 28 targets, their chosen tooling, and when each lands. This is the implementer's
+The 29 targets, their chosen tooling, and when each lands. This is the implementer's
 worksheet: one row is one template.
 
 Test runners are chosen **stdlib-first**. A built-in runner is one less dependency to
@@ -45,6 +45,7 @@ patches, so an old minor can outrank a current one. See
 | `cpp`        | `gcc:16.2.0-trixie` + doctest 2.5.3 (vendored) | `doctest`                    | `clang-format` check / in place      | 3    |
 | `fortran`    | `gcc:16.2.0-trixie` + fpm 0.14.0               | `test-drive` via `fpm test`  | `fprettify --diff` / `fprettify`     | 4    |
 | `pascal`     | `debian:trixie-20261104-slim` + fpc 3.2.2      | `fpcunit`                    | `fpc -Sew` / —                       | 4    |
+| `perl`       | `perl:5.44.0-slim-trixie`                      | `Test::More` via `prove`     | `perlcritic` / `perltidy`            | 4    |
 
 ## Waves
 
@@ -715,6 +716,35 @@ identifier in the same namespace as everything else, so a unit called `greet` hi
 function called `Greet` and the compiler complains about a missing `.` instead. The test
 units are `*_test.pas` for that reason, not for symmetry with `ruby`.
 
+**`perl` came off the deferred list, and the reason it was on it no longer holds.** It was
+declined for "text-processing heritage, small audience", which is a judgement about
+popularity rather than about whether the template would be good. It is one of the best in
+the set: `Test::More` and `prove` are both core, so the runner needs nothing installed,
+`prove -Isrc -r t` discovers tests with no declaration anywhere, and the language has a
+real linter *and* a real formatter — which is more than most rows here manage.
+
+`5.45.5-slim-trixie` exists and is not the one to pin. Perl marks development releases
+with an odd minor version, so `5.44.0` is the current stable and the newest tag is a devel
+build.
+
+**Two things cost more than they look.** Perl::Critic's dependency tree reaches `Clone` and
+`Params::Util`, both XS, so building it needs a compiler that `-slim` does not carry; it is
+built in a stage that installs `gcc` and the modules are copied out. Copying `site_perl`
+alone is not enough, because `Pod::Parser` is an old dual-life distribution that installs
+into the *core* library path — the first build failed on a missing `Pod::PlainText` for
+exactly that reason, so the copy takes `/usr/local/lib/perl5` whole.
+
+And `perltidy -b` edits in place by setting the output file's permissions and mtime, which
+a bind mount from a Windows host refuses, and perltidy treats the refusal as a failure. The
+formatter writes through a temporary file instead. `--assert-tidy` is a real check mode, so
+`lint` needs no diffing wrapper, but it does need `-se`: without it perltidy reports an
+assertion failure by writing a `.ERR` file into the project rather than to stderr.
+
+The kitchen sink's own first run found one more: `reduce`'s `&@` prototype swallows what
+follows it, so `is( reduce { $a * $b } @values, 24 )` passes one argument to `is` and dies
+at compile time. The fold is assigned first, which is what the act phase of the test wanted
+anyway.
+
 **`elixir` is the third BEAM template, and not redundant.** `erlang` shows the runtime
 raw, `gleam` shows a static type system on top of it, and `elixir` shows the ergonomic
 mainstream dialect with the best test tooling of the three — ExUnit is in the stdlib,
@@ -726,12 +756,11 @@ Frameworks are out of the first cut, but the ID namespace reserves them:
 `javascript-react`, `python-fastapi`, `rust-axum`, `go-chi`. They are additional
 template directories under the same contract, not a new mechanism.
 
-Six more languages have official images, verified on 2026-11-19, and were declined for
+Five more languages have official images, verified on 2026-11-19, and were declined for
 now rather than ruled out — adding one is a mechanical job:
 
 | id       | image              | test runner         | why it was declined                      |
 | -------- | ------------------ | ------------------- | ---------------------------------------- |
-| `perl`   | `perl:5.40`        | `Test::More` (core) | text-processing heritage, small audience |
 | `julia`  | `julia:1.11`       | `Test` (stdlib)     | array-scientific, not kata-shaped        |
 | `r`      | `r-base:4.4.2`     | `testthat`          | as above, plus slow CRAN installs        |
 | `groovy` | `groovy:4.0-jdk21` | `Spock`             | duplicates a JVM already covered twice   |
