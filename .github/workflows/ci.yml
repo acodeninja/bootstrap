@@ -121,4 +121,35 @@ jobs:
       - name: actionlint every workflow
         run: |
           docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 \
-            -color .github/workflows/ci.yml templates/*/files/.github/workflows/ci.yml
+            -color .github/workflows/*.yml templates/*/files/.github/workflows/ci.yml
+
+  # The matrix above only exercises clone mode. Remote mode has its own failure
+  # surface -- the ref, the download, the extract, the cleanup -- and no file on
+  # disk, so nothing else here touches it. Both URLs are pinned to this commit
+  # so the script under test fetches the templates that shipped with it, which
+  # is the bug a floating ref would hide.
+  remote:
+    runs-on: ubuntu-latest
+    env:
+      sha: ${{ github.sha }}
+    steps:
+      - name: scaffold through the documented one-liner
+        run: |
+          BOOTSTRAP_REF=$sha /bin/bash -c \
+            "$(curl -fsSL "https://raw.githubusercontent.com/acodeninja/bootstrap/$sha/bootstrap.sh")" \
+            -- javascript ../out --no-git --no-build
+          test -f ../out/package.json
+
+      - name: a bad ref exits 6 and leaves no temporary directory
+        run: |
+          before=$(find /tmp -maxdepth 1 -name 'tmp.*' -type d | wc -l)
+          set +e
+          BOOTSTRAP_REF=refs/heads/no-such-branch /bin/bash -c \
+            "$(curl -fsSL "https://raw.githubusercontent.com/acodeninja/bootstrap/$sha/bootstrap.sh")" \
+            -- javascript ../bad --no-git --no-build >/dev/null 2>&1
+          got=$?
+          set -e
+          if [ "$got" -ne 6 ]; then echo "expected 6 from a bad ref, got $got" >&2; exit 1; fi
+          test ! -e ../bad
+          after=$(find /tmp -maxdepth 1 -name 'tmp.*' -type d | wc -l)
+          if [ "$before" -ne "$after" ]; then echo "a temporary directory survived" >&2; exit 1; fi

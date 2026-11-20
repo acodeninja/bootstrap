@@ -142,20 +142,26 @@ the extract, and the temp-directory cleanup.
 ```yaml
   remote:
     runs-on: ubuntu-latest
+    env:
+      sha: ${{ github.sha }}
     steps:
       - run: |
-          BOOTSTRAP_REF=${{ github.sha }} /bin/bash -c \
-            "$(curl -fsSL https://raw.githubusercontent.com/acodeninja/bootstrap/${{ github.sha }}/bootstrap.sh)" \
-            -- javascript ../out
+          BOOTSTRAP_REF=$sha /bin/bash -c \
+            "$(curl -fsSL "https://raw.githubusercontent.com/acodeninja/bootstrap/$sha/bootstrap.sh")" \
+            -- javascript ../out --no-git --no-build
+          test -f ../out/package.json
 ```
 
 Pinning both URLs to `github.sha` tests the commit under review rather than whatever is
 on `main`, and proves the two refs stay in step — the bug where a script served from one
 ref fetches templates from another.
 
-This job cannot run until the repository is public; `raw.githubusercontent.com` serves
-nothing for a private repo. Until then the remote path is untested, alongside the gaps
-in [what is not covered](#what-is-not-covered).
+A second step asserts the failure path, which is the half with something to clean up: a
+`BOOTSTRAP_REF` naming no branch must exit `6`, write nothing to the target, and leave no
+temporary directory behind.
+
+This covers `bootstrap.sh` only. `bootstrap.ps1` implements the same contract and is
+hand-tested — see [what is not covered](#what-is-not-covered).
 
 ### Failure-mode assertions
 
