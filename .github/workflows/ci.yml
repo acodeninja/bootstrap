@@ -487,6 +487,10 @@ jobs:
   # host platforms, because every assertion here is --dry-run or --no-build and
   # so needs no docker. macOS and Windows runners cannot run a Linux container,
   # so they cover the script and never a toolchain.
+  #
+  # The Windows leg drives bootstrap.ps1, which is the entry point Windows users
+  # are told to run. bootstrap.sh is still exercised there, by the parity step
+  # at the end: comparing the two means running both.
   contract:
     strategy:
       fail-fast: false
@@ -509,13 +513,27 @@ jobs:
           /bin/bash --version | head -1
           /bin/bash ./bootstrap.sh javascript ../floor --dry-run
 
-
       - name: git identity
         run: |
           git config --global user.name 'bootstrap ci'
           git config --global user.email 'ci@example.invalid'
 
+      - name: psscriptanalyzer
+        if: ${{ runner.os == 'Windows' }}
+        shell: powershell
+        run: |
+          if (-not (Get-Module -ListAvailable -Name PSScriptAnalyzer)) {
+            Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+            Install-Module PSScriptAnalyzer -RequiredVersion 1.25.0 -Force
+          }
+          $found = Invoke-ScriptAnalyzer -Path .\bootstrap.ps1 -Settings .\PSScriptAnalyzerSettings.psd1
+          if ($found.Count -gt 0) {
+            $found | Format-Table RuleName, Line, Message -AutoSize | Out-String -Width 200
+            exit 1
+          }
+
       - name: exit codes
+        if: ${{ runner.os != 'Windows' }}
         run: |
           expect() {
             local want=$1
@@ -535,19 +553,71 @@ jobs:
           expect 3 ./bootstrap.sh javascript .
           expect 0 ./bootstrap.sh javascript ../out --dry-run
 
+      - name: exit codes
+        if: ${{ runner.os == 'Windows' }}
+        shell: powershell
+        run: |
+          # Four of these five provoke a usage error on purpose, and Actions
+          # runs this shell with ErrorActionPreference = Stop, under which
+          # anything a child writes to stderr becomes a NativeCommandError and
+          # fails the step -- whatever the child exit code was, which is the
+          # thing being asserted.
+          $ErrorActionPreference = 'Continue'
+
+          function Expect {
+            param([int]$Want, [string[]]$Arguments)
+            & powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1 @Arguments *> $null
+            if ($LASTEXITCODE -ne $Want) {
+              Write-Output "expected $Want from bootstrap.ps1 $Arguments, got $LASTEXITCODE"
+              exit 1
+            }
+          }
+          Expect 1 @()
+          Expect 1 @('--nosuchflag', 'javascript', '..\out')
+          Expect 2 @('nosuchlang', '..\out')
+          Expect 3 @('javascript', '.')
+          Expect 0 @('javascript', '..\out', '--dry-run')
+
       - name: dry-run writes nothing
+        if: ${{ runner.os != 'Windows' }}
         run: |
           ./bootstrap.sh javascript ../out --dry-run
           test ! -e ../out
 
+      - name: dry-run writes nothing
+        if: ${{ runner.os == 'Windows' }}
+        shell: powershell
+        run: |
+          & powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1 javascript ..\out --dry-run
+          if (Test-Path ..\out) {
+            Write-Output 'dry-run created the target'
+            exit 1
+          }
+
       - name: no token survives substitution
+        if: ${{ runner.os != 'Windows' }}
         run: |
           ./bootstrap.sh javascript ../out --no-build
           ! grep -rn '{{[A-Z_]\{2,\}}}' ../out
 
+      # The pattern names the closed token set on purpose: a bare brace pair
+      # also matches the secrets expression in every generated CI workflow, so
+      # it could never find nothing.
+      - name: no token survives substitution
+        if: ${{ runner.os == 'Windows' }}
+        shell: powershell
+        run: |
+          & powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1 javascript ..\out --no-build
+          $left = Get-ChildItem ..\out -Recurse -File | Select-String -Pattern '\{\{[A-Z_]{2,}\}\}'
+          if ($left) {
+            $left
+            exit 1
+          }
+
       # .env carries the host uid and gid, so it is generated and gitignored --
       # a commit containing it would be a real bug nothing else here would see.
       - name: the scaffold is committed
+        if: ${{ runner.os != 'Windows' }}
         run: |
           ./bootstrap.sh javascript ../committed --no-build | tee ../scaffold.log
           grep -q 'initialised, 1 commit' ../scaffold.log
@@ -555,14 +625,59 @@ jobs:
           test "$(git -C ../committed rev-list --count HEAD)" -eq 1
           test "$(git -C ../committed log -1 --pretty=%s)" = 'chore: bootstrap javascript project'
           test -z "$(git -C ../committed status --porcelain)"
+          test -f ../committed/.env
+          test -z "$(git -C ../committed ls-files .env)"
 
-          # Windows gets no .env on purpose: $UID under Git Bash is a Windows
-          # RID that means nothing to a Linux container, so compose falls back
-          # to its own 1000:1000 defaults.
-          if [ "$RUNNER_OS" != Windows ]; then
-            test -f ../committed/.env
-            test -z "$(git -C ../committed ls-files .env)"
-          fi
+      # No .env assertion here: Windows gets none on purpose, because the uid
+      # either script could report is a Windows RID that means nothing to a
+      # Linux container, so compose falls back to its own 1000:1000.
+      - name: the scaffold is committed
+        if: ${{ runner.os == 'Windows' }}
+        shell: powershell
+        run: |
+          function Fail($why) { Write-Output $why; exit 1 }
+          $log = & powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1 javascript ..\committed --no-build
+          $log
+          if (-not ($log -match 'initialised, 1 commit')) { Fail 'no commit step line' }
+          if ((& git -C ..\committed rev-parse --abbrev-ref HEAD) -ne 'main') { Fail 'wrong branch' }
+          if ((& git -C ..\committed rev-list --count HEAD) -ne '1') { Fail 'wrong commit count' }
+          if ((& git -C ..\committed log -1 --pretty=%s) -ne 'chore: bootstrap javascript project') { Fail 'wrong subject' }
+          if (& git -C ..\committed status --porcelain) { Fail 'tree is dirty' }
+
+      # Each side lists the templates in its own shell, because bash invoked
+      # from PowerShell is whatever is first on PATH -- the WSL one, on a
+      # machine that has it, which is not the shell bootstrap.sh runs under.
+      - name: list every template as powershell sees it
+        if: ${{ runner.os == 'Windows' }}
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Force -Path ..\parity | Out-Null
+          foreach ($id in (Get-ChildItem templates -Directory).Name) {
+            $lines = & powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1 --dry-run $id ..\scaffold
+            $files = @($lines | Select-Object -Skip 1 | Select-Object -SkipLast 1 |
+              ForEach-Object { $_.TrimEnd() })
+            [IO.File]::WriteAllLines((Resolve-Path ..\parity).Path + "\$id.txt", $files)
+          }
+
+      # The file lists only. The step line either side of them names the target,
+      # whose separator differs by shell, and that difference is meant to exist.
+      - name: the two entry points agree on every template
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          drift=0
+          checked=0
+          for dir in templates/*/; do
+            id=${dir#templates/}
+            id=${id%/}
+            ./bootstrap.sh --dry-run "$id" ../scaffold | sed '1d;$d' > "../parity/$id.sh.txt"
+            if ! diff -u "../parity/$id.sh.txt" <(tr -d '\r' < "../parity/$id.txt"); then
+              echo "the two entry points disagree on $id" >&2
+              drift=$((drift + 1))
+            fi
+            checked=$((checked + 1))
+          done
+          echo "checked $checked templates"
+          [ "$drift" -eq 0 ]
 
   lint:
     runs-on: ubuntu-latest
@@ -588,94 +703,6 @@ jobs:
   # bootstrap.ps1 had no job at all: six hundred lines of the product that
   # nothing ran, beside a twin that every push exercised. The parity step is
   # the one that matters, because the two are kept in step by hand.
-  powershell:
-    runs-on: windows-latest
-    timeout-minutes: 10
-    defaults:
-      run:
-        shell: powershell
-    steps:
-      - uses: actions/checkout@v7
-
-      - name: psscriptanalyzer
-        run: |
-          if (-not (Get-Module -ListAvailable -Name PSScriptAnalyzer)) {
-            Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-            Install-Module PSScriptAnalyzer -RequiredVersion 1.25.0 -Force
-          }
-          $found = Invoke-ScriptAnalyzer -Path .\bootstrap.ps1 -Settings .\PSScriptAnalyzerSettings.psd1
-          if ($found.Count -gt 0) {
-            $found | Format-Table RuleName, Line, Message -AutoSize | Out-String -Width 200
-            exit 1
-          }
-
-      # The same codes the contract job asserts of bootstrap.sh. No arguments
-      # exits 1 here too: a runner's stdin is redirected, so the prompt both
-      # scripts now have is correctly skipped.
-      - name: exit codes
-        run: |
-          # Four of these five provoke a usage error on purpose. Actions runs this
-          # shell with ErrorActionPreference = Stop, under which anything a child
-          # writes to stderr becomes a NativeCommandError and fails the step --
-          # whatever the child's own exit code was, which is the thing being
-          # asserted here.
-          $ErrorActionPreference = 'Continue'
-
-          function Expect {
-            param([int]$Want, [string[]]$Arguments)
-            & powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1 @Arguments *> $null
-            if ($LASTEXITCODE -ne $Want) {
-              Write-Output "expected $Want from 'bootstrap.ps1 $Arguments', got $LASTEXITCODE"
-              exit 1
-            }
-          }
-          Expect 1 @()
-          Expect 1 @('--nosuchflag', 'javascript', '..\out')
-          Expect 2 @('nosuchlang', '..\out')
-          Expect 3 @('javascript', '.')
-          Expect 0 @('javascript', '..\out', '--dry-run')
-
-      - name: dry-run writes nothing
-        run: |
-          & powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1 javascript ..\out --dry-run
-          if (Test-Path ..\out) {
-            Write-Output 'dry-run created the target'
-            exit 1
-          }
-
-      # Each side writes its own file list in its own shell, because `bash` from
-      # PowerShell is whatever is first on PATH -- WSL's, on a machine that has
-      # it, which is not the shell bootstrap.sh runs under.
-      - name: list every template as powershell sees it
-        run: |
-          New-Item -ItemType Directory -Force -Path ..\parity | Out-Null
-          foreach ($id in (Get-ChildItem templates -Directory).Name) {
-            $lines = & powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1 --dry-run $id ..\scaffold
-            $files = @($lines | Select-Object -Skip 1 | Select-Object -SkipLast 1 |
-              ForEach-Object { $_.TrimEnd() })
-            [IO.File]::WriteAllLines((Resolve-Path ..\parity).Path + "\$id.txt", $files)
-          }
-
-      # The file lists only. The step line either side of them names the target,
-      # whose separator differs by shell, and that difference is meant to exist.
-      - name: the two entry points agree on every template
-        shell: bash
-        run: |
-          drift=0
-          checked=0
-          for dir in templates/*/; do
-            id=${dir#templates/}
-            id=${id%/}
-            ./bootstrap.sh --dry-run "$id" ../scaffold | sed '1d;$d' > "../parity/$id.sh.txt"
-            if ! diff -u "../parity/$id.sh.txt" <(tr -d '\r' < "../parity/$id.txt"); then
-              echo "the two entry points disagree on $id" >&2
-              drift=$((drift + 1))
-            fi
-            checked=$((checked + 1))
-          done
-          echo "checked $checked templates"
-          [ "$drift" -eq 0 ]
-
   # The matrix above only exercises clone mode. Remote mode has its own failure
   # surface -- the ref, the download, the extract, the cleanup -- and no file on
   # disk, so nothing else here touches it. Both URLs are pinned to this commit
