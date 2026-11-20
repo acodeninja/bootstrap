@@ -161,6 +161,14 @@ jobs:
       # commit's templates, and a broken Dockerfile would go green.
       - run: ./bootstrap.sh ${{ matrix.template }} ../scaffold --no-pull
 
+      # bootstrap.sh finishes on make test. The generated workflow runs make
+      # lint as well and this one never has, which is how a lint target that
+      # passed by saying nothing -- gprbuild reusing objects it had not checked
+      # -- survived as long as it did.
+      - name: lint the scaffold
+        working-directory: ../scaffold
+        run: make lint
+
       - name: ghcr login
         if: ${{ needs.scope.outputs.publish == 'true' && needs.lint.result == 'success' }}
         uses: docker/login-action@v4
@@ -253,6 +261,14 @@ jobs:
       - uses: docker/setup-buildx-action@v4
 
       - run: ./bootstrap.sh ${{ matrix.template }} ../scaffold --no-pull
+
+      # bootstrap.sh finishes on make test. The generated workflow runs make
+      # lint as well and this one never has, which is how a lint target that
+      # passed by saying nothing -- gprbuild reusing objects it had not checked
+      # -- survived as long as it did.
+      - name: lint the scaffold
+        working-directory: ../scaffold
+        run: make lint
 
       - name: ghcr login
         if: ${{ needs.scope.outputs.publish == 'true' && needs.lint.result == 'success' }}
