@@ -105,9 +105,8 @@ languages with verified official images listed under "Deferred" in
 [languages.md](languages.md). Both are additions under the existing contract, not
 changes to it.
 
-Three known gaps are also deferred rather than solved: `bootstrap.ps1` has no CI
-coverage, the Windows `make` path is unverified, and the remote one-liner cannot be
-tested until the repo is public. The first two are consequences of the single-platform
+Two known gaps are also deferred rather than solved: `bootstrap.ps1` has no CI coverage,
+and the Windows `make` path is unverified. Both are consequences of the single-platform
 matrix — see [ci.md](ci.md#what-is-not-covered). Revisit if Windows users report
 breakage, or if the PowerShell script grows past the point where hand-testing it is
 honest.

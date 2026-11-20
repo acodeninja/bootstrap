@@ -54,7 +54,7 @@ $ ./bootstrap.sh rust ../my-rust
 Every template is covered by CI on every push, one job each. `ocaml` is the slowest at
 around four and a half minutes; the median is under a minute.
 
-`bootstrap.ps1` covers Windows, including remote mode. `bootstrap.sh` has no remote mode
-yet, so the `curl`-into-`bash` one-liner at the top of this file does not work and clone
-mode is the way in on macOS and Linux. The design is written up in
+Both entry points are complete: `bootstrap.sh` for macOS and Linux, `bootstrap.ps1` for
+Windows, each in clone mode and in remote mode. Nothing enforces that they agree —
+CI is Linux only, so the PowerShell side is hand-tested. The design is written up in
 **[docs/](docs/README.md)**; [roadmap.md](docs/roadmap.md) has what is left.
