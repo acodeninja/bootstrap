@@ -198,6 +198,16 @@ rule disabled. It rejects any snake_case `.kt` filename outright — with a sing
 demands the class's name, with none it demands PascalCase — so `src/{{PROJECT_SNAKE}}.kt`
 cannot pass, and there is no CamelCase token to name the file after its class.
 
+**Both Gradle templates must name Maven Central in `pluginManagement`**, and this was
+learned the hard way — twice, from intermittent CI failures that passed on the next run and
+never reproduced locally. Plugin-classpath resolution consults only
+`plugins.gradle.org/m2` by default; `mavenCentral()` in `build.gradle` governs
+*dependencies*, not plugins. The portal proxies Central, so resolution works until the
+proxy doesn't: `kotlin` failed on `kotlin-gradle-plugins-bom`, which the portal does not
+always serve, and `java` failed on a Spotless transitive whose proxied GET errored.
+Naming both repositories gives Gradle a second, direct route. Verify any change here with
+`docker compose build --no-cache`, because a warm layer cache hides it completely.
+
 ktlint has also **moved from `pinterest/ktlint` to `ktlint/ktlint`**; the old releases
 endpoint answers 301 with an empty body, which looks exactly like "no releases" unless you
 follow the redirect.
