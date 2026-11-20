@@ -3,7 +3,7 @@ name: {{PROJECT_SLUG}}
 services:
   dev:
     build: .
-    image: {{PROJECT_SLUG}}-dev
+    image: ghcr.io/acodeninja/bootstrap/php:main
     working_dir: /work
     init: true
     user: '${DOCKER_UID:-1000}:${DOCKER_GID:-1000}'
