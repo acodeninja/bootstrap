@@ -109,12 +109,12 @@ jobs:
   # image is the one the tests passed against rather than a second build of the
   # same Dockerfile.
   image-amd64:
-    needs: [scope, lint]
-    # Lint gates publishing, not testing: a shellcheck nit should not stop
-    # thirty-five templates being tested, but it should stop a push.
-    if: >-
-      ${{ !cancelled() && needs.scope.result == 'success'
-      && needs.scope.outputs.build == 'true' }}
+    needs: [scope, lint, contract, remote]
+    # Everything cheap runs first. Three minutes of script tests and linters
+    # against seventy builds is not a trade worth thinking about, and the if
+    # below is deliberately not wrapped in !cancelled(): that would override
+    # the success requirement needs already carries.
+    if: ${{ needs.scope.outputs.build == 'true' }}
     runs-on: ubuntu-latest
     # Six times the slowest template. Without one a hung leg holds a runner
     # for GitHub's six-hour default, and the weekly matrix is seventy of them.
@@ -170,7 +170,7 @@ jobs:
         run: make lint
 
       - name: ghcr login
-        if: ${{ needs.scope.outputs.publish == 'true' && needs.lint.result == 'success' }}
+        if: ${{ needs.scope.outputs.publish == 'true' }}
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -181,7 +181,7 @@ jobs:
       # template id, for the reason bootstrap.sh reads it back too: the tag
       # pushed here cannot then drift from the one compose will pull.
       - name: push what the tests passed
-        if: ${{ needs.scope.outputs.publish == 'true' && needs.lint.result == 'success' }}
+        if: ${{ needs.scope.outputs.publish == 'true' }}
         run: |
           image=$(sed -n 's/^ *image: *//p' ../scaffold/compose.yaml)
           docker tag "$image" "${image}-amd64"
@@ -207,7 +207,7 @@ jobs:
       # left by an earlier run looks exactly like one this run wrote. This
       # marker is how it tells the two apart.
       - name: record that this architecture published
-        if: ${{ needs.scope.outputs.publish == 'true' && needs.lint.result == 'success' }}
+        if: ${{ needs.scope.outputs.publish == 'true' }}
         uses: actions/upload-artifact@v7
         with:
           name: pushed-${{ matrix.template }}-amd64
@@ -215,7 +215,7 @@ jobs:
           retention-days: 1
 
   # The same steps on arm hardware, beside the amd64 matrix rather than behind
-  # it, and gated on the same two jobs. A published arm64 image has now been run
+  # it, and gated on the same four jobs. A published arm64 image has now been run
   # on arm64, which it never was while publishing was its own workflow.
   #
   # max-parallel is per job, so two matrices at 8 peak at 16 concurrent builds
@@ -224,10 +224,8 @@ jobs:
   # per instant -- the concurrency group that stopped runs stacking is what fixed
   # that. If one shows up anyway, the dial is 4 in both jobs.
   image-arm64:
-    needs: [scope, lint]
-    if: >-
-      ${{ !cancelled() && needs.scope.result == 'success'
-      && needs.scope.outputs.build == 'true' }}
+    needs: [scope, lint, contract, remote]
+    if: ${{ needs.scope.outputs.build == 'true' }}
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 30
     permissions:
@@ -271,7 +269,7 @@ jobs:
         run: make lint
 
       - name: ghcr login
-        if: ${{ needs.scope.outputs.publish == 'true' && needs.lint.result == 'success' }}
+        if: ${{ needs.scope.outputs.publish == 'true' }}
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -279,7 +277,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: push what the tests passed
-        if: ${{ needs.scope.outputs.publish == 'true' && needs.lint.result == 'success' }}
+        if: ${{ needs.scope.outputs.publish == 'true' }}
         run: |
           image=$(sed -n 's/^ *image: *//p' ../scaffold/compose.yaml)
           docker tag "$image" "${image}-arm64"
@@ -305,7 +303,7 @@ jobs:
       # left by an earlier run looks exactly like one this run wrote. This
       # marker is how it tells the two apart.
       - name: record that this architecture published
-        if: ${{ needs.scope.outputs.publish == 'true' && needs.lint.result == 'success' }}
+        if: ${{ needs.scope.outputs.publish == 'true' }}
         uses: actions/upload-artifact@v7
         with:
           name: pushed-${{ matrix.template }}-arm64
@@ -316,11 +314,10 @@ jobs:
   # pulls, and it has to be an index covering both or an arm64 host gets an
   # amd64 image.
   manifest:
-    needs: [scope, lint, image-amd64, image-arm64]
+    needs: [scope, image-amd64, image-arm64]
     if: >-
       ${{ !cancelled() && needs.scope.result == 'success'
-      && needs.scope.outputs.publish == 'true'
-      && needs.lint.result == 'success' }}
+      && needs.scope.outputs.publish == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
