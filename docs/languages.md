@@ -59,6 +59,39 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 
 ## Notes on individual rows
 
+**`haskell` builds its own linter on a second image, because hlint cannot be built by the
+GHC this row pins.** hlint 3.10 requires `ghc-lib-parser == 9.12.*`, which needs
+`base < 4.22`, and GHC 9.14 ships 4.22 — so a `haskell:9.12.4-slim-bookworm` stage builds
+it and only the binary plus its hint data come forward. A cabal-installed hlint cannot find
+its own hint files once moved, so `hlint_datadir` points at them. ormolu builds on 9.14 and
+gets its own stage, purely so `ghc-lib-parser`'s couple of gigabytes never reach the final
+image. Neither tool publishes an aarch64-linux release binary, which is why both are built
+from source rather than downloaded — this is the one template pinning **two** base image
+tags, and a bump has to move both.
+
+**The cold image build is about forty-five minutes**, almost all of it those two
+`ghc-lib-parser` compilations. That is the price of priming, and it buys a first `make test`
+of eight seconds rather than ten minutes. Nothing is wrong if a cold measurement shows
+minutes.
+
+**`-Wno-missing-home-modules` is suppressed on the test-suite stanza only**, and that is a
+deliberate trade the contract forces. `hspec-discover` generates a main that imports the
+Spec modules, and cabal's warning asks for them in `other-modules` — but listing them names
+the kitchen sink, and `cabal test` then *fails* the moment it is deleted. The warning is
+cabal bookkeeping rather than a correctness check: GHC still compiles and type-checks every
+module, and the library and executable keep plain `-Wall` with zero warnings. Suppressing it
+is what keeps the suite deletable, which is the rule that matters.
+
+Two tool facts worth knowing: **`ormolu` takes files, never directories** (it dies with
+"inappropriate type (is a directory)"), so an image-baked `ormolu-tree` wrapper globs for it
+— a literal Makefile file list would have named the sink. And `ormolu --mode check` exits
+**100** on a difference, not 1.
+
+Haskell also cannot put a snake_case token in a *module* filename, since a module's filename
+must equal its capitalised module name. The escape is `main-is`, which cabal treats as a
+path: `src/{{PROJECT_SNAKE}}.hs` is the executable's entry point, with the library module
+beside it.
+
 **Debian's `luarocks` package drags in lua5.1, and that lua owns `/usr/bin/lua`.** Installing
 `lua5.4` and `liblua5.4-dev` alongside it does not win the fight: `lua -v` silently reports
 5.1 until `lua5.4` is re-symlinked onto `PATH`. Silently running the wrong interpreter is the

@@ -1,0 +1,46 @@
+cabal-version:   3.4
+name:            {{PROJECT_SLUG}}
+version:         0.1.0
+synopsis:        {{PROJECT_NAME}}
+license:         MIT
+author:          {{AUTHOR}}
+build-type:      Simple
+
+common warnings
+    ghc-options: -Wall
+
+library
+    import:           warnings
+    hs-source-dirs:   src
+    exposed-modules:  Greeter
+    build-depends:    base >=4.22 && <5
+    default-language: GHC2024
+
+executable {{PROJECT_SLUG}}
+    import:           warnings
+
+    -- The source dir is the project root rather than src, so that Greeter
+    -- resolves to the library and not to a second copy compiled in here.
+    hs-source-dirs:   .
+    main-is:          src/{{PROJECT_SNAKE}}.hs
+    build-depends:    base >=4.22 && <5, {{PROJECT_SLUG}}
+    default-language: GHC2024
+
+test-suite spec
+    import:             warnings
+    type:               exitcode-stdio-1.0
+    hs-source-dirs:     test
+    main-is:            Spec.hs
+
+    -- hspec-discover finds the Spec modules itself. Listing them in
+    -- other-modules is what the warning asks for and what a suite you are
+    -- meant to delete cannot afford.
+    ghc-options:        -Wno-missing-home-modules
+    build-tool-depends: hspec-discover:hspec-discover ==2.11.18
+    build-depends:
+        base >=4.22 && <5,
+        containers >=0.8 && <0.9,
+        {{PROJECT_SLUG}},
+        hspec >=2.11.18 && <2.12
+
+    default-language:   GHC2024
