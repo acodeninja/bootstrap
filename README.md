@@ -35,13 +35,13 @@ The same whichever language you pick:
 You do not install the language. The toolchain lives in a container, so trying Zig costs
 you nothing on your machine and leaves nothing behind.
 
-All thirty: javascript, typescript, zig, go, rust, python, ruby, elixir, php, swift,
+All thirty-one: javascript, typescript, zig, go, rust, python, ruby, elixir, php, swift,
 dart, erlang, gleam, clojure, haskell, kotlin, java, fsharp, csharp, ocaml, nim, prolog,
-elm, lua, c, cpp, fortran, pascal, perl, cobol.
+elm, lua, c, cpp, fortran, pascal, perl, cobol, basic.
 
 ## Status
 
-All thirty templates work. Each one scaffolds from a cold Docker cache, runs its own
+All thirty-one templates work. Each one scaffolds from a cold Docker cache, runs its own
 suite green, keeps the generated project's git tree clean, and still builds when you
 delete the kitchen sink:
 

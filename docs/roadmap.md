@@ -76,6 +76,9 @@ Perl::Critic built without leaving a compiler in the final image.
 `cobol` — Debian carries GnuCOBOL, and no test framework exists to carry. Tests are
 programs that report in TAP and set RETURN-CODE; the image consumes the TAP.
 
+`basic` — Bywater BASIC, with line numbers and GOSUB. Tests report TAP because the
+interpreter exits 0 whatever happens, including when it dies half way.
+
 ## Per-template definition of done
 
 1. `make test`, `make lint` and `make fmt` all work from a cold image.

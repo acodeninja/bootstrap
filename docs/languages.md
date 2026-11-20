@@ -1,6 +1,6 @@
 # Languages
 
-The 30 targets, their chosen tooling, and when each lands. This is the implementer's
+The 31 targets, their chosen tooling, and when each lands. This is the implementer's
 worksheet: one row is one template.
 
 Test runners are chosen **stdlib-first**. A built-in runner is one less dependency to
@@ -47,6 +47,7 @@ patches, so an old minor can outrank a current one. See
 | `pascal`     | `debian:trixie-20261104-slim` + fpc 3.2.2      | `fpcunit`                    | `fpc -Sew` / —                       | 4    |
 | `perl`       | `perl:5.44.0-slim-trixie`                      | `Test::More` via `prove`     | `perlcritic` / `perltidy`            | 4    |
 | `cobol`      | `debian:trixie-20261104-slim` + GnuCOBOL 3.2   | TAP + `RETURN-CODE`          | `cobc -fsyntax-only -Wall` / —       | 4    |
+| `basic`      | `debian:trixie-20261104-slim` + bwbasic 2.20   | TAP                          | — / —                                | 4    |
 
 ## Waves
 
@@ -778,6 +779,37 @@ and the gotcha case now show from either side.
 
 There is no formatter, so `make lint` is `cobc -fsyntax-only -Wall` and `make fmt` is
 `prolog`'s documented no-op.
+
+**`basic` is Bywater, and the choice was authenticity over tooling.** `yabasic` is also in
+trixie, is maintained, and has a `--check` flag that would have made `make lint` a real
+check. Bywater has none of that and was picked anyway: line numbers, `GOSUB`, `DEF FN`, an
+interpreter that is also its own shell. FreeBASIC was the third option and was ruled out
+rather than declined — no Debian package, and its official binaries are x86 only, which
+would have reintroduced the single-architecture row that `nim` had just stopped being.
+
+**It is the first template where `make lint` proves nothing.** bwbasic has no check mode and
+does not parse a line until the line runs, so a mistake in a branch nothing took is
+invisible until something takes it. `make fmt` and `make build` are no-ops too — three of
+the six targets. The generated `README.md` says so plainly rather than letting a green
+check imply something it cannot.
+
+**The plan line is the whole safety net.** A program that fails an assertion exits 0; so
+does one that stops half way through with `ERROR in line`. Nothing in the exit status
+distinguishes any of it, which is why TAP earns its place here more than anywhere else: the
+runner compares the `1..15` against the number of results, so a dead program is caught by
+the results it never printed. That was demonstrated by accident — a duplicated line number
+sent the kitchen sink off the end of itself at case nine, and the plan check is what said
+so.
+
+**Line numbers are the module system.** There is no `import`; `MERGE` loads another file's
+lines into the running program, so what makes it work is a convention about which ranges
+belong to whom: the test below 8000, its reporting subroutines at 8000, and `src/` from 9000
+up. A subroutine takes its arguments in shared variables because `GOSUB` has none.
+
+Two limits found by writing the suite, both now stated in it: a `DEF FN` call will not nest
+inside another `DEF FN` call, and `UCASE$` does not exist. And the gotcha slot writes itself
+— nothing is ever declared, so a mistyped name is not an error but a new variable worth
+zero.
 
 **`elixir` is the third BEAM template, and not redundant.** `erlang` shows the runtime
 raw, `gleam` shows a static type system on top of it, and `elixir` shows the ergonomic

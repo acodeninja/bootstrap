@@ -140,6 +140,7 @@ the TDD loop for every invalid input a kata has.
 | Pascal                  | `raise` an `Exception` subclass, caught with `on E: ... do`       |
 | Perl                    | `die`, caught by `eval` with the message in `$@`                  |
 | COBOL                   | a condition on the statement — `ON SIZE ERROR`, `AT END`          |
+| BASIC                   | nothing refuses anything; `ON ERROR GOSUB` traps what it raises   |
 
 ## Gotchas are deliberately not uniform
 
