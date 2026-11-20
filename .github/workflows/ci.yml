@@ -384,7 +384,7 @@ jobs:
   # the repository. One run of this says which, before anything irreversible is
   # written against a guess.
   cleanup:
-    needs: [scope, manifest]
+    needs: [scope, image-amd64, image-arm64, manifest]
     if: >-
       ${{ !cancelled() && needs.scope.result == 'success'
       && needs.scope.outputs.publish == 'true'
@@ -394,6 +394,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      actions: write    # to delete this run's publish markers
     steps:
       - name: what the token can see
         env:
@@ -415,6 +416,26 @@ jobs:
           probe "users/$owner/packages/container/bootstrap%2Fzig/versions"
           probe "user/packages/container/bootstrap%2Fzig/versions"
           probe "orgs/$owner/packages/container/bootstrap%2Fzig/versions"
+
+      # The markers have done their job once every manifest has read them, and
+      # a day of retention is a day of clutter. Only when nothing failed,
+      # though: re-running a failed leg re-uploads its own marker but not its
+      # sibling's, so a run with a failure keeps both and lets retention take
+      # them. That is the path kotlin's 429 went down.
+      - name: delete the publish markers
+        if: >-
+          ${{ needs['image-amd64'].result == 'success'
+          && needs['image-arm64'].result == 'success' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api --paginate \
+            "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
+            --jq '.artifacts[] | select(.name | startswith("pushed-")) | "\(.id) \(.name)"' |
+            while read -r id name; do
+              echo "deleting $name"
+              gh api -X DELETE "repos/${{ github.repository }}/actions/artifacts/$id"
+            done
 
   # Asserting which failure happened, not merely that one did -- on all three
   # host platforms, because every assertion here is --dry-run or --no-build and
