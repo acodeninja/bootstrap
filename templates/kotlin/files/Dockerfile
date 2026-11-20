@@ -18,18 +18,22 @@ ENV GRADLE_USER_HOME=/cache/gradle
 # Gradle's first run resolves the Kotlin plugin and the test framework and
 # compiles the build scripts, which is minutes against a cold cache. Priming it
 # on the real build files means the named volume seeds warm from the image.
+# The daemon registry is the one primed path Gradle chmods rather than writes,
+# and chmod needs ownership rather than permission. Dropping it lets the first
+# run recreate it as whatever uid Compose maps in.
+#
+# /cache is world-writable so the service runs as any host uid without needing a
+# passwd entry or a writable $HOME. See docs/containers.md "File ownership". The
+# cleanup and the chmod have to share this layer: run separately the chmod
+# rewrites the mode of every file Gradle just cached, and overlayfs then copies
+# all of it again -- which cost 223MB of the image.
 WORKDIR /prime
 COPY settings.gradle.kts build.gradle.kts gradle.properties ./
 RUN mkdir -p src test \
     && printf 'fun prime() = Unit\n' > src/prime.kt \
     && printf 'class PrimeTest {\n@kotlin.test.Test fun prime() = Unit\n}\n' > test/PrimeTest.kt \
-    && gradle --no-daemon --project-cache-dir /cache/project-cache test
+    && gradle --no-daemon --project-cache-dir /cache/project-cache test \
+    && rm -rf /prime /cache/build /cache/gradle/daemon \
+    && chmod -R 777 /cache
 
-# The daemon registry is the one primed path Gradle chmods rather than writes,
-# and chmod needs ownership rather than permission. Dropping it lets the first
-# run recreate it as whatever uid Compose maps in.
-#
-# /cache is world-writable so the service runs as any host uid without needing
-# a passwd entry or a writable $HOME. See docs/containers.md "File ownership".
 WORKDIR /work
-RUN rm -rf /prime /cache/build /cache/gradle/daemon && chmod -R 777 /cache

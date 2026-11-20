@@ -26,12 +26,15 @@ ENV CABAL_DIR=/cache/cabal
 # several minutes of compilation before a line of test code runs. Priming both
 # here seeds the named volume from the image, so the first `make test` pays for
 # neither.
+# /cache is world-writable so the service runs as any host uid without needing a
+# passwd entry or a writable $HOME. See docs/containers.md "File ownership". The
+# chmod has to share this layer: run separately it rewrites the mode of every
+# file the build just cached, and overlayfs then copies all of it again.
 WORKDIR /prime
 COPY *.cabal ./
 RUN cabal update \
-    && cabal build --only-dependencies --enable-tests --builddir=/tmp/prime all
+    && cabal build --only-dependencies --enable-tests --builddir=/tmp/prime all \
+    && rm -rf /prime /tmp/prime \
+    && chmod -R 777 /cache
 
-# /cache is world-writable so the service runs as any host uid without needing
-# a passwd entry or a writable $HOME. See docs/containers.md "File ownership".
 WORKDIR /work
-RUN rm -rf /prime /tmp/prime && chmod -R 777 /cache
