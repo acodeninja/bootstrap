@@ -180,11 +180,17 @@ jobs:
       # The name is read out of the scaffold rather than rebuilt from the
       # template id, for the reason bootstrap.sh reads it back too: the tag
       # pushed here cannot then drift from the one compose will pull.
+      #
+      # Two tags, because manifest cannot see a matrix sibling's result and a
+      # :main-amd64 left by an earlier run looks exactly like one this run
+      # wrote. A tag naming this commit cannot be mistaken for an older one, so
+      # it is what manifest merges from.
       - name: push what the tests passed
         if: ${{ needs.scope.outputs.publish == 'true' }}
         run: |
           image=$(sed -n 's/^ *image: *//p' ../scaffold/compose.yaml)
           docker tag "$image" "${image}-amd64"
+          docker tag "$image" "${image%:*}:${GITHUB_SHA}-amd64"
 
           # ghcr creates the package on a template's first ever push, and the
           # two architectures race to do it. The loser is denied after every
@@ -192,7 +198,7 @@ jobs:
           # an arm64-only :main. Retrying costs nothing when nothing is wrong.
           pushed=no
           for attempt in 1 2 3; do
-            if docker push "${image}-amd64"; then
+            if docker push "${image}-amd64" && docker push "${image%:*}:${GITHUB_SHA}-amd64"; then
               pushed=yes
               break
             fi
@@ -201,19 +207,6 @@ jobs:
           done
 
           [ "$pushed" = yes ]
-          printf '%s\n' "$image" > pushed-amd64
-
-      # manifest cannot see a matrix sibling's result, and a stale :main-amd64
-      # left by an earlier run looks exactly like one this run wrote. This
-      # marker is how it tells the two apart.
-      - name: record that this architecture published
-        if: ${{ needs.scope.outputs.publish == 'true' }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: pushed-${{ matrix.template }}-amd64
-          path: pushed-amd64
-          retention-days: 1
-
   # The same steps on arm hardware, beside the amd64 matrix rather than behind
   # it, and gated on the same four jobs. A published arm64 image has now been run
   # on arm64, which it never was while publishing was its own workflow.
@@ -281,6 +274,7 @@ jobs:
         run: |
           image=$(sed -n 's/^ *image: *//p' ../scaffold/compose.yaml)
           docker tag "$image" "${image}-arm64"
+          docker tag "$image" "${image%:*}:${GITHUB_SHA}-arm64"
 
           # ghcr creates the package on a template's first ever push, and the
           # two architectures race to do it. The loser is denied after every
@@ -288,7 +282,7 @@ jobs:
           # an arm64-only :main. Retrying costs nothing when nothing is wrong.
           pushed=no
           for attempt in 1 2 3; do
-            if docker push "${image}-arm64"; then
+            if docker push "${image}-arm64" && docker push "${image%:*}:${GITHUB_SHA}-arm64"; then
               pushed=yes
               break
             fi
@@ -297,18 +291,6 @@ jobs:
           done
 
           [ "$pushed" = yes ]
-          printf '%s\n' "$image" > pushed-arm64
-
-      # manifest cannot see a matrix sibling's result, and a stale :main-arm64
-      # left by an earlier run looks exactly like one this run wrote. This
-      # marker is how it tells the two apart.
-      - name: record that this architecture published
-        if: ${{ needs.scope.outputs.publish == 'true' }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: pushed-${{ matrix.template }}-arm64
-          path: pushed-arm64
-          retention-days: 1
 
   # The per-architecture tags above are the inputs; this is the tag compose
   # pulls, and it has to be an index covering both or an arm64 host gets an
@@ -335,29 +317,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Only what this run pushed. imagetools inspect cannot tell a tag written
-      # minutes ago from one left by an earlier run, so for a template whose
-      # legs both failed it re-merged the previous digests and reported a green
-      # publish that nothing had tested.
-      - continue-on-error: true
-        uses: actions/download-artifact@v8
-        with:
-          pattern: pushed-${{ matrix.template }}-*
-          path: pushed
-          merge-multiple: true
-
+      # Only what this run pushed. A :main-<arch> written minutes ago and one
+      # left by an earlier run are indistinguishable, and for a template whose
+      # legs both failed the second kind used to be re-merged and published
+      # green with nothing having tested it. A tag naming this commit cannot be
+      # that: no earlier run wrote this sha.
       - name: merge the architectures this run published
         run: |
           image=ghcr.io/${{ github.repository }}/${{ matrix.template }}
           set --
           for arch in amd64 arm64; do
-            if [ -f "pushed/pushed-$arch" ]; then
-              set -- "$@" "$image:main-$arch"
+            if docker buildx imagetools inspect "$image:$GITHUB_SHA-$arch" >/dev/null 2>&1; then
+              set -- "$@" "$image:$GITHUB_SHA-$arch"
             fi
           done
 
-          # Nothing to do rather than an error: a marker is missing only when
-          # that architecture's leg failed, and that is already red.
+          # Nothing to do rather than an error: a tag is missing only when that
+          # architecture's leg failed, and that is already red.
           if [ "$#" -ne 2 ]; then
             echo "not republishing $image: $# of 2 architectures published" >&2
             exit 0
@@ -380,7 +356,7 @@ jobs:
   # GITHUB_TOKEN lists them at users/<owner>/... and deletes them at user/... --
   # established by a read-only probe, then by 426 deletions that all went through.
   cleanup:
-    needs: [scope, image-amd64, image-arm64, manifest]
+    needs: [scope, manifest]
     if: >-
       ${{ !cancelled() && needs.scope.result == 'success'
       && needs.scope.outputs.publish == 'true'
@@ -391,7 +367,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-      actions: write    # to delete this run's publish markers
     steps:
       - uses: actions/checkout@v7
 
@@ -462,26 +437,6 @@ jobs:
           done
 
           echo "deleted $gone superseded versions, kept $kept under an hour old"
-
-      # The markers have done their job once every manifest has read them, and
-      # a day of retention is a day of clutter. Only when nothing failed,
-      # though: re-running a failed leg re-uploads its own marker but not its
-      # sibling's, so a run with a failure keeps both and lets retention take
-      # them. That is the path kotlin's 429 went down.
-      - name: delete the publish markers
-        if: >-
-          ${{ needs['image-amd64'].result == 'success'
-          && needs['image-arm64'].result == 'success' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh api --paginate \
-            "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
-            --jq '.artifacts[] | select(.name | startswith("pushed-")) | "\(.id) \(.name)"' |
-            while read -r id name; do
-              echo "deleting $name"
-              gh api -X DELETE "repos/${{ github.repository }}/actions/artifacts/$id"
-            done
 
   # Asserting which failure happened, not merely that one did -- on all three
   # host platforms, because every assertion here is --dry-run or --no-build and
