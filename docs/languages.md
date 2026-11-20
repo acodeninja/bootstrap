@@ -598,9 +598,11 @@ runs a real load check (see below) and `make fmt` is a no-op that says so
 — the contract requires all six targets to exist, not all six to do work.
 
 **`haskell` is the only row not on trixie.** Upstream publishes no `slim-trixie` variant,
-so it pins `9.14.1-slim-bookworm`. Re-check when writing the template: if a trixie slim
-tag has appeared, take it, because the whole set being one Debian generation is worth more
-than the bump.
+so it pins `9.14.1-slim-bookworm`. Re-check whenever this row is touched: a trixie slim tag
+would be worth taking for consistency, and it now buys something concrete as well — the
+linters come from apt, and trixie carries hlint 3.6.1 and ormolu 0.7.2.0 against bookworm's
+3.3.6 and 0.3.1.0. This is the only row where the Debian generation sets a tool version
+rather than just the base layer.
 
 **`kotlin` uses the `gradle` image** rather than a Kotlin one, because no official
 Kotlin image exists and Gradle is how the project builds anyway.

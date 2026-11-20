@@ -92,24 +92,38 @@ Containers are Linux whatever the host is, so running the matrix on three operat
 systems would test Docker Desktop, not the templates. The matrix is `ubuntu-latest`
 only.
 
-The template list is written out in the workflow rather than generated. With one
-platform and no `PLATFORMS` key left to consult, a matrix-generation job would be an
-indirection around a list of 26 strings.
+The template list is **generated**, not written out: a `templates` job globs
+`templates/*/template.env` into a JSON array and the matrix consumes it via `fromJSON`.
+That is the same glob `bootstrap.sh` discovers templates with, so adding a language needs
+no CI edit — which is what the contract's "no registry to update" promise requires.
 
 ### Layer caching
 
-Twenty-six cold image builds per run is unacceptable. Use buildx with the GitHub Actions
-cache backend so unchanged Dockerfiles restore rather than rebuild:
+Twenty-six cold image builds per run is a real cost, and it is **not implemented**. What
+follows is what it would take, because the obvious approach does not fit the code.
 
-```yaml
-      - run: |
-          docker buildx build \
-            --cache-from type=gha,scope=${{ matrix.template }} \
-            --cache-to   type=gha,scope=${{ matrix.template }},mode=max \
-            --load -t ${{ matrix.template }}-dev ../out
-```
+The build does not happen in the workflow. `bootstrap.sh` runs `docker compose build
+--progress plain` in the target directory, and it offers no hook for extra flags — no
+passthrough variable, and the flag string is a literal. `docker compose build` has no
+`--cache-from`/`--cache-to`; those are compose-file keys, and every template's
+`compose.yaml` uses the scalar short form `build: .`, which has no room for sub-keys. So
+there are only two honest routes:
 
-Scope per template, or they evict each other.
+1. **Add `cache_from`/`cache_to` to every template's `compose.yaml`.** Twenty-six edits,
+   and it puts CI-specific configuration into the generated project, which the user then
+   has to understand or delete.
+2. **Give `bootstrap.sh` a documented way to pass build flags through** — one variable it
+   reads and appends — and set it from CI. One edit to the script, none to the templates,
+   and the generated project stays clean.
+
+Route 2 is the one to take. Whoever does it should note that CI bootstraps into
+`../scaffold` for every template, so the compose project and image tag are `scaffold` and
+`scaffold-dev` regardless of language — a per-template cache scope has to come from
+`matrix.template`, not from the tag.
+
+The sting has also mostly been drawn: `haskell` was the one leg that made this urgent, and
+installing its linters from apt took it from never finishing to 99s. The slowest leg is now
+`ocaml` at about four minutes.
 
 ### Script quality
 
