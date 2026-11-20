@@ -47,9 +47,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # templates/<id>/files is not a usable build context: the manifests the
+      # priming layers read still carry {{TOKEN}} placeholders, and haskell's
+      # cabal file is named with one. Scaffolding first also makes the published
+      # image exactly what a developer's own first build would produce.
+      - name: scaffold
+        run: ./bootstrap.sh ${{ matrix.template }} '${{ runner.temp }}/scaffold' --name bootstrap --no-git --no-build
+
       - uses: docker/build-push-action@v7
         with:
-          context: templates/${{ matrix.template }}/files
+          context: ${{ runner.temp }}/scaffold
           platforms: linux/${{ matrix.platform.arch }}
           push: true
           tags: ghcr.io/${{ github.repository }}/${{ matrix.template }}:main-${{ matrix.platform.arch }}
