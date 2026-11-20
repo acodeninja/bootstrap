@@ -279,6 +279,39 @@ template that reinstalls its dependencies on every run.
 
 Either way it is part of the definition of done for every template.
 
+### What the first run still costs
+
+Measured on all twenty-six against a pulled image and a fresh volume — the path a
+developer actually takes — timing `make test` twice:
+
+| Template | first | second |
+| -------- | ----- | ------ |
+| kotlin   | 19.8s | 7.0s   |
+| java     | 10.0s | 5.8s   |
+| cpp      |  9.5s | 0.9s   |
+| haskell  |  7.9s | 1.5s   |
+| dart     |  7.1s | 1.5s   |
+| csharp   |  5.6s | 2.7s   |
+| fsharp   |  5.1s | 2.6s   |
+| swift    |  4.6s | 1.9s   |
+| zig      |  3.0s | 1.0s   |
+
+The other seventeen sit within a second of each other, on a floor of about 0.9s of
+container startup.
+
+Two of these gaps have been traced. `zig`'s was a prime that never hit, and is fixed.
+`kotlin`'s is three seconds of build-script compilation, which Gradle caches against the
+script's contents while `settings.gradle.kts` carries the project name — so the primed
+copy is never the one asked for, and keeping the name is worth three seconds. Its other
+nine seconds are the project's own first Kotlin compile, which lands in `/cache/build`;
+seeding that from the image would mean shipping a foreign project's outputs at root
+ownership — see [seed directories, never files](#seed-directories-never-files).
+
+The rest are untraced, and `cpp` is the one with an obvious lead: its 8.6s is compiling
+vendored doctest, byte-identical in every generated project. Priming it needs a compiler
+cache rather than a warm directory, because make decides by mtime and a scaffolded file
+is always newer than an image layer.
+
 ## Lock files land in the project, not the cache
 
 Several toolchains write a lock or generated manifest into the **project root** on first
