@@ -32,10 +32,13 @@ run `make shell` once to let rebar3 regenerate the lock.
 
 ## CI
 
-`.github/workflows/ci.yml` needs two repository secrets, `DOCKERHUB_USERNAME`
-and `DOCKERHUB_TOKEN`. Docker Hub rate-limits anonymous pulls and GitHub's
-runners share IP addresses, so without them CI fails with a registry error
-that looks nothing like the real cause.
+`.github/workflows/ci.yml` builds the image and runs lint and tests on every
+push, and needs no secrets to do it.
+
+`DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` are optional, and worth setting only
+if the build starts failing to pull its base image: Docker Hub rate-limits
+anonymous pulls and GitHub's runners share IP addresses, so the error looks
+nothing like the real cause.
 
 ## Licence
 
