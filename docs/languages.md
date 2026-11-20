@@ -155,20 +155,31 @@ the `_test` suffix must be on the **function** name; the filename suffix is conv
 And gleam has no flag or environment variable for `build/`, making this the second template
 after `clojure` to need a named volume nested inside the bind mount.
 
-**`haskell` builds its own linter on a second image, because hlint cannot be built by the
-GHC this row pins.** hlint 3.10 requires `ghc-lib-parser == 9.12.*`, which needs
-`base < 4.22`, and GHC 9.14 ships 4.22 — so a `haskell:9.12.4-slim-bookworm` stage builds
-it and only the binary plus its hint data come forward. A cabal-installed hlint cannot find
-its own hint files once moved, so `hlint_datadir` points at them. ormolu builds on 9.14 and
-gets its own stage, purely so `ghc-lib-parser`'s couple of gigabytes never reach the final
-image. Neither tool publishes an aarch64-linux release binary, which is why both are built
-from source rather than downloaded — this is the one template pinning **two** base image
-tags, and a bump has to move both.
+**`haskell` installs its linters from Debian, and the reason is worth recording because the
+template first did the opposite.** hlint and ormolu were compiled from Hackage, which meant
+building `ghc-lib-parser` — a complete GHC frontend — **twice**, at two versions that cannot
+share any work: hlint pins the 9.12 series while the image's GHC is 9.14. A genuinely cold
+build measured about forty-five minutes, and CI never once finished the leg. One
+`apt-get install hlint ormolu` replaced all of it; the same build now measures **99s**.
 
-**The cold image build is about forty-five minutes**, almost all of it those two
-`ghc-lib-parser` compilations. That is the price of priming, and it buys a first `make test`
-of eight seconds rather than ten minutes. Nothing is wrong if a cold measurement shows
-minutes.
+The claim that sent it down the slow path was that neither tool publishes an
+`aarch64-linux` release binary. That is true of **GitHub releases** and the wrong conclusion
+to draw from it: both are in **Debian's archive**, which builds for every architecture the
+base image does. `containers.md` already prescribes exactly this for `c` and `cpp`.
+
+The cost is version currency. apt here carries **hlint 3.3.6 and ormolu 0.3.1.0**, both
+around two years old, *because* this is [the one row with no trixie
+image](#notes-on-individual-rows) — trixie offers 3.6.1 and 0.7.2.0. Both were verified
+against this template's own sources before the swap: `hlint` reports no hints and every
+`.hs` file passes `ormolu --mode check`, including files formatted by 0.9.0.0, so the
+committed formatting needed no change. The newer GitHub binaries work too, but are amd64
+only, and picking by architecture would mean the formatter differing between a Mac and CI —
+`make fmt` on one could leave `make lint` red on the other. Identical tooling everywhere is
+worth more here than two minor versions.
+
+What remains in the image build is the `hspec`/QuickCheck compile, which is primed
+deliberately and cannot come from apt: Debian's Haskell libraries are built against its own
+GHC, not the image's. That keeps the first `make test` at about eight seconds.
 
 **`-Wno-missing-home-modules` is suppressed on the test-suite stanza only**, and that is a
 deliberate trade the contract forces. `hspec-discover` generates a main that imports the
