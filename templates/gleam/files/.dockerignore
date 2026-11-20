@@ -1,0 +1,7 @@
+.git
+.github
+.env
+build
+src
+test
+*.md

@@ -29,7 +29,7 @@ patches, so an old minor can outrank a current one. See
 | `swift`      | `swift:6.4.2-trixie`                           | `swift-testing` + `XCTest`   | `swift format lint --strict` / `swift format` | 1    |
 | `dart`       | `dart:3.14.1-sdk`                              | `package:test`               | `dart analyze` / `dart format`       | 1    |
 | `erlang`     | `erlang:29.1.2.0-slim`                         | `eunit`                      | `dialyzer` / `erlfmt`                | 2    |
-| `gleam`      | `ghcr.io/gleam-lang/gleam:v1.19.2-erlang-slim` | `gleeunit`                   | `gleam check` / `gleam format`       | 2    |
+| `gleam`      | `ghcr.io/gleam-lang/gleam:v1.19.2-erlang-slim` | `gleeunit`                   | `gleam format --check` / `gleam format` | 2    |
 | `clojure`    | `clojure:temurin-25-tools-deps-1.12.7.1681-trixie-slim` | `clojure.test`               | `clj-kondo` / `cljfmt`               | 2    |
 | `haskell`    | `haskell:9.14.1-slim-bookworm`                 | `hspec`                      | `hlint` / `ormolu`                   | 2    |
 | `kotlin`     | `gradle:9.9.1-jdk25`                           | `kotlin.test`                | `ktlint` / `ktlint -F`               | 2    |
@@ -58,6 +58,28 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
   test framework because the language has no stdlib one.
 
 ## Notes on individual rows
+
+**`gleam format` sorts a module's imports, and that quietly makes the obvious test entry
+module name-dependent.** With `import {{PROJECT_SNAKE}}` beside `import gleeunit`, exactly
+one ordering is correct — and which one depends on how the project name sorts against
+"gleeunit". `gleam_kata_lab` lints clean; `zebra_lab` goes red. The worst kind of bug: it
+would have passed for roughly half of all project names. The entry module now imports
+`gleeunit` alone and the project's own test lives in a sibling file with a single import, so
+no file has two imports to order. Verified by bootstrapping with a name that sorts after
+`gleeunit`.
+
+`gleam test` insists the module `<name>_test` exists and offers no flag to point elsewhere,
+which is why that file is the template's own and the kitchen sink is a sibling.
+
+The `-erlang-slim` image **ships no CA bundle**, so every dependency-resolving command dies
+with "Dependency resolution failed / builder error" — an error that names TLS nowhere. One
+`apt-get install ca-certificates` fixes it.
+
+Discovery turned out easier than feared: `gleeunit.main()` globs `test/**/*.{erl,gleam}` at
+run time, so nothing names the suite. Note the convention is narrower than the mechanism —
+the `_test` suffix must be on the **function** name; the filename suffix is convention only.
+And gleam has no flag or environment variable for `build/`, making this the second template
+after `clojure` to need a named volume nested inside the bind mount.
 
 **`haskell` builds its own linter on a second image, because hlint cannot be built by the
 GHC this row pins.** hlint 3.10 requires `ghc-lib-parser == 9.12.*`, which needs

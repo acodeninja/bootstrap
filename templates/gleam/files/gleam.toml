@@ -1,0 +1,10 @@
+name = "{{PROJECT_SNAKE}}"
+version = "0.1.0"
+description = "{{PROJECT_NAME}}"
+licences = ["MIT"]
+
+[dependencies]
+gleam_stdlib = ">= 1.0.0 and < 2.0.0"
+
+[dev_dependencies]
+gleeunit = ">= 1.0.0 and < 2.0.0"
