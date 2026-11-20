@@ -142,6 +142,7 @@ the TDD loop for every invalid input a kata has.
 | COBOL                   | a condition on the statement — `ON SIZE ERROR`, `AT END`          |
 | BASIC                   | nothing refuses anything; `ON ERROR GOSUB` traps what it raises   |
 | LOLCODE                 | nothing catches anything; guard before the operation              |
+| INTERCAL                | nothing is raised; overflow lands in a variable, or it stops      |
 
 ## Gotchas are deliberately not uniform
 

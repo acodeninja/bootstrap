@@ -1,6 +1,6 @@
 # Languages
 
-The 32 targets, their chosen tooling, and when each lands. This is the implementer's
+The 33 targets, their chosen tooling, and when each lands. This is the implementer's
 worksheet: one row is one template.
 
 Test runners are chosen **stdlib-first**. A built-in runner is one less dependency to
@@ -49,6 +49,7 @@ patches, so an old minor can outrank a current one. See
 | `cobol`      | `debian:trixie-20261104-slim` + GnuCOBOL 3.2   | TAP + `RETURN-CODE`          | `cobc -fsyntax-only -Wall` / —       | 4    |
 | `basic`      | `debian:trixie-20261104-slim` + bwbasic 2.20   | TAP                          | — / —                                | 4    |
 | `lolcode`    | `debian:trixie-20261104-slim` + lci 1.3        | TAP                          | — / —                                | 4    |
+| `intercal`   | `debian:trixie-20261104-slim` + C-INTERCAL     | TAP from Roman numerals      | `ick -c` / —                         | 4    |
 
 ## Waves
 
@@ -845,6 +846,43 @@ arithmetic casts a `YARN` without being asked, and `BOTH SAEM "3" AN 3` is `FAIL
 comparison does not. Two things that were *not* usable: an uninitialised variable is a fatal
 "cannot implicitly cast nil" rather than a quiet zero, and `WILE` cannot stand alone — it
 has to follow `UPPIN` or `NERFIN`.
+
+**`intercal` was the one expected to be impossible, and the assertion is what made it
+work.** C-INTERCAL is in Debian stable for arm64 as well as amd64. The problem was never
+the toolchain: it is that nothing in the language can print the name of a test. `READ OUT`
+writes Roman numerals and that is the entirety of its output — text means one character
+code at a time, which is why Hello World in INTERCAL is a column of magic numbers.
+
+So an assertion is an **array subscript**. `,9` is dimensioned to exactly one element, and
+the comparison `'?.2$.3'~'#0$#65535'` is zero exactly when two values match; syslib's
+`(1020)` adds one to it, and indexing `,9` with the result either works or ends the program
+with `ICL241I VARIABLES MAY NOT BE STORED IN WEST HYPERSPACE`. A test then reads out the
+number of each assertion it survived, and the runner pairs those numerals in order with the
+`DON'T ok - ` lines in the source to produce TAP. An assertion that failed has no numeral,
+so it and everything after it come back as `not ok` — which is why breaking the eighth of
+fifteen reports eight failures rather than one.
+
+`DON'T` is the only comment the language has: the statement is abstained, so it never runs
+and never has to parse. That is also what lets the test names live in the file.
+
+**`make lint` is real here, and it is the best lint in the repo.** `ick -c` stops after
+translating INTERCAL to C, so it rejects a syntax error — and it rejects a program whose
+share of `PLEASE` falls outside one fifth to one third of its statements. Both were checked
+by provoking them: `ICL079I PROGRAMMER IS INSUFFICIENTLY POLITE` and `ICL099I PROGRAMMER IS
+OVERLY POLITE`. The ratio is over the whole spliced program, so adding a case or a module
+can push it out of range, which makes it the only template where a dependency can break the
+build by arithmetic.
+
+**`-b` is not optional.** `ick` inserts a chance of `E774 RANDOM COMPILER BUG` into every
+compile deliberately. Before that flag was added, one run of the suite died at the sixth of
+fifteen assertions and the next five runs were clean — which is exactly the kind of thing
+that would have been blamed on the test for a week.
+
+Like `lolcode` it has no import at all, so the runner splices the test and the modules into
+one program, test first: execution starts at the first statement and stops at its `GIVE UP`,
+which leaves the subroutines after it reachable only by `NEXT`. `src/` therefore holds
+labelled subroutines and never a `GIVE UP`, labels are global, and arguments are shared
+variables because `NEXT` has no parameters.
 
 **`elixir` is the third BEAM template, and not redundant.** `erlang` shows the runtime
 raw, `gleam` shows a static type system on top of it, and `elixir` shows the ergonomic

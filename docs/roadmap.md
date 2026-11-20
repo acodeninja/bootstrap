@@ -82,6 +82,9 @@ interpreter exits 0 whatever happens, including when it dies half way.
 `lolcode` — lci built from its release tarball. LOLCODE has no import, so the runner
 splices src and the test into one program and feeds it to the interpreter.
 
+`intercal` — C-INTERCAL from Debian. An assertion is an array subscript that ends the
+program when it does not match, and the runner turns the Roman numerals into TAP.
+
 ## Per-template definition of done
 
 1. `make test`, `make lint` and `make fmt` all work from a cold image.
