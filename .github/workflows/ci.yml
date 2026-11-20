@@ -8,6 +8,12 @@ on:
 permissions:
   contents: read
 
+# This job builds twenty-six images against a Docker Hub account limit that is
+# shared with the publish workflow. Stacked runs of both exhaust it.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # The matrix is whatever is in templates/, discovered with the same glob
   # bootstrap.sh uses, so adding a template needs no edit here.
