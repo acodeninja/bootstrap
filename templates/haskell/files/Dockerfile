@@ -5,10 +5,14 @@ FROM haskell:9.14.1-slim-bookworm
 # them from Hackage instead costs two ghc-lib-parser compilations -- a whole GHC
 # frontend, twice, at versions that cannot share work -- for tools the template
 # only ever runs. That measured about forty-five minutes.
+#
+# The trailing wildcard covers Debian's binNMU suffix, which is assigned per
+# architecture: hlint is 3.3.6-1+b4 on amd64 and a different revision on arm64,
+# so an exact pin builds on one and fails to resolve at all on the other.
 RUN apt-get update \
     && apt-get install --no-install-recommends --yes \
-         hlint=3.3.6-1+b4 \
-         ormolu=0.3.1.0-1+b2 \
+         'hlint=3.3.6-1*' \
+         'ormolu=0.3.1.0-1*' \
     && rm -rf /var/lib/apt/lists/*
 
 # ormolu takes files rather than directories, and the Makefile cannot run find
