@@ -593,8 +593,16 @@ cannot solve.
 
 Its **image primes its own cache**. `zig build` compiles `build.zig` into a runner before
 it builds anything, which is about seventy seconds of `std.Build` against a cold cache.
-The Dockerfile runs a throwaway `zig init && zig build test`, and the named volume seeds
-from the image — first `make test` measures 2.8s instead of 73s.
+The Dockerfile copies the project's own `build.zig` and runs `zig build --help`, which
+compiles that runner and nothing else — first `make test` measures 3.0s against 72.1s
+unprimed.
+
+It took two goes. The first primed a throwaway `zig init && zig build test` and bought
+nothing at all: the runner is cached against the contents of `build.zig`, so a project's
+own build script never asks for one compiled from a different script, and the first
+`make test` still measured the full 72.1s. A differently *named* project does hit the
+primed runner — a name costs 1.4s of test-binary recompilation, not seventy seconds of
+`std.Build`. See [containers.md](containers.md#caching-is-mandatory).
 
 **`erlang` and `prolog` are no longer platform-restricted.** Under mise they were
 linux+macos only because the toolchains were unreliable elsewhere. In a Linux container
