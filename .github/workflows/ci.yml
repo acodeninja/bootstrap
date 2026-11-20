@@ -422,10 +422,14 @@ jobs:
             id=${dir#templates/}
             id=${id%/}
 
-            gh api --paginate \
+            if ! gh api --paginate \
               "users/$owner/packages/container/bootstrap%2F$id/versions" \
               --jq '.[] | "\(.created_at) \(.name) \(.metadata.container.tags | length)"' \
-              > versions.txt
+              > versions.txt; then
+              # A template that has never published has no package to list.
+              echo "no package yet for $id"
+              continue
+            fi
 
             while read -r created digest tags; do
               [ -n "$created" ] || continue
