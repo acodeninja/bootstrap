@@ -1,1 +1,11 @@
+// Spotless pulls transitive artefacts that the plugin portal only proxies from
+// Maven Central, and a proxied GET that fails takes the whole build with it --
+// naming Maven Central here gives plugin resolution a second, direct route.
+pluginManagement {
+  repositories {
+    gradlePluginPortal()
+    mavenCentral()
+  }
+}
+
 rootProject.name = "{{PROJECT_SLUG}}"
