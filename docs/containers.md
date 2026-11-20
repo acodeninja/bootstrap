@@ -92,7 +92,7 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | haskell                | `haskell:9.14-slim-bookworm`                 | official    |
 | prolog                 | `swipl:11.0`                                 | official    |
 | kotlin, java           | `gradle:9.9-jdk25`                           | official    |
-| nim                    | `nim:2.4`                                    | official    |
+| nim                    | `nim:2.2`                                    | official    |
 | fsharp, csharp         | `mcr.microsoft.com/dotnet/sdk:10.0`          | vendor      |
 | ocaml                  | `ocaml/opam:debian-13-ocaml-5.5`             | vendor      |
 | gleam                  | `ghcr.io/gleam-lang/gleam:v1.19-erlang-slim` | vendor      |
@@ -205,8 +205,8 @@ the pull needs no credentials.
 
 **The `Dockerfile` is still the pin and still the authority.** Nothing downstream
 depends on the package existing: a template with no image yet, an architecture that was
-never published (`nim` has no `arm64` — see [languages.md](languages.md)), a machine with
-no network, all degrade to building locally. `--no-pull` forces that path.
+never published, a machine with no network, all degrade to building locally. `--no-pull`
+forces that path.
 
 One consequence worth knowing: the tag names the *template*, not the project. Two
 projects scaffolded from the same template share it locally, so editing one project's

@@ -4,4 +4,4 @@ description   = "{{PROJECT_NAME}}"
 license       = "MIT"
 srcDir        = "src"
 
-requires "nim >= 2.4.0"
+requires "nim >= 2.2.14"

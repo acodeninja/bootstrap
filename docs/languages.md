@@ -37,7 +37,7 @@ patches, so an old minor can outrank a current one. See
 | `fsharp`     | `mcr.microsoft.com/dotnet/sdk:10.0.404`        | `xUnit v3`                   | `fantomas --check` / `fantomas`      | 2    |
 | `csharp`     | `mcr.microsoft.com/dotnet/sdk:10.0.404`        | `xUnit v3`                   | `dotnet format --verify-no-changes`  | 2    |
 | `ocaml`      | `ocaml/opam:debian-13-ocaml-5.5` + digest      | `alcotest` via `dune test`   | `dune build @fmt` / `dune fmt`       | 2    |
-| `nim`        | `nim:2.4.0`                                    | `unittest`                   | `nim check` / `nimpretty`            | 2    |
+| `nim`        | `nim:2.2.14`                                   | `unittest`                   | `nim check` / `nimpretty`            | 2    |
 | `prolog`     | `swipl:11.0.0`                                 | `plunit`                     | `check` + status flags / —           | 2    |
 | `elm`        | `node:26.13.1-trixie-slim` + elm 0.19.3-0      | `elm-test`                   | `elm-format --validate` / `--yes`    | 3    |
 | `lua`        | `debian:trixie-20261104-slim` + lua5.4, luarocks | `busted`                     | `luacheck` / `stylua`                | 3    |
@@ -451,13 +451,23 @@ last layer. And `nim`'s cache only skips the C-compiler step, not its own fronte
 warm-run speedup is real but modest: measured in isolation, 22 `gcc` invocations cold
 against 0 warm.
 
-**`nim` is the one template with no `arm64` image.** `nim:2.4.0` publishes `amd64`
-only — buildkit reports `no match for platform in manifest` — so the arm64 matrix excludes
-that combination and the merged manifest carries a single architecture. Nothing arm64 can
-be produced from an amd64-only base, so an Apple Silicon or arm64 Linux host runs `nim`
-under emulation whichever path it takes. Every other template publishes both, and since
-publishing moved into the test pipeline, every other template is also run on arm64
-hardware before it ships — `nim` is now the one row with no arm64 coverage at all.
+**`nim` pins the 2.2 line, not the newest.** `nim:2.4.0` publishes `amd64` and `i386`
+only, so buildkit answers `no match for platform in manifest` on arm64 and nothing arm64
+can be produced from it. That is not a property of nim. The official image is
+`debian:bookworm-slim` plus a downloaded nightlies tarball, and `official-images`
+generates each tag's architecture list from the assets that nightly happened to carry —
+the `2026-10-28-version-2-4` build `2.4.0` pins has `linux_x64`, `linux_x32` and
+`macosx_arm64`, and no `linux_arm64`. Every 2.2 and 2.0 image has all four architectures,
+and `nim:2.2.14` was rebuilt the same day as `2.4.0`.
+
+A release line behind buys arm64, and nothing here pays for it: `nimble test`, `nim check`,
+`nimpretty` and `std/unittest` all long predate 2.4, and `nimpretty` 2.2.14 reformats none
+of the shipped files. Two files carry the pin — the `Dockerfile` and the generated
+`.nimble`'s `requires`, which nimble enforces, so a bump of one without the other fails on
+the compiler it was handed. Returning to the 2.4 line is that tag bump: the `version-2-4`
+branch has published `linux_arm64` in every nightly since, and nim-lang.org offers a
+released `nim-2.4.2-linux_arm64.tar.xz`, so an official 2.4.x image should generate an
+arm64 entry of its own.
 
 **`kotlin` and `java` pin the newest *LTS* JDK, not the newest JDK.** `gradle:9.9.1`
 publishes jdk17, jdk21, jdk25 and jdk27 variants. 21 and 25 are LTS; 27 is an interim

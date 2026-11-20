@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM nim:2.4.0
+FROM nim:2.2.14
 
 ENV NIMBLE_DIR=/cache/nimble
 ENV HOME=/cache/home
