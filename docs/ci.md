@@ -21,9 +21,12 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
     steps:
       - uses: actions/checkout@v7
-      - uses: docker/login-action@v4
+      - if: env.dockerhub_username != ''
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -35,9 +38,15 @@ jobs:
 Deliberately minimal. It is a starting point the project owner will edit, not a
 framework. No matrix, no release job.
 
-The login step is not optional ceremony — see [rate limits](#rate-limits) below. A
-template's README must say that the two secrets are needed, and that CI will fail
-confusingly without them.
+**It builds rather than pulls, on purpose.** The published image would be faster, but a
+generated project's CI exists to test that project's own `Dockerfile`; pulling would
+test the upstream image instead and quietly ignore every edit the owner had made to it.
+
+That is also why the `docker/login-action` step survives: building resolves the base
+image from Docker Hub, which rate-limits — see [rate limits](#rate-limits). It is
+guarded on the secret rather than required, so a project that never hits the limit needs
+no setup at all and one that does has somewhere to put credentials. The secrets context
+is not available to an `if`, which is why the value goes through `env` first.
 
 ## This repo's CI
 
@@ -178,6 +187,31 @@ Negative tests asserting the exit codes in [cli.md](cli.md) rather than just "it
 Codes `4` and `5` are not asserted — faking an absent Docker daemon or a failing
 generated test costs more than it proves.
 
+## Publishing images
+
+`publish.yml`, on every push to `main`. It is the only workflow here with write scope of
+any kind, and it writes `packages` only.
+
+Two architectures, on native runners rather than under QEMU: emulating a toolchain build
+costs more than the whole matrix, and public repositories get `ubuntu-24.04-arm` free.
+Each of the 52 jobs pushes its own `:main-<arch>` tag and a per-template `manifest` job
+merges them into the `:main` index `compose.yaml` names. The merge takes whichever
+architectures it finds rather than naming both, because `nim` has no `arm64` base — see
+[languages.md](languages.md).
+
+The build context is a **scaffold**, not `templates/<id>/files`. The raw template
+directory is not buildable: the manifests the priming layers read still carry
+`{{TOKEN}}` placeholders — `elixir`'s `mix.exs` declares `app: :{{PROJECT_SNAKE}}`, which
+is not valid Elixir — and `haskell`'s cabal file is *named* with one. Five of the
+twenty-six failed this way on the first run. Scaffolding first also means the published
+image is exactly what a developer's own first build would have produced.
+
+It is deliberately **not** gated on the `bootstrap` matrix. Publishing cannot make a
+broken template worse: the `Dockerfile` that fails to build is in the repository either
+way, and the bootstrap falls back to building it. Gating would put the slowest template's
+test run in front of every push. The images are a cache, not a release — see
+[containers.md](containers.md#published-images-are-a-cache-not-the-pin).
+
 ## What is not covered
 
 Stated plainly, because the gaps are real:
@@ -198,7 +232,9 @@ re-proving that Docker is Docker.
 
 Docker Hub limits anonymous pulls, and GitHub Actions runners share IP addresses, so
 unauthenticated CI hits the limit routinely and reports it as an unrelated-looking build
-failure. Every workflow that builds an image — in this repo and in every template —
-authenticates first with `docker/login-action`.
+failure. This repository's `bootstrap` job authenticates first with
+`docker/login-action`; a generated project's does the same when the secrets are set.
 
-Combined with layer caching, most runs then pull nothing at all.
+The publish workflow logs in to both, for opposite reasons: ghcr with `GITHUB_TOKEN`
+because that is where the image goes, Docker Hub because every `FROM` comes from there
+and fifty-two parallel builds off shared runner IPs are well past the anonymous limit.
