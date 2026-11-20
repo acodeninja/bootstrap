@@ -1,0 +1,16 @@
+(test
+ (name main)
+ (libraries alcotest greeter))
+
+; alcotest-discover is baked into the image. It writes main.ml from whatever
+; *_test.ml files are present, so nothing here names a suite and deleting one
+; needs no edit.
+
+(rule
+ (target main.ml)
+ (deps
+  (glob_files *_test.ml))
+ (action
+  (with-stdout-to
+   main.ml
+   (run alcotest-discover %{deps}))))

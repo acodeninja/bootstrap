@@ -94,7 +94,7 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | kotlin, java           | `gradle:9.9-jdk25`                           | official    |
 | nim                    | `nim:2.4`                                    | official    |
 | fsharp, csharp         | `mcr.microsoft.com/dotnet/sdk:10.0`          | vendor      |
-| ocaml                  | `ocaml/opam:debian-13-ocaml-5.6`             | vendor      |
+| ocaml                  | `ocaml/opam:debian-13-ocaml-5.5`             | vendor      |
 | gleam                  | `ghcr.io/gleam-lang/gleam:v1.19-erlang-slim` | vendor      |
 | lua                    | `debian:trixie-slim` + lua, luarocks         | hand-rolled |
 | zig                    | `debian:trixie-slim` + release tarball       | hand-rolled |

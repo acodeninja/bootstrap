@@ -36,7 +36,7 @@ patches, so an old minor can outrank a current one. See
 | `java`       | `gradle:9.9.1-jdk25`                           | `JUnit 5`                    | `checkstyle` / `spotless`            | 2    |
 | `fsharp`     | `mcr.microsoft.com/dotnet/sdk:10.0.404`        | `xUnit v3`                   | `fantomas --check` / `fantomas`      | 2    |
 | `csharp`     | `mcr.microsoft.com/dotnet/sdk:10.0.404`        | `xUnit v3`                   | `dotnet format --verify-no-changes`  | 2    |
-| `ocaml`      | `ocaml/opam:debian-13-ocaml-5.6`               | `alcotest` via `dune test`   | `dune build @lint` / `ocamlformat`   | 2    |
+| `ocaml`      | `ocaml/opam:debian-13-ocaml-5.5` + digest      | `alcotest` via `dune test`   | `dune build @fmt` / `dune fmt`       | 2    |
 | `nim`        | `nim:2.4.0`                                    | `unittest`                   | `nim check` / `nimpretty`            | 2    |
 | `prolog`     | `swipl:11.0.0`                                 | `plunit`                     | `check` + status flags / —           | 2    |
 | `elm`        | `node:26.13.1-trixie-slim` + elm               | `elm-test`                   | `elm-format --validate`              | 3    |
@@ -58,6 +58,33 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
   test framework because the language has no stdlib one.
 
 ## Notes on individual rows
+
+**`ocaml` is the one template pinned by digest, because `ocaml/opam` publishes no patch tag
+and its minor tags are not all releases.** `debian-13-ocaml-5.6` carries
+`ocaml-variants.5.6.0+trunk` — `ocaml --version` reports `5.6.0+dev2-2026-10-02` — so the
+sweep's "newest by semantic sort" picked a development compiler. The template pins
+`debian-13-ocaml-5.5` (OCaml 5.5.2) plus a sha256, which is a stronger pin than any other
+row has rather than a weaker one. **Check `ocaml --version` inside the image before
+believing a minor tag is a release**; the only other variants published are `-flambda` and
+`-no-flat-float-array`, so there is no beta-suffixed tag to compare against.
+
+It also **avoided zig's concession**, which was not obvious: dune's `(test (name …))` stanza
+names its modules, so deleting the suite would break the `dune` file. Instead `test/dune`
+names a generated `main`, and an image-baked `alcotest-discover` writes `main.ml` from a
+`(glob_files *_test.ml)` rule — so `main.ml` *depends on* each test module, giving
+deterministic link order rather than relying on registration side effects. Verified at
+sixteen tests, one, and none.
+
+Three image facts cost real time. `/home/opam` is mode `0700`, so at any uid but 1000 the
+base image's `opam exec --` entrypoint fails with `[ERROR] Opam has not been initialised` —
+advice that points nowhere near the cause; `chmod 0755 /home/opam` is the whole fix. The
+bundled opam repository is a *frozen local clone*, so installing a pinned version fails with
+"has no version" until `opam repository set-url default https://opam.ocaml.org` repoints it.
+And `dune fmt` exits non-zero whenever it actually reformats something, so `make fmt` runs an
+image-baked wrapper that re-checks afterwards and lets the check decide the exit code.
+
+There is no `@lint` alias in dune — this row used to claim one. `@fmt` is the non-mutating
+check.
 
 **`clojure` was expected to need a second zig-style concession and does not.** `clojure.test`
 has no discovering CLI, and both obvious routes break a rule: a third-party runner in
