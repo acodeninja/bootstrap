@@ -63,7 +63,7 @@ login. The `Dockerfile` is still the version pin and still the authority: no ima
 no network, or `--no-pull` and it builds locally instead.
 
 Both entry points are complete: `bootstrap.sh` for macOS and Linux, `bootstrap.ps1` for
-Windows, each in clone mode and in remote mode. A Windows CI job diffs the two
-across all thirty-five templates, so they cannot drift apart quietly. The design is
-written up in **[docs/](docs/README.md)**; [roadmap.md](docs/roadmap.md) has what is
-left.
+Windows, each in clone mode and in remote mode, and CI exercises each on the platform it
+is for. The Windows leg also diffs the two across all thirty-five templates, so they
+cannot drift apart quietly. The design is written up in **[docs/](docs/README.md)**;
+[roadmap.md](docs/roadmap.md) has what is left.

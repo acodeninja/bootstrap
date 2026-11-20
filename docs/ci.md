@@ -60,12 +60,13 @@ image it just tested.
 One workflow:
 
 ```
-scope ─┬─> image-amd64 (one leg per changed template, cap 8) ─┬─> manifest ─> cleanup
-lint  ─┴─> image-arm64 (one leg per changed template, cap 8) ─┘   merge :main  prune
-           build, lint, test, push
+lint     ─┐
+contract ─┼─> image-amd64 (one leg per changed template, cap 8) ─┬─> manifest ─> cleanup
+remote   ─┤   image-arm64 (one leg per changed template, cap 8) ─┘   merge :main  prune
+scope    ─┘   build, lint, test, push
 
-contract (ubuntu, macos, windows), remote (same three),
-lint, powershell                                   (ungated, every push)
+contract and remote run on ubuntu, macos and windows; the windows leg of
+each drives bootstrap.ps1 rather than bootstrap.sh
 ```
 
 Each `image` leg is one template on one architecture:
@@ -76,19 +77,22 @@ Each `image` leg is one template on one architecture:
         working-directory: ../scaffold
         run: make lint
       - name: push what the tests passed
-        if: ${{ needs.scope.outputs.publish == 'true' && needs.lint.result == 'success' }}
+        if: ${{ needs.scope.outputs.publish == 'true' }}
         run: |
           image=$(sed -n 's/^ *image: *//p' ../scaffold/compose.yaml)
           docker tag "$image" "${image}-amd64"
-          docker push "${image}-amd64"      # retried; see the first-push race below
-          printf '%s\n' "$image" > pushed-amd64
+          docker tag "$image" "${image%:*}:${GITHUB_SHA}-amd64"
+          docker push "${image}-amd64"                     # both retried; see
+          docker push "${image%:*}:${GITHUB_SHA}-amd64"    # the first-push race
 ```
 
-The marker file is the last line for a reason. `manifest` runs per template and cannot
-see a matrix sibling's result, and `imagetools inspect` cannot tell a `:main-amd64` this
-run wrote from one left behind weeks ago — so a template whose both legs failed had the
-previous digests re-merged and published green. Each leg uploads its marker as an
-artifact and the merge needs both before it touches `:main`.
+**The second tag is how `manifest` knows what this run pushed.** It runs per template and
+cannot see a matrix sibling's result, and a `:main-amd64` written minutes ago is
+indistinguishable from one left behind weeks ago — so a template whose both legs failed
+had the previous digests re-merged and published green. A tag naming the commit cannot be
+mistaken that way, because no earlier run wrote this sha, so `manifest` merges from those
+and skips any template missing one. It used to be an uploaded artefact per leg, which did
+the same job through a channel that had nothing to do with images.
 
 That is the whole idea: **the bootstrap builds it, the bootstrap tests it, and the thing
 that passed is the thing that ships.** `--no-pull` because the point is the `Dockerfile`;
@@ -133,20 +137,21 @@ tag pushed here cannot drift from the one `compose` will pull.
 - **`scope` gates publishing too**, on the same selection plus two more conditions: the
   event is not a pull request, and the ref is `main`. A PR builds and tests; it never
   pushes.
-- **A template gates itself.** One red test stops that template's push and nothing else.
-  Gating the whole matrix was the objection to testing before publishing at all — it would
-  put the slowest template in front of every other template's release — and a per-template
-  gate answers it, because `manifest` was already per-template.
-- **`lint` gates publishing, not testing.** It is in `needs`, so the image jobs wait for
-  it, but they run under `!cancelled()` and only the push steps require
-  `needs.lint.result == 'success'`. A shellcheck nit should not stop a template being
-  tested; it should stop a release.
-
-`lint`, `contract` and `remote` are not gated at all. They cost minutes rather than
-builds, and a green check on every push is worth that.
+- **Everything cheap gates everything expensive.** `lint`, `contract` and `remote` are
+  ungated and run first; the image jobs `needs` all three plus `scope`, with an `if` that
+  checks only `scope`'s selection. Wrapping that `if` in `!cancelled()` — which it used to
+  be — overrides the success requirement `needs` already carries, so a broken script or a
+  shellcheck nit spent seventy builds proving itself. Three minutes against seventy builds
+  is not a trade worth thinking about.
+- **`manifest` and `cleanup` are ordered, not gated.** Both `needs` what comes before them
+  and both keep `!cancelled()`, because a matrix reports one aggregate result: a strict
+  gate on `image-amd64` would let one template's failed leg withhold publishing for the
+  other thirty-four. Per-template granularity comes from the tags instead — see
+  [publishing images](#publishing-images).
 
 `packages: write` is granted to the three jobs that push, never at workflow level, so the
 `lint`, `contract` and `remote` jobs keep read-only tokens.
+
 ### The commit path
 
 A runner has no `user.name` or `user.email`, and `bootstrap.sh` treats that as
@@ -276,22 +281,22 @@ installing its linters from apt took it from never finishing to 99s. The slowest
 
 ### Script quality
 
-Two jobs, and a gate on publishing. On Linux:
+One job, `lint`, and a gate on everything after it:
 
 - `shellcheck bootstrap.sh`
 - `actionlint` over this repo's workflows and every template's `files/.github/workflows/`
 - `hadolint` over every template's `Dockerfile`
 
-and on `windows-latest`, which is where Windows PowerShell 5.1 is:
+`bootstrap.ps1` is checked where PowerShell is, which is the Windows leg of `contract`:
 
-- `PSScriptAnalyzer` over `bootstrap.ps1`, with the repo's own settings file
-- the same exit codes `contract` asserts of `bootstrap.sh`
+- `PSScriptAnalyzer`, with the repo's own settings file
+- the same five exit codes the other two legs assert of `bootstrap.sh`
 - a diff of both scripts' `--dry-run` file list, for every template
 
-That last one is the only thing that has ever compared the two entry points. They
-are kept in step by hand, and a drift between them is invisible to every other job
-here. Each side generates its list in its own shell: `bash` from PowerShell is
-whatever is first on `PATH`, which on a developer machine with WSL is not Git Bash.
+That last one is the only thing that has ever compared the two entry points. They are
+kept in step by hand, and a drift between them would otherwise be invisible. Each side
+generates its list in its own shell: `bash` invoked from PowerShell is whatever is first
+on `PATH`, which on a machine with WSL is not Git Bash.
 
 ### The remote path
 
@@ -324,8 +329,19 @@ A second step asserts the failure path, which is the half with something to clea
 temporary directory behind. `mktemp -d` does not write to `/tmp` on macOS, so the
 check asks `$TMPDIR` where it did.
 
-This covers `bootstrap.sh` only, in both modes and on all three platforms.
-`bootstrap.ps1` has its own job — see [script quality](#script-quality).
+The Windows leg runs the PowerShell one-liner instead, which
+[install.md](install.md#windows) documents and nothing used to test. Two details of that
+form are now load-bearing in CI as well as in the docs. The happy path invokes the script
+block in process, because `iex` cannot pass arguments to the code it runs. The failure
+path cannot: a script block built from a string runs in the *caller's* process, where the
+script's `exit` would end the step rather than report to it, so the exit code has to come
+from a child — and `BOOTSTRAP_REF` is handed to that child through the environment,
+because `powershell -Command` strips the quotes from an assignment inside the command
+string and the bad ref would be run as a command, leaving the variable unset and the
+script fetching `main` perfectly happily.
+
+So `bootstrap.sh` is covered in both modes on Linux and macOS, and `bootstrap.ps1` in
+both modes on Windows — each script where its users run it.
 
 ### Failure-mode assertions
 
@@ -345,13 +361,20 @@ generated test costs more than it proves.
 
 `javascript` throughout, not `zig`: one template is enough to assert a script's
 exit code, and the one with the fastest image is the one to use. The same five run
-against `bootstrap.ps1` on `windows-latest`.
+against `bootstrap.ps1` on the Windows leg.
 
 ## Publishing images
 
 Not a workflow of its own any more — the last three steps of each `image` leg, and the
 `manifest` job after them. What gets published and when is covered in
 [what gates what](#what-gates-what) above; what follows is the shape of the artefact.
+
+Four tags per template, and only one of them is for anyone else to use: `:main` is the
+index `compose.yaml` pulls, `:main-amd64` and `:main-arm64` are the platform manifests it
+indexes, and `:<sha>-<arch>` is what `manifest` merged from. The sha tags are plumbing
+rather than a release — nothing pins to them, and `cleanup` collects them once
+`:main-<arch>` has moved on. Pinning a published image is still not a thing you can do;
+see [containers.md](containers.md#published-images-are-a-cache-not-the-pin).
 
 Three things keep the pipeline inside Docker Hub's limit, which is counted **per account**
 and shared by every leg in flight. All three were added after a run answered `429`:
@@ -380,32 +403,35 @@ The images are still a cache rather than a release — see
 gated on tests because the gate is cheap and per-template, not because a published image
 is a promise.
 
-
 ### Pruning what the publish superseded
 
-Every publish leaves a digest behind. The new index gets `:main`, the new platform
-manifests get `:main-amd64` and `:main-arm64`, and the three they replaced keep existing
-with no tag pointing at them. Nothing removed them until the `cleanup` job, so they had
+Every publish leaves digests behind. The new index takes `:main`, the new platform
+manifests take `:main-amd64` and `:main-arm64`, and the three they replaced keep existing
+with those tags moved off them. Nothing removed them until the `cleanup` job, so they had
 been piling up since the first push.
 
-**The rule is "delete every version with no tag", and it is safe here for a reason that
-does not generalise.** The usual advice is the opposite: an image index's platform
-manifests are normally untagged, so pruning untagged digests pulls the platforms out from
-under a live multi-architecture tag and every pull breaks. In this registry they are not
-untagged — `:main-amd64` and `:main-arm64` exist because that is how `manifest` merges
-them — and `BUILDX_NO_DEFAULT_ATTESTATIONS` means nothing else is untagged either. So
-untagged here means exactly one thing: superseded.
+**The rule is "delete every version with no durable tag", and it is safe here for a
+reason that does not generalise.** The usual advice is the opposite: an image index's
+platform manifests are normally untagged, so pruning untagged digests pulls the platforms
+out from under a live multi-architecture tag and every pull breaks. In this registry they
+are not untagged — `:main-amd64` and `:main-arm64` exist because that is how the
+architectures are published — and `BUILDX_NO_DEFAULT_ATTESTATIONS` means nothing else is
+untagged either.
+
+*Durable* is the one word that does the work. A platform manifest also carries the
+`:<sha>-<arch>` tag `manifest` merged it from, which outlives `:main-<arch>` by a run, so
+"no tag" would have kept every superseded manifest forever. A version is kept when some
+tag on it is not a run token — `main`, `main-amd64`, `main-arm64` — and a version whose
+only tags are run tokens has been superseded as surely as one with none.
 
 Anything younger than an hour is kept regardless. That is not about the argument above;
-it is about a run this one overlapped, whose index is minutes old.
+it is about a run this one overlapped, whose index is minutes old. Each template is also
+capped at twenty-five deletions a run, which is what makes the step finite: the first
+real run met a backlog of a thousand and ran out of its timeout part-way through.
 
 `cleanup` runs after `manifest` and never before it. Before the merge, the previous index
 is still what `:main` points at, and deleting it then would break the tag it was about to
 replace.
-
-It also deletes this run's publish markers, but only when no leg failed. Re-running a
-failed leg re-uploads its own marker and not its sibling's, so a run with a failure keeps
-both and lets the one-day retention collect them.
 
 ## What is not covered
 

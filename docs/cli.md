@@ -176,5 +176,5 @@ container: no Windows runner can run one. See
 - **Shell out, don't parse.** The scripts invoke `docker` and `make` and read nothing
   from them but the exit code, except for detecting `toomanyrequests` in build output.
 - **`bootstrap.sh` is shellcheck-clean and `bootstrap.ps1` is PSScriptAnalyzer-clean**,
-  both enforced by CI — and a job diffs the two scripts' `--dry-run` output across every
-  template, because nothing else would notice them drifting apart.
+  both enforced by CI — and the Windows contract leg diffs the two scripts' `--dry-run`
+  output across every template, because nothing else would notice them drifting apart.
