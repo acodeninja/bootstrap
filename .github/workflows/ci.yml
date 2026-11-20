@@ -504,6 +504,13 @@ jobs:
       # scripts now have is correctly skipped.
       - name: exit codes
         run: |
+          # Four of these five provoke a usage error on purpose. Actions runs this
+          # shell with ErrorActionPreference = Stop, under which anything a child
+          # writes to stderr becomes a NativeCommandError and fails the step --
+          # whatever the child's own exit code was, which is the thing being
+          # asserted here.
+          $ErrorActionPreference = 'Continue'
+
           function Expect {
             param([int]$Want, [string[]]$Arguments)
             & powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1 @Arguments *> $null
