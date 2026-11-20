@@ -96,6 +96,19 @@ tag pushed here cannot drift from the one `compose` will pull.
 
 ### What gates what
 
+- **`scope` gates building, by path.** An image can only change when a template, the
+  script that scaffolds it, or this pipeline changes; docs, the README and `bootstrap.ps1`
+  cannot. So `scope` diffs the pushed range under `templates/`, `bootstrap.sh` and
+  `.github/workflows/ci.yml`, and if nothing there moved, no image is built. It answers
+  "build" whenever the question cannot be asked — a new branch, a force push.
+
+  This started as a `paths` filter on the old publish workflow's trigger. Merged, it has
+  to be a job: a trigger filter would skip the script's own tests too. It is also what
+  stops the thing that prompted it — a push that touched one workflow file and three docs
+  built twenty-six images that could not possibly have changed, and skipped the
+  architecture that would actually have shipped.
+- **`scope` gates publishing too**, on the same diff plus two more conditions: the event
+  is not a pull request, and the ref is `main`. A PR builds and tests; it never pushes.
 - **A template gates itself.** One red test stops that template's push and nothing else.
   Gating the whole matrix was the objection to testing before publishing at all — it would
   put the slowest template in front of every other template's release — and a per-template
@@ -104,14 +117,9 @@ tag pushed here cannot drift from the one `compose` will pull.
   it, but they run under `!cancelled()` and only the push steps require
   `needs.lint.result == 'success'`. A shellcheck nit should not stop twenty-six templates
   being tested; it should stop a release.
-- **`scope` gates publishing by path.** A docs-only commit cannot change an image, and
-  rebuilding all fifty-one for one of those is what answered `429` once already. This was
-  a `paths` filter on the old publish workflow's trigger; merged, it has to be a job,
-  because a trigger filter would skip the tests too. It diffs
-  `github.event.before..github.sha` under `templates/`, and answers "publish" whenever the
-  question cannot be asked — a new branch, a force push.
-- **Nothing publishes from a pull request.** `scope` returns `false` for any event that
-  is not a push, so a PR builds and tests amd64 and stops there.
+
+`lint`, `contract` and `remote` are not gated at all. They cost minutes rather than
+builds, and a green check on every push is worth that.
 
 `packages: write` is granted to the three jobs that push, never at workflow level, so the
 `lint`, `contract` and `remote` jobs keep read-only tokens.

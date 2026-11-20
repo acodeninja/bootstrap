@@ -26,7 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       ids: ${{ steps.ids.outputs.ids }}
-      templates: ${{ steps.diff.outputs.templates }}
+      build: ${{ steps.diff.outputs.build }}
+      publish: ${{ steps.diff.outputs.publish }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -39,27 +40,38 @@ jobs:
           ids=$(for f in templates/*/template.env; do d=${f%/template.env}; printf '"%s",' "${d##*/}"; done)
           echo "ids=[${ids%,}]" >> "$GITHUB_OUTPUT"
 
-      # A docs-only commit cannot change an image, and republishing all fifty-one
-      # for one of those is what answered 429 once already. This is the paths
-      # filter the publish workflow used to carry on its trigger; it has to be a
-      # job now, because a trigger filter would skip the tests too.
+      # An image can only change when a template, the script that scaffolds it,
+      # or this pipeline changes. Docs, the README and bootstrap.ps1 cannot, and
+      # fifty-one builds proving that is pure waste. This is the paths filter the
+      # publish workflow used to carry on its trigger; it has to be a job now,
+      # because a trigger filter would skip the script's own tests too.
       - id: diff
         env:
           event: ${{ github.event_name }}
+          ref: ${{ github.ref }}
           before: ${{ github.event.before }}
+          pr_base: ${{ github.event.pull_request.base.sha }}
           after: ${{ github.sha }}
         run: |
-          # Publishing is the answer when the question cannot be asked -- a new
+          base=$before
+          if [ "$event" = pull_request ]; then base=$pr_base; fi
+
+          # Build is the answer when the question cannot be asked -- a new
           # branch or a force push leaves no commit to diff against.
-          answer=true
-          if [ "$event" != push ]; then
-            answer=false
-          elif git cat-file -e "$before^{commit}" 2>/dev/null; then
-            if [ -z "$(git diff --name-only "$before" "$after" -- templates)" ]; then
-              answer=false
+          build=true
+          if git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            if [ -z "$(git diff --name-only "$base" "$after" -- templates bootstrap.sh .github/workflows/ci.yml)" ]; then
+              build=false
             fi
           fi
-          echo "templates=$answer" >> "$GITHUB_OUTPUT"
+
+          publish=false
+          if [ "$build" = true ] && [ "$event" != pull_request ] && [ "$ref" = refs/heads/main ]; then
+            publish=true
+          fi
+
+          echo "build=$build" >> "$GITHUB_OUTPUT"
+          echo "publish=$publish" >> "$GITHUB_OUTPUT"
 
   # The bootstrap builds the image and runs the suite, the same two commands a
   # developer runs, and what it built is then what gets pushed -- so a published
@@ -69,7 +81,9 @@ jobs:
     needs: [scope, lint]
     # Lint gates publishing, not testing: a shellcheck nit should not stop
     # twenty-six templates being tested, but it should stop a push.
-    if: ${{ !cancelled() && needs.scope.result == 'success' }}
+    if: >-
+      ${{ !cancelled() && needs.scope.result == 'success'
+      && needs.scope.outputs.build == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -108,7 +122,7 @@ jobs:
       - run: ./bootstrap.sh ${{ matrix.template }} ../scaffold --no-pull
 
       - name: ghcr login
-        if: ${{ needs.scope.outputs.templates == 'true' && needs.lint.result == 'success' }}
+        if: ${{ needs.scope.outputs.publish == 'true' && needs.lint.result == 'success' }}
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
@@ -119,7 +133,7 @@ jobs:
       # template id, for the reason bootstrap.sh reads it back too: the tag
       # pushed here cannot then drift from the one compose will pull.
       - name: push what the tests passed
-        if: ${{ needs.scope.outputs.templates == 'true' && needs.lint.result == 'success' }}
+        if: ${{ needs.scope.outputs.publish == 'true' && needs.lint.result == 'success' }}
         run: |
           image=$(sed -n 's/^ *image: *//p' ../scaffold/compose.yaml)
           docker tag "$image" "${image}-amd64"
@@ -134,7 +148,7 @@ jobs:
     needs: [scope, lint, image-amd64]
     if: >-
       ${{ !cancelled() && needs.scope.result == 'success'
-      && needs.scope.outputs.templates == 'true'
+      && needs.scope.outputs.publish == 'true'
       && needs.lint.result == 'success' }}
     runs-on: ubuntu-24.04-arm
     permissions:
@@ -188,7 +202,7 @@ jobs:
     needs: [scope, lint, image-amd64, image-arm64]
     if: >-
       ${{ !cancelled() && needs.scope.result == 'success'
-      && needs.scope.outputs.templates == 'true'
+      && needs.scope.outputs.publish == 'true'
       && needs.lint.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
