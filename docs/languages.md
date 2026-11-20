@@ -35,7 +35,7 @@ patches, so an old minor can outrank a current one. See
 | `kotlin`     | `gradle:9.9.1-jdk25`                           | `kotlin.test`                | `ktlint` / `ktlint -F`               | 2    |
 | `java`       | `gradle:9.9.1-jdk25`                           | `JUnit 5`                    | `checkstyle` / `spotless`            | 2    |
 | `fsharp`     | `mcr.microsoft.com/dotnet/sdk:10.0.404`        | `xUnit v3`                   | `fantomas --check` / `fantomas`      | 2    |
-| `csharp`     | `mcr.microsoft.com/dotnet/sdk:10.0.404`        | `xUnit`                      | `dotnet format --verify-no-changes`  | 2    |
+| `csharp`     | `mcr.microsoft.com/dotnet/sdk:10.0.404`        | `xUnit v3`                   | `dotnet format --verify-no-changes`  | 2    |
 | `ocaml`      | `ocaml/opam:debian-13-ocaml-5.6`               | `alcotest` via `dune test`   | `dune build @lint` / `ocamlformat`   | 2    |
 | `nim`        | `nim:2.4.0`                                    | `unittest`                   | `nim check` / `nimpretty`            | 2    |
 | `prolog`     | `swipl:11.0.0`                                 | `plunit`                     | load check / —                       | 2    |
@@ -58,6 +58,17 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
   test framework because the language has no stdlib one.
 
 ## Notes on individual rows
+
+**`csharp` inherits every .NET answer from `fsharp` and differs in exactly one place.**
+`dotnet format` *does* support C#, so it stays as both `lint` and `fmt` — verified red on a
+real whitespace violation (exit 2), where the same tool silently exits 0 on F#. The
+`global.json` MTP opt-in, `HOME=/cache`, `Directory.Build.props`, the redirected test
+results and `--ignore-exit-code 8` are all identical, deliberately: the two .NET rows
+disagreeing on how `make test` treats an empty suite would be worse than either choice.
+
+It also needs no compile-order glob. The SDK's default `**/*.cs` include picks up `src/` and
+`test/` with no `<Compile>` list at all, where F# has to glob explicitly because it compiles
+in listed order.
 
 **`fsharp` cannot use `dotnet format`, so it uses Fantomas.** `dotnet format` supports C#
 and Visual Basic only: handed an F# project it prints "Format currently supports only C#

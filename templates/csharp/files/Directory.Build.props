@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <!-- The SDK writes bin/ and obj/ beside the project, which here is a bind
+         mount that has to stay clean. obj/ moves only if it is set before the
+         SDK props are imported, hence this file rather than the .csproj. -->
+    <BaseOutputPath>/cache/build/$(MSBuildProjectName)/bin/</BaseOutputPath>
+    <BaseIntermediateOutputPath>/cache/build/$(MSBuildProjectName)/obj/</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>
