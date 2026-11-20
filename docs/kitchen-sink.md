@@ -141,6 +141,7 @@ the TDD loop for every invalid input a kata has.
 | Perl                    | `die`, caught by `eval` with the message in `$@`                  |
 | COBOL                   | a condition on the statement — `ON SIZE ERROR`, `AT END`          |
 | BASIC                   | nothing refuses anything; `ON ERROR GOSUB` traps what it raises   |
+| LOLCODE                 | nothing catches anything; guard before the operation              |
 
 ## Gotchas are deliberately not uniform
 

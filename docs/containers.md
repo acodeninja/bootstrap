@@ -1,7 +1,7 @@
 # Containers
 
 Every generated project runs its toolchain inside Docker. The host needs **Docker** and
-**make**, and that answer is the same for all 31 templates.
+**make**, and that answer is the same for all 32 templates.
 
 ## Why containers
 
@@ -104,24 +104,25 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | pascal                 | `debian:trixie-slim` + fpc 3.2.2             | hand-rolled |
 | cobol                  | `debian:trixie-slim` + GnuCOBOL 3.2          | hand-rolled |
 | basic                  | `debian:trixie-slim` + bwbasic 2.20          | hand-rolled |
+| lolcode                | `debian:trixie-slim` + lci 1.3 from source   | hand-rolled |
 
-Across 31 templates that is **21 official, 4 vendor, 6 hand-rolled**. The hand-rolled
-set — zig, lua, elm, pascal, cobol and basic — stayed at three from 18 templates to 26,
-because every language added in between built on an official image and merely added a
-package. Under mise, six languages had no usable pin at all.
+Across 32 templates that is **21 official, 4 vendor, 7 hand-rolled**. The hand-rolled
+set — zig, lua, elm, pascal, cobol, basic and lolcode — stayed at three from 18 templates
+to 26, because every language added in between built on an official image and merely
+added a package. Under mise, six languages had no usable pin at all.
 
 ### One image, several templates
 
-Five images cover fifteen templates. This is deliberate; do not "tidy up" by giving each
+Five images cover sixteen templates. This is deliberate; do not "tidy up" by giving each
 language its own.
 
-| Image                                 | Templates                      |
-| ------------------------------------- | ------------------------------ |
-| `node:26-trixie-slim`                 | javascript, typescript, elm    |
-| `gradle:9.9-jdk25`                    | kotlin, java                   |
-| `mcr.microsoft.com/dotnet/sdk:10.0`   | fsharp, csharp                 |
-| `gcc:16-trixie`                       | c, cpp, fortran                |
-| `debian:trixie-slim`                  | zig, lua, pascal, cobol, basic |
+| Image                                 | Templates                               |
+| ------------------------------------- | --------------------------------------- |
+| `node:26-trixie-slim`                 | javascript, typescript, elm             |
+| `gradle:9.9-jdk25`                    | kotlin, java                            |
+| `mcr.microsoft.com/dotnet/sdk:10.0`   | fsharp, csharp                          |
+| `gcc:16-trixie`                       | c, cpp, fortran                         |
+| `debian:trixie-slim`                  | zig, lua, pascal, cobol, basic, lolcode |
 
 Sharing a base image does not mean sharing a template. Each still has its own
 Dockerfile, Makefile and kitchen sink, because the image is the toolchain and the
@@ -148,9 +149,9 @@ Five cases, recorded here so they are not rediscovered per template:
   the `-slim` tags are runtime-only and carry no `swift` binary at all.
 
 Every reference above was resolved against the registry on 2026-11-19, tags included, and
-each wave 4 row on the day it landed. `zig`, `lua`, `elm`, `pascal`, `cobol` and `basic`
-returned `errors:` — no Docker Official Image exists for any of them. That is the only
-reason they are hand-rolled, so **re-check before writing one**:
+each wave 4 row on the day it landed. `zig`, `lua`, `elm`, `pascal`, `cobol`, `basic` and
+`lolcode` returned `errors:` — no Docker Official Image exists for any of them. That is
+the only reason they are hand-rolled, so **re-check before writing one**:
 
 ```console
 $ docker search --filter is-official=true lua

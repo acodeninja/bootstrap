@@ -79,6 +79,9 @@ programs that report in TAP and set RETURN-CODE; the image consumes the TAP.
 `basic` — Bywater BASIC, with line numbers and GOSUB. Tests report TAP because the
 interpreter exits 0 whatever happens, including when it dies half way.
 
+`lolcode` — lci built from its release tarball. LOLCODE has no import, so the runner
+splices src and the test into one program and feeds it to the interpreter.
+
 ## Per-template definition of done
 
 1. `make test`, `make lint` and `make fmt` all work from a cold image.

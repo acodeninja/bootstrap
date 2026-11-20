@@ -1,6 +1,6 @@
 # Languages
 
-The 31 targets, their chosen tooling, and when each lands. This is the implementer's
+The 32 targets, their chosen tooling, and when each lands. This is the implementer's
 worksheet: one row is one template.
 
 Test runners are chosen **stdlib-first**. A built-in runner is one less dependency to
@@ -48,6 +48,7 @@ patches, so an old minor can outrank a current one. See
 | `perl`       | `perl:5.44.0-slim-trixie`                      | `Test::More` via `prove`     | `perlcritic` / `perltidy`            | 4    |
 | `cobol`      | `debian:trixie-20261104-slim` + GnuCOBOL 3.2   | TAP + `RETURN-CODE`          | `cobc -fsyntax-only -Wall` / —       | 4    |
 | `basic`      | `debian:trixie-20261104-slim` + bwbasic 2.20   | TAP                          | — / —                                | 4    |
+| `lolcode`    | `debian:trixie-20261104-slim` + lci 1.3        | TAP                          | — / —                                | 4    |
 
 ## Waves
 
@@ -810,6 +811,40 @@ Two limits found by writing the suite, both now stated in it: a `DEF FN` call wi
 inside another `DEF FN` call, and `UCASE$` does not exist. And the gotcha slot writes itself
 — nothing is ever declared, so a mistyped name is not an error but a new variable worth
 zero.
+
+**`lolcode` is a joke with a working toolchain behind it.** `lci` is alive — 820 stars, last
+pushed September 2026 — and builds from its release tarball with CMake in about ten seconds.
+It is GPL-3, which is why it is installed into the image and never vendored into the
+template: the same relationship every Debian-based image already has with its contents. The
+runtime stage needs nothing but libc and libm, so the compiler that builds it stays in the
+stage above. `g++` is in that stage's package list for one reason: `project(lci)` asks cmake
+for a C++ compiler the project never uses.
+
+**It has no import, so the image provides one.** `CAN HAS` takes a library name rather than
+a path, and two files on one `lci` command line are two separate programs — the second
+cannot see the first's functions. The only way a test can reach `src/` is to be the same
+program as it, so `tap-run` strips each file's `HAI` and `KTHXBYE`, splices the bodies with
+the modules first, and feeds the result to `lci` through standard input. This is `basic`'s
+`MERGE` problem with no `MERGE` to solve it, and the consequence is one namespace across the
+whole project.
+
+Unlike `basic`, there is a real crash signal: `lci` exits non-zero on a runtime error, and
+it parses the entire program before running any of it, so a syntax error anywhere fails the
+suite immediately. The plan line still earns its place, because nothing distinguishes a
+failed assertion from a passed one.
+
+**The language is poorer than the sections assume, and saying so is the content.** There is
+no array — `SRS` turns a number into a slot name on a `BUKKIT`, which is as close as it
+gets, and nothing reports how many slots there are. There is no set. `SMOOSH` is the whole
+of the string library: no length, no substring, no split. `O RLY?` and `WTF?` are
+statements, so the only way a branch yields a value is `FOUND YR` inside a function. A
+function can call itself and cannot be handed anywhere.
+
+The gotcha wrote itself once the suite was running: `SUM OF 1 AN "3"` is 4, because
+arithmetic casts a `YARN` without being asked, and `BOTH SAEM "3" AN 3` is `FAIL`, because
+comparison does not. Two things that were *not* usable: an uninitialised variable is a fatal
+"cannot implicitly cast nil" rather than a quiet zero, and `WILE` cannot stand alone — it
+has to follow `UPPIN` or `NERFIN`.
 
 **`elixir` is the third BEAM template, and not redundant.** `erlang` shows the runtime
 raw, `gleam` shows a static type system on top of it, and `elixir` shows the ergonomic
