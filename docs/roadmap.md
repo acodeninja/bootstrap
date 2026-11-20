@@ -59,6 +59,14 @@ and doctest). First use of the vendoring rule in
 [template-contract.md](template-contract.md#vendored-code); get it right here because
 it sets the precedent.
 
+## Wave 4 — after the first twenty-six
+
+Languages added because somebody asked for them rather than because the contract needed
+proving. One commit each, against the same definition of done below.
+
+`fortran` — official `gcc:16-trixie`, which already carried `gfortran`. The work was fpm
+for dependencies and test discovery, and a formatter.
+
 ## Per-template definition of done
 
 1. `make test`, `make lint` and `make fmt` all work from a cold image.

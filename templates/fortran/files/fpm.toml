@@ -1,0 +1,8 @@
+name = "{{PROJECT_SNAKE}}"
+version = "0.1.0"
+license = "MIT"
+author = "{{AUTHOR}}"
+
+[dev-dependencies]
+test-drive.git = "https://github.com/fortran-lang/test-drive"
+test-drive.tag = "v0.6.1"

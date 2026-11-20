@@ -103,7 +103,7 @@ reference material.
 ## Failure is expressed natively
 
 The rule that makes the errors slot worth spending: **do not port the JavaScript version
-into twenty-six languages.** Each template represents failure the way its community does.
+into every language.** Each template represents failure the way its community does.
 
 One slot, so it carries both halves at once: the idiom, and how a test asserts it. The
 second half is the one people reach for, because asserting a refusal is the red step of
@@ -136,6 +136,7 @@ the TDD loop for every invalid input a kata has.
 | Nim                     | `raise newException(ValueError, ...)`                             |
 | Lua                     | `nil, "message"` multiple return                                  |
 | Prolog                  | the predicate simply fails                                        |
+| Fortran                 | a status argument (`iostat=`, `stat=`); no exceptions exist       |
 
 ## Gotchas are deliberately not uniform
 

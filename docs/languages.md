@@ -1,6 +1,6 @@
 # Languages
 
-The 26 targets, their chosen tooling, and when each lands. This is the implementer's
+The 27 targets, their chosen tooling, and when each lands. This is the implementer's
 worksheet: one row is one template.
 
 Test runners are chosen **stdlib-first**. A built-in runner is one less dependency to
@@ -43,6 +43,7 @@ patches, so an old minor can outrank a current one. See
 | `lua`        | `debian:trixie-20261104-slim` + lua5.4, luarocks | `busted`                     | `luacheck` / `stylua`                | 3    |
 | `c`          | `gcc:16.2.0-trixie` + Unity 2.7.0 (vendored)   | `Unity`                      | `clang-format` check / in place      | 3    |
 | `cpp`        | `gcc:16.2.0-trixie` + doctest 2.5.3 (vendored) | `doctest`                    | `clang-format` check / in place      | 3    |
+| `fortran`    | `gcc:16.2.0-trixie` + fpm 0.14.0               | `test-drive` via `fpm test`  | `fprettify --diff` / `fprettify`     | 4    |
 
 ## Waves
 
@@ -56,6 +57,8 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
   the BEAM, .NET, dune, opam). The images do the installing; the work is the build config.
 - **Wave 3** is the remaining hand-rolled images, plus the two templates that vendor a
   test framework because the language has no stdlib one.
+- **Wave 4** is everything added after the first twenty-six shipped. Its rows are not
+  ordered by difficulty, because they arrive when somebody asks for them.
 
 ## Notes on individual rows
 
@@ -657,6 +660,29 @@ template would have to hedge every section, which is precisely what the
 
 They are also the only two templates that vendor a third-party test framework — see
 [template-contract.md](template-contract.md#vendored-code).
+
+**`fortran` is the third template on the gcc image, and it needed no new one.** The
+official `gcc` image is built `--enable-languages=c,c++,fortran,go`, so `gfortran` was
+already inside the tag `c` and `cpp` pin. What was missing is everything around the
+compiler: fpm for dependencies and test discovery, and a formatter.
+
+`fpm test` builds every file under `test/` that contains a `program` into its own
+executable and runs all of them, so nothing names the kitchen sink and deleting it leaves
+the other test discovered. That is better than the concession `zig` needed, and it comes
+free rather than through a wrapper.
+
+Two things the row does not show. fpm resolves dependencies by cloning them into `build/`
+*inside the project*, so `compose.yaml` mounts a named volume there — the same arrangement
+`gleam`, `dart`, `elm` and `clojure` already need — and the image leaves `test-drive`
+resolved at that path for the volume to seed from, verified by running the suite green
+with the network switched off. And `fprettify` is the whole of `lint`: Fortran has no
+linter in wide use, `fprettify --diff` prints a diff but still exits `0`, so a wrapper
+compares its output against nothing. Compilation errors come from `make build`.
+
+`fprettify` is published to PyPI only, which is the one ugly part of the image: python3
+ships in the gcc image but pip does not, so the Dockerfile installs `python3-pip` to
+install one formatter. The alternative was `prolog`'s documented no-op, and a real
+formatter was worth more than the layer it costs.
 
 **`elixir` is the third BEAM template, and not redundant.** `erlang` shows the runtime
 raw, `gleam` shows a static type system on top of it, and `elixir` shows the ergonomic
