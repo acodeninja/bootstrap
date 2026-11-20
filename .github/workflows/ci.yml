@@ -396,26 +396,52 @@ jobs:
       packages: write
       actions: write    # to delete this run's publish markers
     steps:
-      - name: what the token can see
+      - uses: actions/checkout@v7
+
+      # users/<owner>/... rather than user/... or orgs/...: a probe run showed
+      # the first two readable with GITHUB_TOKEN and the third a 404, so these
+      # packages do inherit access from the repository and no PAT is needed.
+      #
+      # The hour's grace is not about the tagging argument above. It is for a
+      # run this one overlapped, whose index is minutes old.
+      #
+      # Listing only, until a log has been read. A wrong prune takes published
+      # images away from everyone who has ever bootstrapped, and nothing on
+      # this side can put them back.
+      - name: list what a prune would delete
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           owner: ${{ github.repository_owner }}
         run: |
-          probe() {
-            echo "== GET $1"
-            if gh api "$1" --paginate > versions.json 2>errors.txt; then
-              echo "   readable, $(grep -c '"id":' versions.json) versions"
-              gh api "$1" --paginate \
-                --jq '.[] | "   \(.id)  \(.created_at)  [\(.metadata.container.tags | join(" "))]"' |
-                head -8
-            else
-              echo "   refused: $(tr -d '\n' < errors.txt | cut -c1-200)"
-            fi
-          }
+          cutoff=$(date -u -d '1 hour ago' +%s)
+          stale=0
+          young=0
+          tagged=0
 
-          probe "users/$owner/packages/container/bootstrap%2Fzig/versions"
-          probe "user/packages/container/bootstrap%2Fzig/versions"
-          probe "orgs/$owner/packages/container/bootstrap%2Fzig/versions"
+          for dir in templates/*/; do
+            id=${dir#templates/}
+            id=${id%/}
+
+            gh api --paginate \
+              "users/$owner/packages/container/bootstrap%2F$id/versions" \
+              --jq '.[] | "\(.created_at) \(.name) \(.metadata.container.tags | length)"' \
+              > versions.txt
+
+            while read -r created digest tags; do
+              [ -n "$created" ] || continue
+              if [ "$tags" -gt 0 ]; then
+                tagged=$((tagged + 1))
+              elif [ "$(date -u -d "$created" +%s)" -gt "$cutoff" ]; then
+                young=$((young + 1))
+              else
+                echo "would delete  $id  ${digest#sha256:}  $created"
+                stale=$((stale + 1))
+              fi
+            done < versions.txt
+          done
+
+          echo "kept: $tagged tagged, $young untagged under an hour"
+          echo "would delete: $stale"
 
       # The markers have done their job once every manifest has read them, and
       # a day of retention is a day of clutter. Only when nothing failed,
