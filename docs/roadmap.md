@@ -9,7 +9,7 @@ The only wave with real design risk. Everything after it is repetition.
 
 - `bootstrap.sh` and `bootstrap.ps1` implementing [cli.md](cli.md) in full, in both
   clone and remote mode per [install.md](install.md)
-- `.github/workflows/ci.yml` per [ci.md](ci.md), with registry auth and layer caching
+- `.github/workflows/ci.yml` per [ci.md](ci.md), with registry auth
 - `templates/javascript/` — official `node` image, `node:test`, no runtime dependencies
 - `templates/zig/` — hand-rolled image from `debian:trixie-slim`, `std.testing`
 

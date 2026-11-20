@@ -182,8 +182,9 @@ red with no commit in between.
 ### Published images are a cache, not the pin
 
 Every template's image is built and pushed to
-`ghcr.io/acodeninja/bootstrap/<template-id>:main` for `amd64` and `arm64` on every push
-to `main` — see [ci.md](ci.md). `compose.yaml` names it beside `build: .`:
+`ghcr.io/acodeninja/bootstrap/<template-id>:main` for `amd64` and `arm64` whenever a push
+to `main` changes a template and that template's tests pass — see [ci.md](ci.md).
+`compose.yaml` names it beside `build: .`:
 
 ```yaml
 services:
@@ -406,9 +407,10 @@ Docker Hub rate-limits anonymous pulls, and the limit is low enough to hit in no
 use — writing this document exhausted it after three `docker manifest inspect` calls,
 before `docker login` cleared it. Two places it matters:
 
-- **This repository's CI** runs 26 image builds per workflow from shared runner IPs, and
-  `--no-pull` means it really does build them. Authenticate with `docker/login-action`
-  before any build. See [ci.md](ci.md).
+- **This repository's CI** builds every template from shared runner IPs — 26 on a pull
+  request, 51 across two architectures when it publishes — and `--no-pull` means it really
+  does build them. Authenticate with `docker/login-action` before any build. See
+  [ci.md](ci.md).
 - **First run on a developer machine** now pulls from ghcr, which has no such limit, so
   the common case never touches Docker Hub at all. It can still happen when the pull
   falls through to a build. The bootstrap's exit `4` message names `toomanyrequests` as
