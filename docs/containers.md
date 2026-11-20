@@ -179,6 +179,36 @@ FROM node:26.13.1-trixie-slim
 Not `node`, not `node:latest`, not `node:26`. A floating tag means a green suite can go
 red with no commit in between.
 
+### Published images are a cache, not the pin
+
+Every template's image is built and pushed to
+`ghcr.io/acodeninja/bootstrap/<template-id>:main` for `amd64` and `arm64` on every push
+to `main` — see [ci.md](ci.md). `compose.yaml` names it beside `build: .`:
+
+```yaml
+services:
+  dev:
+    build: .
+    image: ghcr.io/acodeninja/bootstrap/python:main
+```
+
+Both keys together are what makes this work: `docker compose pull` fetches it, and
+`docker compose build` tags a local build with the same name, so the two paths are
+interchangeable. The bootstrap tries the pull first and falls back to the build, which
+turns a first run from a toolchain compile into a download. The registry is public, so
+the pull needs no credentials.
+
+**The `Dockerfile` is still the pin and still the authority.** Nothing downstream
+depends on the package existing: a template with no image yet, an architecture that was
+never published (`nim` has no `arm64` — see [languages.md](languages.md)), a machine with
+no network, all degrade to building locally. `--no-pull` forces that path.
+
+One consequence worth knowing: the tag names the *template*, not the project. Two
+projects scaffolded from the same template share it locally, so editing one project's
+`Dockerfile` and rebuilding changes the image the other one runs until it builds too.
+Project-scoped tags would avoid that but cannot be pulled, since the published name has
+to be predictable.
+
 ## Caching is mandatory
 
 With no native execution path, the TDD loop runs through a container every time. Source
@@ -323,10 +353,17 @@ Docker Hub rate-limits anonymous pulls, and the limit is low enough to hit in no
 use — writing this document exhausted it after three `docker manifest inspect` calls,
 before `docker login` cleared it. Two places it matters:
 
-- **CI** runs 26 image pulls per workflow from shared runner IPs. Authenticate with
-  `docker/login-action` before any build, and use layer caching so most runs pull
-  nothing. See [ci.md](ci.md).
-- **First run on a developer machine** can fail with `toomanyrequests` through no fault
-  of the project. The bootstrap's exit `4` message names this as a likely cause rather
-  than reporting a generic build failure — a user who has just run one command deserves
-  to be told the registry rate-limited them, not that "the image build failed".
+- **This repository's CI** runs 26 image builds per workflow from shared runner IPs, and
+  `--no-pull` means it really does build them. Authenticate with `docker/login-action`
+  before any build. See [ci.md](ci.md).
+- **First run on a developer machine** now pulls from ghcr, which has no such limit, so
+  the common case never touches Docker Hub at all. It can still happen when the pull
+  falls through to a build. The bootstrap's exit `4` message names `toomanyrequests` as
+  a likely cause rather than reporting a generic build failure — a user who has just run
+  one command deserves to be told the registry rate-limited them, not that "the image
+  build failed".
+- **A generated project's CI** builds its own `Dockerfile`, because that is the thing it
+  exists to test, so it does reach Docker Hub for the base image. Its
+  `docker/login-action` step is therefore kept, but guarded on the secret being set:
+  projects that never hit the limit need no setup, and projects that do have somewhere
+  to put credentials.

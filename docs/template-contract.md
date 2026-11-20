@@ -57,7 +57,7 @@ Every template's `files/` must contain:
 | Path                       | Purpose                                                            |
 | -------------------------- | ------------------------------------------------------------------ |
 | `Dockerfile`               | `FROM` a pinned image, dependencies installed, `WORKDIR /work`     |
-| `compose.yaml`             | the `dev` service: bind mount, cache volumes, `user`               |
+| `compose.yaml`             | the `dev` service: bind mount, cache volumes, `user`, `image`      |
 | `Makefile`                 | `test`, `lint`, `fmt`, `build`, `shell`, `help`                    |
 | `.dockerignore`            | `.git`, build output, `.env`                                       |
 | `README.md`                | What this is, how to run it, the prerequisites                     |
@@ -72,6 +72,13 @@ Every template's `files/` must contain:
 
 `.env` is **not** in `files/`. The bootstrap script generates it — see
 [containers.md](containers.md#file-ownership).
+
+`compose.yaml` carries both `build: .` and
+`image: ghcr.io/acodeninja/bootstrap/<template-id>:main`, and the `image` name is not
+free-form — the publish workflow pushes to exactly that path and the bootstrap pulls it.
+A new template's image does not exist until the first push to `main` lands, which is
+fine: the pull fails and the `Dockerfile` beside it builds. See
+[containers.md](containers.md#published-images-are-a-cache-not-the-pin).
 
 `.gitattributes` is one line, `* text=auto eol=lf`, and it is not decoration. The
 toolchain runs in a Linux container while the project may be checked out on Windows, where
