@@ -343,13 +343,18 @@ jobs:
           docker buildx imagetools inspect "$image:main"
 
   # Every publish leaves the previous index and its two children behind: the
-  # tags move on, the digests stay, and nothing has ever removed them. Pruning
-  # them is safe here for a reason worth stating, because every other source
-  # says the opposite: an index's platform manifests are normally untagged, so
-  # deleting untagged digests breaks a live multi-architecture tag. In this
-  # registry they are not untagged -- :main-amd64 and :main-arm64 are how
-  # manifest merges them -- and attestations are off, so nothing else is
-  # untagged either. Untagged here means exactly one thing: superseded.
+  # durable tags move on, the digests stay, and nothing removed them until this
+  # job. Pruning them is safe here for a reason worth stating, because every
+  # other source says the opposite: an index's platform manifests are normally
+  # untagged, so deleting untagged digests breaks a live multi-architecture tag.
+  # In this registry they are not untagged -- :main-amd64 and :main-arm64 exist
+  # because that is how the architectures are published -- and attestations are
+  # off, so nothing else is untagged either.
+  #
+  # The rule is therefore "no durable tag" rather than "no tag": a digest also
+  # carries the sha tag manifest merged it from, which outlives :main-<arch> by
+  # one run. A version whose only tags are run tokens has been superseded just
+  # as surely as one with none.
   #
   # The packages sit under the *user* namespace, where the REST endpoints normally
   # want a PAT. Not here: these inherit access from the repository, so
@@ -373,10 +378,10 @@ jobs:
       # The hour's grace is not about the tagging argument above. It is for a
       # run this one overlapped, whose index is minutes old.
       #
-      # A dry run of this same filter kept 105 tagged versions -- exactly three
-      # per template, which is every tag that exists -- so the keep set is the
-      # live set and nothing reachable is in the delete set.
-      - name: delete untagged versions
+      # A dry run of the first form of this filter kept 105 tagged versions --
+      # exactly three per template, which was every tag that existed -- so the
+      # keep set is the live set and nothing reachable is in the delete set.
+      - name: delete superseded versions
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           owner: ${{ github.repository_owner }}
@@ -393,7 +398,9 @@ jobs:
 
             if ! gh api --paginate \
               "users/$owner/packages/container/$package/versions" \
-              --jq '.[] | select(.metadata.container.tags | length == 0)
+              --jq '.[] | select([.metadata.container.tags[]
+                                  | select(test("^[0-9a-f]{40}-(amd64|arm64)$") | not)]
+                                 | length == 0)
                         | "\(.id) \(.created_at) \(.name)"' \
               > newest-first.txt; then
               # A template that has never published has no package to list.
