@@ -372,6 +372,53 @@ jobs:
           docker buildx imagetools create --tag "$image:main" "$@"
           docker buildx imagetools inspect "$image:main"
 
+  # Every publish leaves the previous index and its two children behind: the
+  # tags move on, the digests stay, and nothing has ever removed them. Pruning
+  # them is safe here for a reason worth stating, because every other source
+  # says the opposite: an index's platform manifests are normally untagged, so
+  # deleting untagged digests breaks a live multi-architecture tag. In this
+  # registry they are not untagged -- :main-amd64 and :main-arm64 are how
+  # manifest merges them -- and attestations are off, so nothing else is
+  # untagged either. Untagged here means exactly one thing: superseded.
+  #
+  # This job deletes nothing yet. The packages sit under the *user* namespace,
+  # and the user-scoped REST endpoints normally want a PAT: the repo-scoped
+  # path works with packages: write only where the package inherits access from
+  # the repository. One run of this says which, before anything irreversible is
+  # written against a guess.
+  cleanup:
+    needs: [scope, manifest]
+    if: >-
+      ${{ !cancelled() && needs.scope.result == 'success'
+      && needs.scope.outputs.publish == 'true'
+      && needs.manifest.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: what the token can see
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          owner: ${{ github.repository_owner }}
+        run: |
+          probe() {
+            echo "== GET $1"
+            if gh api "$1" --paginate > versions.json 2>errors.txt; then
+              echo "   readable, $(grep -c '"id":' versions.json) versions"
+              gh api "$1" --paginate \
+                --jq '.[] | "   \(.id)  \(.created_at)  [\(.metadata.container.tags | join(" "))]"' |
+                head -8
+            else
+              echo "   refused: $(tr -d '\n' < errors.txt | cut -c1-200)"
+            fi
+          }
+
+          probe "users/$owner/packages/container/bootstrap%2Fzig/versions"
+          probe "user/packages/container/bootstrap%2Fzig/versions"
+          probe "orgs/$owner/packages/container/bootstrap%2Fzig/versions"
+
   # Asserting which failure happened, not merely that one did -- on all three
   # host platforms, because every assertion here is --dry-run or --no-build and
   # so needs no docker. macOS and Windows runners cannot run a Linux container,
