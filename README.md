@@ -51,8 +51,15 @@ $ ./bootstrap.sh --list
 $ ./bootstrap.sh rust ../my-rust
 ```
 
-Every template is covered by CI on every push, one job each. `ocaml` is the slowest at
-around four and a half minutes; the median is under a minute.
+Every template is covered by CI on every push, one job each. `ocaml` is the slowest to
+build at around four and a half minutes; the median is under a minute.
+
+You do not normally pay that. Every template's image is published to
+`ghcr.io/acodeninja/bootstrap/<template-id>:main` for `amd64` and `arm64`, and the
+bootstrap pulls it instead of building — `ocaml` scaffolds, pulls and runs its suite
+green in about fifteen seconds. The registry is public, so nothing needs a login. The
+`Dockerfile` is still the version pin and still the authority: no image yet, no network,
+or `--no-pull` and it builds locally instead.
 
 Both entry points are complete: `bootstrap.sh` for macOS and Linux, `bootstrap.ps1` for
 Windows, each in clone mode and in remote mode. Nothing enforces that they agree —
