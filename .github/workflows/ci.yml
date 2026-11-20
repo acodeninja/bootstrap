@@ -126,6 +126,11 @@ jobs:
       # An attestation is a second entry in the index, which imagetools would
       # then carry into the merged manifest as a bogus platform.
       BUILDX_NO_DEFAULT_ATTESTATIONS: 1
+
+      # Read by the if on the Docker Hub login below. The two secrets are
+      # optional -- they lift an anonymous pull limit that GitHub runners share
+      # an IP address against -- so a fork PR, which gets none, still builds.
+      dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
     steps:
       - uses: actions/checkout@v7
 
@@ -136,7 +141,8 @@ jobs:
           git config --global user.name 'bootstrap ci'
           git config --global user.email 'ci@example.invalid'
 
-      - uses: docker/login-action@v4
+      - if: env.dockerhub_username != ''
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -217,6 +223,11 @@ jobs:
         template: ${{ fromJSON(needs.scope.outputs.ids) }}
     env:
       BUILDX_NO_DEFAULT_ATTESTATIONS: 1
+
+      # Read by the if on the Docker Hub login below. The two secrets are
+      # optional -- they lift an anonymous pull limit that GitHub runners share
+      # an IP address against -- so a fork PR, which gets none, still builds.
+      dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
     steps:
       - uses: actions/checkout@v7
 
@@ -225,7 +236,8 @@ jobs:
           git config --global user.name 'bootstrap ci'
           git config --global user.email 'ci@example.invalid'
 
-      - uses: docker/login-action@v4
+      - if: env.dockerhub_username != ''
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
