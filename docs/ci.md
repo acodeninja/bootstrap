@@ -60,8 +60,8 @@ image it just tested.
 One workflow:
 
 ```
-scope ─┬─> image-amd64 (one leg per changed template, cap 8) ─┬─> manifest
-lint  ─┴─> image-arm64 (one leg per changed template, cap 8) ─┘   merge :main
+scope ─┬─> image-amd64 (one leg per changed template, cap 8) ─┬─> manifest ─> cleanup
+lint  ─┴─> image-arm64 (one leg per changed template, cap 8) ─┘   merge :main  prune
            build, lint, test, push
 
 contract (ubuntu, macos, windows), remote (same three),
@@ -379,6 +379,33 @@ The images are still a cache rather than a release — see
 [containers.md](containers.md#published-images-are-a-cache-not-the-pin). Publishing is
 gated on tests because the gate is cheap and per-template, not because a published image
 is a promise.
+
+
+### Pruning what the publish superseded
+
+Every publish leaves a digest behind. The new index gets `:main`, the new platform
+manifests get `:main-amd64` and `:main-arm64`, and the three they replaced keep existing
+with no tag pointing at them. Nothing removed them until the `cleanup` job, so they had
+been piling up since the first push.
+
+**The rule is "delete every version with no tag", and it is safe here for a reason that
+does not generalise.** The usual advice is the opposite: an image index's platform
+manifests are normally untagged, so pruning untagged digests pulls the platforms out from
+under a live multi-architecture tag and every pull breaks. In this registry they are not
+untagged — `:main-amd64` and `:main-arm64` exist because that is how `manifest` merges
+them — and `BUILDX_NO_DEFAULT_ATTESTATIONS` means nothing else is untagged either. So
+untagged here means exactly one thing: superseded.
+
+Anything younger than an hour is kept regardless. That is not about the argument above;
+it is about a run this one overlapped, whose index is minutes old.
+
+`cleanup` runs after `manifest` and never before it. Before the merge, the previous index
+is still what `:main` points at, and deleting it then would break the tag it was about to
+replace.
+
+It also deletes this run's publish markers, but only when no leg failed. Re-running a
+failed leg re-uploads its own marker and not its sibling's, so a run with a failure keeps
+both and lets the one-day retention collect them.
 
 ## What is not covered
 

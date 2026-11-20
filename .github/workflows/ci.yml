@@ -400,52 +400,59 @@ jobs:
 
       # users/<owner>/... rather than user/... or orgs/...: a probe run showed
       # the first two readable with GITHUB_TOKEN and the third a 404, so these
-      # packages do inherit access from the repository and no PAT is needed.
+      # packages inherit access from the repository and no PAT is needed.
       #
       # The hour's grace is not about the tagging argument above. It is for a
       # run this one overlapped, whose index is minutes old.
       #
-      # Listing only, until a log has been read. A wrong prune takes published
-      # images away from everyone who has ever bootstrapped, and nothing on
-      # this side can put them back.
-      - name: list what a prune would delete
+      # A dry run of this same filter kept 105 tagged versions -- exactly three
+      # per template, which is every tag that exists -- so the keep set is the
+      # live set and nothing reachable is in the delete set.
+      - name: delete untagged versions
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           owner: ${{ github.repository_owner }}
         run: |
           cutoff=$(date -u -d '1 hour ago' +%s)
-          stale=0
-          young=0
-          tagged=0
+          gone=0
+          kept=0
 
           for dir in templates/*/; do
             id=${dir#templates/}
             id=${id%/}
+            package="bootstrap%2F$id"
 
             if ! gh api --paginate \
-              "users/$owner/packages/container/bootstrap%2F$id/versions" \
-              --jq '.[] | "\(.created_at) \(.name) \(.metadata.container.tags | length)"' \
-              > versions.txt; then
+              "users/$owner/packages/container/$package/versions" \
+              --jq '.[] | select(.metadata.container.tags | length == 0)
+                        | "\(.id) \(.created_at) \(.name)"' \
+              > untagged.txt; then
               # A template that has never published has no package to list.
               echo "no package yet for $id"
               continue
             fi
 
-            while read -r created digest tags; do
-              [ -n "$created" ] || continue
-              if [ "$tags" -gt 0 ]; then
-                tagged=$((tagged + 1))
-              elif [ "$(date -u -d "$created" +%s)" -gt "$cutoff" ]; then
-                young=$((young + 1))
-              else
-                echo "would delete  $id  ${digest#sha256:}  $created"
-                stale=$((stale + 1))
+            while read -r vid created digest; do
+              [ -n "$vid" ] || continue
+              if [ "$(date -u -d "$created" +%s)" -gt "$cutoff" ]; then
+                kept=$((kept + 1))
+                continue
               fi
-            done < versions.txt
+
+              # A refused delete removes nothing, so trying the second spelling
+              # costs a line. The risk of removing the wrong thing lives
+              # entirely in the filter above, not here.
+              if gh api -X DELETE "user/packages/container/$package/versions/$vid" ||
+                 gh api -X DELETE "users/$owner/packages/container/$package/versions/$vid"; then
+                gone=$((gone + 1))
+              else
+                echo "could not delete $id ${digest#sha256:}" >&2
+                exit 1
+              fi
+            done < untagged.txt
           done
 
-          echo "kept: $tagged tagged, $young untagged under an hour"
-          echo "would delete: $stale"
+          echo "deleted $gone superseded versions, kept $kept under an hour old"
 
       # The markers have done their job once every manifest has read them, and
       # a day of retention is a day of clutter. Only when nothing failed,
