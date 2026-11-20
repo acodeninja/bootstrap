@@ -539,6 +539,25 @@ next_steps() {
   printf '  https://learn.madetech.com/technology/katas/\n'
 }
 
+# Asking rather than failing is why docs/install.md documents
+# `bash -c "$(curl ...)"` and never `curl | bash`: a pipe makes stdin the pipe,
+# and these two questions would have nowhere to read an answer from. A
+# redirected stdin falls through to the die 1 below, which is what CI sees.
+read_missing_args() {
+  [ -t 0 ] || return 0
+  if [ -n "$TEMPLATE_ID" ] && [ -n "$TARGET" ]; then return 0; fi
+
+  if [ -z "$TEMPLATE_ID" ]; then
+    list_templates
+    printf '\ntemplate: '
+    read -r TEMPLATE_ID
+  fi
+  if [ -z "$TARGET" ]; then
+    printf 'target directory: '
+    read -r TARGET
+  fi
+}
+
 main() {
   parse_args "$@"
 
@@ -560,6 +579,8 @@ main() {
     list_templates
     exit 0
   fi
+
+  read_missing_args
 
   [ -n "$TEMPLATE_ID" ] ||
     die 1 'a template id is required' 'run --list to see them, --help for usage'
