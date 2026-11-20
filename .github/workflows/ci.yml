@@ -369,12 +369,32 @@ jobs:
           docker buildx imagetools create --tag "$image:main" "$@"
           docker buildx imagetools inspect "$image:main"
 
-  # Asserting which failure happened, not merely that one did.
+  # Asserting which failure happened, not merely that one did -- on all three
+  # host platforms, because every assertion here is --dry-run or --no-build and
+  # so needs no docker. macOS and Windows runners cannot run a Linux container,
+  # so they cover the script and never a toolchain.
   contract:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v7
+
+      # macOS is the only runner with the bash the header names as the floor,
+      # which makes it the only one that tests the claim rather than repeating
+      # it. /bin/bash explicitly: the shebang takes whatever PATH offers.
+      - name: the bash floor
+        if: ${{ runner.os == 'macOS' }}
+        run: |
+          /bin/bash --version | head -1
+          /bin/bash ./bootstrap.sh javascript ../floor --dry-run
+
 
       - name: git identity
         run: |
@@ -421,8 +441,14 @@ jobs:
           test "$(git -C ../committed rev-list --count HEAD)" -eq 1
           test "$(git -C ../committed log -1 --pretty=%s)" = 'chore: bootstrap javascript project'
           test -z "$(git -C ../committed status --porcelain)"
-          test -f ../committed/.env
-          test -z "$(git -C ../committed ls-files .env)"
+
+          # Windows gets no .env on purpose: $UID under Git Bash is a Windows
+          # RID that means nothing to a Linux container, so compose falls back
+          # to its own 1000:1000 defaults.
+          if [ "$RUNNER_OS" != Windows ]; then
+            test -f ../committed/.env
+            test -z "$(git -C ../committed ls-files .env)"
+          fi
 
   lint:
     runs-on: ubuntu-latest
@@ -450,9 +476,20 @@ jobs:
   # disk, so nothing else here touches it. Both URLs are pinned to this commit
   # so the script under test fetches the templates that shipped with it, which
   # is the bug a floating ref would hide.
+  #
+  # On all three platforms because this is where the portability lives: mktemp
+  # with no template, and tar --strip-components against bsdtar on macOS and
+  # Git Bash's tar on Windows.
   remote:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
     env:
       sha: ${{ github.sha }}
     steps:
@@ -465,7 +502,9 @@ jobs:
 
       - name: a bad ref exits 6 and leaves no temporary directory
         run: |
-          before=$(find /tmp -maxdepth 1 -name 'tmp.*' -type d | wc -l)
+          # Where mktemp -d actually writes, which is not /tmp on macOS.
+          tmp=${TMPDIR:-/tmp}
+          before=$(find "$tmp" -maxdepth 1 -name 'tmp.*' -type d | wc -l)
           set +e
           BOOTSTRAP_REF=refs/heads/no-such-branch /bin/bash -c \
             "$(curl -fsSL "https://raw.githubusercontent.com/acodeninja/bootstrap/$sha/bootstrap.sh")" \
@@ -474,5 +513,5 @@ jobs:
           set -e
           if [ "$got" -ne 6 ]; then echo "expected 6 from a bad ref, got $got" >&2; exit 1; fi
           test ! -e ../bad
-          after=$(find /tmp -maxdepth 1 -name 'tmp.*' -type d | wc -l)
+          after=$(find "$tmp" -maxdepth 1 -name 'tmp.*' -type d | wc -l)
           if [ "$before" -ne "$after" ]; then echo "a temporary directory survived" >&2; exit 1; fi
