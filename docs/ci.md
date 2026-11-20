@@ -189,8 +189,19 @@ generated test costs more than it proves.
 
 ## Publishing images
 
-`publish.yml`, on every push to `main`. It is the only workflow here with write scope of
-any kind, and it writes `packages` only.
+`publish.yml`, on pushes to `main` that touch `templates/*/files/**`. It is the only
+workflow here with write scope of any kind, and it writes `packages` only.
+
+Three things keep it inside Docker Hub's limit, which is counted **per account** and
+shared with the `bootstrap` job above — all three added after a run answered `429`:
+
+- the `paths` filter, because a docs-only commit cannot change an image and was
+  rebuilding all fifty-one
+- a `concurrency` group, because successive pushes stacked whole matrices
+- `max-parallel: 8`, because every build resolves its `FROM` and fifty-one at once is
+  past the limit however well authenticated
+
+Nothing here is urgent, so spreading it out costs nothing that matters.
 
 Two architectures, on native runners rather than under QEMU: emulating a toolchain build
 costs more than the whole matrix, and public repositories get `ubuntu-24.04-arm` free.
