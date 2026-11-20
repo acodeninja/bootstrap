@@ -54,15 +54,14 @@ The real proof. A template is only correct if a cold machine can bootstrap it an
 green test, so that is exactly what CI does, for every template — and then publishes the
 image it just tested.
 
-One workflow, in this order:
+One workflow:
 
 ```
-scope ─┐
-lint  ─┴─> image-amd64 ─────> image-arm64 ─────> manifest
-           26 legs            25 legs            26 legs
-           build, test, push  build, test, push  merge :main
+scope ─┬─> image-amd64 (26 legs, cap 8) ─┬─> manifest (26 legs)
+lint  ─┴─> image-arm64 (25 legs, cap 8) ─┘   merge :main
+           build, test, push
 
-contract, remote                                 (independent)
+contract, remote                             (ungated, every push)
 ```
 
 Each `image` leg is one template on one architecture:
@@ -141,16 +140,24 @@ The bootstrap's own build and test steps are what assert the generated project w
 CI does not re-run them — a non-zero exit from `bootstrap.sh` with code `4` or `5`
 already says which half failed.
 
-### Two architectures, in series
+### Two architectures, in parallel
 
 Containers are Linux whatever the host is, so running the matrix on three operating
 systems would test Docker Desktop, not the templates. There is no Windows or macOS leg.
 
 There are two *architectures*, on native runners rather than under QEMU: emulating a
 toolchain build costs more than the whole matrix, and public repositories get
-`ubuntu-24.04-arm` free. They run in series — all of amd64, then all of arm64 — which
-holds concurrent `FROM` resolutions at `max-parallel: 8` rather than sixteen, and means
-amd64 is published before an arm runner starts.
+`ubuntu-24.04-arm` free. Two matrices, one per architecture, both gated on `scope` and
+`lint` and neither waiting on the other. They ran in series for exactly one revision; the
+barrier made every arm64 leg wait for the slowest amd64 one and bought nothing beyond
+"amd64 ships first".
+
+**What two caps of eight add up to.** `max-parallel` is per job, so the peak is 16
+concurrent builds rather than 8. The pull count per run does not change — one or two per
+leg either way — and Docker Hub's limit is counted per account over six hours rather than
+per instant, which is why the `concurrency` group that stopped successive pushes stacking
+whole matrices is the thing that actually fixed the `429`. 16 is also a long way below the
+51 that produced it. If one shows up again, the dial is `max-parallel: 4` in both jobs.
 
 Each leg pushes its own `:main-<arch>` tag and a per-template `manifest` job merges them
 into the `:main` index `compose.yaml` names. The merge takes whichever architectures it
@@ -160,9 +167,9 @@ to merge. The edge that follows: if a template's amd64 leg fails and its arm64 l
 `:main` indexes a fresh arm64 beside the previous commit's amd64. That was already true of
 a failed *build* and is now also true of a failed test; the run is red either way.
 
-Running arm64 only when publishing is deliberate. It is the architecture nothing had ever
-tested, it is in the pipeline to validate what is about to ship, and a pull request should
-not pay for it.
+Both architectures build and test on a pull request; neither pushes. arm64 was the
+architecture nothing had ever run, so it is worth the runner time to find out before the
+merge rather than after.
 
 The template list is **generated**, not written out: the `scope` job globs
 `templates/*/template.env` into a JSON array and all three matrices consume it via
@@ -256,16 +263,17 @@ Not a workflow of its own any more — the last three steps of each `image` leg,
 `manifest` job after them. What gets published and when is covered in
 [what gates what](#what-gates-what) above; what follows is the shape of the artefact.
 
-Four things keep the pipeline inside Docker Hub's limit, which is counted **per account**
-and shared by every leg in flight. The first three were added after a run answered `429`:
+Three things keep the pipeline inside Docker Hub's limit, which is counted **per account**
+and shared by every leg in flight. All three were added after a run answered `429`:
 
 - `scope`, because a docs-only commit cannot change an image and was rebuilding all
   fifty-one
 - a `concurrency` group, because successive pushes stacked whole matrices
 - `max-parallel: 8`, because every build resolves its `FROM` and fifty-one at once is past
   the limit however well authenticated
-- the amd64 wave finishing before the arm64 wave starts, which is what keeps that eight
-  from becoming sixteen
+
+That cap is per job and there are two matrices, so the peak is sixteen rather than eight —
+see [two architectures, in parallel](#two-architectures-in-parallel).
 
 Nothing here is urgent, so spreading it out costs nothing that matters.
 
