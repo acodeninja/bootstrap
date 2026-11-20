@@ -33,6 +33,7 @@ jobs:
   # forces needs['like-this'] at every reference.
   scope:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       ids: ${{ steps.select.outputs.ids }}
       build: ${{ steps.select.outputs.build }}
@@ -115,6 +116,9 @@ jobs:
       ${{ !cancelled() && needs.scope.result == 'success'
       && needs.scope.outputs.build == 'true' }}
     runs-on: ubuntu-latest
+    # Six times the slowest template. Without one a hung leg holds a runner
+    # for GitHub's six-hour default, and the weekly matrix is seventy of them.
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write
@@ -217,6 +221,7 @@ jobs:
       ${{ !cancelled() && needs.scope.result == 'success'
       && needs.scope.outputs.build == 'true' }}
     runs-on: ubuntu-24.04-arm
+    timeout-minutes: 30
     permissions:
       contents: read
       packages: write
@@ -301,6 +306,7 @@ jobs:
       && needs.scope.outputs.publish == 'true'
       && needs.lint.result == 'success' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: read
       packages: write
@@ -350,6 +356,7 @@ jobs:
   # Asserting which failure happened, not merely that one did.
   contract:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
 
@@ -403,6 +410,7 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
       - run: shellcheck bootstrap.sh
@@ -428,6 +436,7 @@ jobs:
   # is the bug a floating ref would hide.
   remote:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     env:
       sha: ${{ github.sha }}
     steps:
