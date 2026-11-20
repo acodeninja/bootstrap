@@ -146,6 +146,27 @@ $ docker search --filter is-official=true lua
 Tags will go stale faster than the table. Treat the versions as the starting point they
 were verified at, not as a standing claim about what is current.
 
+### Debian variants, and the three exceptions
+
+Where an image publishes several OS variants, take the **Debian** one — `-slim` or
+`-trixie-slim` where published, the plain Debian tag otherwise. Alpine was considered and
+rejected: it is unavailable for seven of the languages here, it is not reliably smaller
+(`rust:1.100.0-alpine3.24` is *larger* than `rust:1.100.0-slim`), and musl costs
+correctness — Python on Alpine loses manylinux wheels. The measured saving across the rows
+that could use it was about 400 MB compressed, against a build cache that routinely holds
+ten times that.
+
+Three rows cannot follow the rule:
+
+- **`haskell`** publishes no `slim-trixie`, so it pins `9.14.1-slim-bookworm` — the one row
+  a Debian generation behind. Re-check when touching it.
+- **`fsharp` and `csharp`** are on `mcr.microsoft.com/dotnet/sdk`, which is **Ubuntu 24.04**.
+  Microsoft publishes no Debian default tag for the 10.0 SDK, so there is nothing to switch
+  to.
+- **`swift`** must use the *full* `swift:<ver>-trixie` image. Its `-slim` tags are
+  runtime-only and carry no `swift` binary at all, so applying the `-slim` preference here
+  produces an image that cannot compile anything.
+
 ### Pin the tag, never `latest`
 
 The image tag is now the version pin. It is the only thing making a local run match CI,
