@@ -68,6 +68,23 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 - **Wave 4** is everything added after the first twenty-six shipped. Its rows are not
   ordered by difficulty, because they arrive when somebody asks for them.
 
+## Where lint and fmt prove nothing
+
+Nine of the lint and fmt targets above do nothing, across seven templates, and they
+are worth one list rather than seven notes. **`basic` and `lolcode` have no `lint`**:
+neither Bywater BASIC nor `lci` has a check mode, a syntax-only flag or a
+third-party checker, so `make lint` prints why and exits 0. CI runs it, and for
+those two it is theatre.
+
+**Seven have no `fmt`** — `ada`, `basic`, `cobol`, `intercal`, `lolcode`, `pascal`
+and `prolog`. `gnatpp` ships only with AdaCore's own distribution; GnuCOBOL, lci
+and SWI-Prolog publish no formatter; Free Pascal's `ptop` capitalises keywords and
+dedents `end;` to column 0, which is worse than leaving the file alone. Each one's
+`.editorconfig` carries the indent the language expects instead.
+
+The alternative in both cases was a target that looked like a check. A reader
+cannot tell a check that passed from one that was never made, so these say so.
+
 ## Notes on individual rows
 
 **`cpp` follows `c`'s vendoring precedent and needs none of its machinery.** doctest is a
