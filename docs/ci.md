@@ -177,6 +177,30 @@ The template list is **generated**, not written out: the `scope` job globs
 language needs no CI edit — which is what the contract's "no registry to update" promise
 requires.
 
+### The weekly rebuild
+
+```yaml
+  schedule:
+    - cron: '17 4 * * 1'
+```
+
+Gating builds on changed paths means nothing tests a template unless it changes, and
+"build everything on every push" had been accidentally serving as drift detection — a
+moved base-image tag, an apt repository that stopped carrying a version, a Hackage
+outage. Monday morning replaces the accident with something deliberate, off the hour
+because scheduled runs on the hour are the ones GitHub delays.
+
+**It publishes.** That is a decision rather than an oversight, and it has a consequence
+worth stating: `:main` can move with no commit behind it. This is consistent with the
+images being [a cache, not the pin](containers.md#published-images-are-a-cache-not-the-pin) —
+the `Dockerfile` is still the authority on every version — but a reader who assumes
+`:main` corresponds to a commit is wrong, and would be wrong in a confusing way if nobody
+had written it down.
+
+Scheduled runs share the `ci-${{ github.ref }}` concurrency group with pushes to `main`,
+deliberately: a push should cancel an in-flight weekly rather than run sixteen builds
+beside it.
+
 ### Layer caching
 
 There is none, and that is a choice rather than an omission.

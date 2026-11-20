@@ -4,6 +4,12 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Nothing tests a template unless it changes, so upstream breakage -- a moved
+  # base tag, an apt or Hackage outage -- would otherwise surface on whoever
+  # next edits one. Off the hour, because scheduled runs on the hour are the
+  # ones GitHub delays.
+  schedule:
+    - cron: '17 4 * * 1'
 
 # packages: write is granted per job, to the three that push, rather than here:
 # at workflow level it would hand write scope to the lint, contract and remote
@@ -57,9 +63,10 @@ jobs:
           if [ "$event" = pull_request ]; then base=$pr_base; fi
 
           # Build is the answer when the question cannot be asked -- a new
-          # branch or a force push leaves no commit to diff against.
+          # branch, a force push, or the weekly run, which has nothing to diff
+          # and exists to rebuild everything.
           build=true
-          if git cat-file -e "${base}^{commit}" 2>/dev/null; then
+          if [ "$event" != schedule ] && git cat-file -e "${base}^{commit}" 2>/dev/null; then
             if [ -z "$(git diff --name-only "$base" "$after" -- templates bootstrap.sh .github/workflows/ci.yml)" ]; then
               build=false
             fi

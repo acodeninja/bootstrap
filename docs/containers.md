@@ -183,7 +183,11 @@ red with no commit in between.
 
 Every template's image is built and pushed to
 `ghcr.io/acodeninja/bootstrap/<template-id>:main` for `amd64` and `arm64` whenever a push
-to `main` changes a template and that template's tests pass — see [ci.md](ci.md).
+to `main` changes a template and that template's tests pass, and again every Monday so
+the cache tracks upstream — see [ci.md](ci.md). The weekly run means a tag can move with
+no commit behind it, which is the sense in which these are a cache: the `Dockerfile` is
+the authority on versions, not the registry.
+
 `compose.yaml` names it beside `build: .`:
 
 ```yaml
