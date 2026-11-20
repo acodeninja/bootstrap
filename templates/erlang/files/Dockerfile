@@ -28,13 +28,16 @@ ENV REBAR_CACHE_DIR=/cache/rebar3-cache
 # this on every `make lint`.
 WORKDIR /prime
 COPY rebar.config .
+# /cache is world-writable so the service runs as any host uid without needing a
+# passwd entry or a writable $HOME. See docs/containers.md "File ownership". The
+# chmod shares this layer deliberately: run separately it rewrites the mode of
+# every file the PLT build just cached, and overlayfs then copies all of it again.
 RUN mkdir -p src \
     && printf -- '-module(prime).\n' > src/prime.erl \
     && rebar3 dialyzer \
-    && rebar3 fmt --check
+    && rebar3 fmt --check \
+    && rm -rf /prime \
+    && mkdir -p /cache \
+    && chmod -R 777 /cache
 
-# /cache is world-writable so the service runs as any host uid without
-# needing a passwd entry or a writable $HOME. See docs/containers.md
-# "File ownership".
 WORKDIR /work
-RUN rm -rf /prime && mkdir -p /cache && chmod -R 777 /cache

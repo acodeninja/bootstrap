@@ -46,9 +46,13 @@ ENV ZIG_LOCAL_CACHE_DIR=/cache/zig-local
 # Priming it here means the named volume seeds from the image, so the first
 # `make test` takes a second and a half rather than a minute and a half.
 WORKDIR /prime
-RUN zig init && zig build test
+# /cache is world-writable so the service runs as any host uid without needing a
+# passwd entry or a writable $HOME. See docs/containers.md "File ownership". The
+# chmod shares this layer deliberately: run separately it rewrites the mode of
+# every file the prime just cached, and overlayfs then copies all of it again.
+RUN zig init \
+    && zig build test \
+    && rm -rf /prime \
+    && chmod -R 777 /cache
 
-# /cache is world-writable so the service runs as any host uid without needing
-# a passwd entry or a writable $HOME. See docs/containers.md "File ownership".
 WORKDIR /work
-RUN rm -rf /prime && chmod -R 777 /cache

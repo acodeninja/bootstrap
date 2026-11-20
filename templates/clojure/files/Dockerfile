@@ -105,9 +105,11 @@ RUN mkdir -p /cache/clojure \
 # the image, so the first `make test` pays for neither.
 WORKDIR /work
 COPY deps.edn ./
-RUN clojure -P -M:test && rm /work/deps.edn
-
 # /cache and the .cpcache mount point are world-writable so the service runs as
 # any host uid without a passwd entry or a writable $HOME. See
-# docs/containers.md "File ownership".
-RUN chmod -R 777 /cache /work/.cpcache
+# docs/containers.md "File ownership". The chmod shares this layer deliberately:
+# run separately it rewrites the mode of every jar just cached, and overlayfs
+# then copies all of it again.
+RUN clojure -P -M:test \
+    && rm /work/deps.edn \
+    && chmod -R 777 /cache /work/.cpcache

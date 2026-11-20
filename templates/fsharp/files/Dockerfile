@@ -21,15 +21,19 @@ RUN dotnet tool install fantomas --version "${FANTOMAS_VERSION}" --tool-path /op
 WORKDIR /prime
 COPY global.json Directory.Build.props ./
 COPY *.fsproj ./
-RUN mkdir -p src test \
-    && printf 'module Prime\n\nlet prime = ()\n' > src/prime.fs \
-    && printf 'module PrimeTests\n\nopen Xunit\n\n[<Fact>]\nlet primeTest () = Assert.True(true)\n' > test/PrimeTests.fs \
-    && dotnet test --results-directory /cache/test-results
-
 # The primed obj/ records /prime as the project directory, so it is dropped and
 # the first real run rebuilds it from the package cache beside it.
 #
-# /cache is world-writable so the service runs as any host uid without needing
-# a passwd entry or a writable $HOME. See docs/containers.md "File ownership".
+# /cache is world-writable so the service runs as any host uid without needing a
+# passwd entry or a writable $HOME. See docs/containers.md "File ownership". The
+# cleanup and the chmod share this layer deliberately: run separately the chmod
+# rewrites the mode of every package NuGet just cached, and overlayfs then copies
+# all of it again.
+RUN mkdir -p src test \
+    && printf 'module Prime\n\nlet prime = ()\n' > src/prime.fs \
+    && printf 'module PrimeTests\n\nopen Xunit\n\n[<Fact>]\nlet primeTest () = Assert.True(true)\n' > test/PrimeTests.fs \
+    && dotnet test --results-directory /cache/test-results \
+    && rm -rf /prime /cache/build /cache/test-results \
+    && chmod -R 777 /cache
+
 WORKDIR /work
-RUN rm -rf /prime /cache/build /cache/test-results && chmod -R 777 /cache

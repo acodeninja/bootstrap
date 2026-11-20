@@ -48,12 +48,15 @@ ENV PATH=/cache/luarocks/bin:$PATH
 # volume seeds from the image and `make test`/`make lint` never touch the
 # network.
 WORKDIR /prime
+# /cache is world-writable so the service runs as any host uid without needing a
+# passwd entry or a writable $HOME. See docs/containers.md "File ownership". The
+# chmod shares this layer deliberately: run separately it rewrites the mode of
+# every rock just installed, and overlayfs then copies all of it again.
 RUN mkdir -p /cache/luarocks \
     && luarocks --lua-dir=/usr --tree=/cache/luarocks install busted 2.3.0 \
-    && luarocks --lua-dir=/usr --tree=/cache/luarocks install luacheck 1.2.0
+    && luarocks --lua-dir=/usr --tree=/cache/luarocks install luacheck 1.2.0 \
+    && rm -rf /prime \
+    && mkdir -p /cache/home \
+    && chmod -R 777 /cache
 
-# /cache is world-writable so the service runs as any host uid without
-# needing a passwd entry or a writable $HOME. See docs/containers.md "File
-# ownership".
 WORKDIR /work
-RUN rm -rf /prime && mkdir -p /cache/home && chmod -R 777 /cache

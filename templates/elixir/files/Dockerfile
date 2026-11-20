@@ -19,9 +19,13 @@ ENV MIX_BUILD_PATH=/cache/_build
 # means the named volume seeds from the image already fetched and compiled.
 WORKDIR /prime
 COPY mix.exs ./
-RUN mix deps.get && mix deps.compile
+# World-writable so the service runs as any host uid. See docs/containers.md
+# "File ownership". The chmod shares this layer deliberately: run separately it
+# rewrites the mode of every dependency just compiled, and overlayfs then copies
+# all of it again.
+RUN mix deps.get \
+    && mix deps.compile \
+    && rm -rf /prime \
+    && chmod -R 777 /cache
 
-# World-writable so the service runs as any host uid. See
-# docs/containers.md "File ownership".
 WORKDIR /work
-RUN rm -rf /prime && chmod -R 777 /cache

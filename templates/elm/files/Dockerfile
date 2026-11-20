@@ -69,12 +69,17 @@ theToolchainCompilesAndRunsATest =
 ELM
 
 WORKDIR /prime
-RUN mkdir -p src && elm-test
-
 # /cache and the elm-stuff mount point are world-writable so the service runs
 # as any host uid without a passwd entry or a writable $HOME. See
 # docs/containers.md "File ownership".
-WORKDIR /work
-RUN rm -rf /prime \
+#
+# The chmod shares this layer deliberately: run separately it rewrites the mode
+# of every package ELM_HOME just cached, and overlayfs then copies all of it
+# again.
+RUN mkdir -p src \
+    && elm-test \
+    && rm -rf /prime \
     && mkdir -p /work/elm-stuff \
     && chmod -R 777 /cache /work/elm-stuff
+
+WORKDIR /work
