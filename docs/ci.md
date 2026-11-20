@@ -51,39 +51,77 @@ is not available to an `if`, which is why the value goes through `env` first.
 ## This repo's CI
 
 The real proof. A template is only correct if a cold machine can bootstrap it and get a
-green test, so that is exactly what CI does, for every template.
+green test, so that is exactly what CI does, for every template — and then publishes the
+image it just tested.
+
+One workflow, in this order:
+
+```
+templates ─┐
+changed   ─┼─> image-amd64 ─────> image-arm64 ─────> manifest
+lint      ─┘   26 legs            25 legs            26 legs
+               build, test, push  build, test, push  merge :main
+
+contract, remote                                     (independent)
+```
+
+Each `image` leg is one template on one architecture:
 
 ```yaml
-jobs:
-  bootstrap:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        template: [javascript, zig, go, rust, python, ...]
-    steps:
-      - uses: actions/checkout@v7
-      - name: git identity
+      - run: ./bootstrap.sh ${{ matrix.template }} ../scaffold --no-pull
+      - name: push what the tests passed
+        if: ${{ needs.changed.outputs.templates == 'true' && needs.lint.result == 'success' }}
         run: |
-          git config --global user.name 'bootstrap ci'
-          git config --global user.email 'ci@example.invalid'
-      - uses: docker/login-action@v4
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - uses: docker/setup-buildx-action@v4
-      - run: ./bootstrap.sh ${{ matrix.template }} ../out
+          image=$(sed -n 's/^ *image: *//p' ../scaffold/compose.yaml)
+          docker tag "$image" "${image}-amd64"
+          docker push "${image}-amd64"
 ```
+
+That is the whole idea: **the bootstrap builds it, the bootstrap tests it, and the thing
+that passed is the thing that ships.** `--no-pull` because the point is the `Dockerfile`;
+pulling the published image would test the previous commit's toolchain against this
+commit's templates, and a broken `Dockerfile` would go green.
+
+It used to be two workflows that did not know about each other. `ci` built twenty-six
+images, tested them and threw them away; `publish` built fifty-one more and pushed those,
+untested. Seventy-seven builds to ship fifty-one images, and the fifty-one that shipped
+were not the ones that passed. Merging them removes twenty-six builds from every push.
 
 `fail-fast: false` matters: when an upstream image bumps and breaks three languages, you
 want all three in one run.
+
+The image name is read out of the scaffold's `compose.yaml` rather than rebuilt from the
+template id — the same reason `bootstrap.sh` reads it back instead of composing it, so the
+tag pushed here cannot drift from the one `compose` will pull.
+
+### What gates what
+
+- **A template gates itself.** One red test stops that template's push and nothing else.
+  Gating the whole matrix was the objection to testing before publishing at all — it would
+  put the slowest template in front of every other template's release — and a per-template
+  gate answers it, because `manifest` was already per-template.
+- **`lint` gates publishing, not testing.** It is in `needs`, so the image jobs wait for
+  it, but they run under `!cancelled()` and only the push steps require
+  `needs.lint.result == 'success'`. A shellcheck nit should not stop twenty-six templates
+  being tested; it should stop a release.
+- **`changed` gates publishing by path.** A docs-only commit cannot change an image, and
+  rebuilding all fifty-one for one of those is what answered `429` once already. This was
+  a `paths` filter on the old publish workflow's trigger; merged, it has to be a job,
+  because a trigger filter would skip the tests too. It diffs
+  `github.event.before..github.sha` under `templates/`, and answers "publish" whenever the
+  question cannot be asked — a new branch, a force push.
+- **Nothing publishes from a pull request.** `changed` returns `false` for any event that
+  is not a push, so a PR builds and tests amd64 and stops there.
+
+`packages: write` is granted to the three jobs that push, never at workflow level, so the
+`lint`, `contract` and `remote` jobs keep read-only tokens.
 
 ### The commit path
 
 A runner has no `user.name` or `user.email`, and `bootstrap.sh` treats that as
 non-fatal — it initialises the repository, skips the commit, says so, and still exits
-`0`. Left alone, CI would prove the fallback and never the normal path, so both jobs
-configure an identity first.
+`0`. Left alone, CI would prove the fallback and never the normal path, so every job that
+runs the bootstrap configures an identity first.
 
 The `contract` job then asserts what the commit contains: one commit, on `main`, with a
 clean tree afterwards. It also asserts that `.env` exists and is **not** tracked. That
@@ -95,45 +133,57 @@ The bootstrap's own build and test steps are what assert the generated project w
 CI does not re-run them — a non-zero exit from `bootstrap.sh` with code `4` or `5`
 already says which half failed.
 
-### One platform
+### Two architectures, in series
 
 Containers are Linux whatever the host is, so running the matrix on three operating
-systems would test Docker Desktop, not the templates. The matrix is `ubuntu-latest`
-only.
+systems would test Docker Desktop, not the templates. There is no Windows or macOS leg.
+
+There are two *architectures*, on native runners rather than under QEMU: emulating a
+toolchain build costs more than the whole matrix, and public repositories get
+`ubuntu-24.04-arm` free. They run in series — all of amd64, then all of arm64 — which
+holds concurrent `FROM` resolutions at `max-parallel: 8` rather than sixteen, and means
+amd64 is published before an arm runner starts.
+
+Each leg pushes its own `:main-<arch>` tag and a per-template `manifest` job merges them
+into the `:main` index `compose.yaml` names. The merge takes whichever architectures it
+finds rather than naming both, because `nim` has no `arm64` base — see
+[languages.md](languages.md) — and because a template whose tests failed has no new tag
+to merge. The edge that follows: if a template's amd64 leg fails and its arm64 leg passes,
+`:main` indexes a fresh arm64 beside the previous commit's amd64. That was already true of
+a failed *build* and is now also true of a failed test; the run is red either way.
+
+Running arm64 only when publishing is deliberate. It is the architecture nothing had ever
+tested, it is in the pipeline to validate what is about to ship, and a pull request should
+not pay for it.
 
 The template list is **generated**, not written out: a `templates` job globs
-`templates/*/template.env` into a JSON array and the matrix consumes it via `fromJSON`.
-That is the same glob `bootstrap.sh` discovers templates with, so adding a language needs
-no CI edit — which is what the contract's "no registry to update" promise requires.
+`templates/*/template.env` into a JSON array and all three matrices consume it via
+`fromJSON`. That is the same glob `bootstrap.sh` discovers templates with, so adding a
+language needs no CI edit — which is what the contract's "no registry to update" promise
+requires.
 
 ### Layer caching
 
-The publish workflow caches: `type=gha`, scoped per template and architecture, which is
-straightforward because it drives `docker buildx` directly.
+There is none, and that is a choice rather than an omission.
 
-The `bootstrap` job does not, and twenty-six cold image builds per run is a real cost.
-What follows is what it would take, because the obvious approach does not fit the code.
-Note that it cannot simply pull the published image instead — that is what `--no-pull`
-exists to prevent, since the Dockerfile is the thing this job is testing.
-
-The build does not happen in the workflow. `bootstrap.sh` runs `docker compose build
---progress plain` in the target directory, and it offers no hook for extra flags — no
-passthrough variable, and the flag string is a literal. `docker compose build` has no
-`--cache-from`/`--cache-to`; those are compose-file keys, and every template's
+The build happens inside `bootstrap.sh`, which runs `docker compose build` in the target
+directory and offers no hook for extra flags. `docker compose build` has no
+`--cache-from`/`--cache-to` either; those are compose-file keys, and every template's
 `compose.yaml` uses the scalar short form `build: .`, which has no room for sub-keys. So
-there are only two honest routes:
+caching would mean one of:
 
-1. **Add `cache_from`/`cache_to` to every template's `compose.yaml`.** Twenty-six edits,
-   and it puts CI-specific configuration into the generated project, which the user then
-   has to understand or delete.
-2. **Give `bootstrap.sh` a documented way to pass build flags through** — one variable it
-   reads and appends — and set it from CI. One edit to the script, none to the templates,
-   and the generated project stays clean.
+1. **`cache_from`/`cache_to` in every template's `compose.yaml`.** Twenty-six edits, and
+   it puts CI-specific configuration into the generated project, which the user then has
+   to understand or delete.
+2. **A documented build-flag passthrough in `bootstrap.sh`** — one variable it reads and
+   appends — set from CI. One edit to the script, none to the templates, and the generated
+   project stays clean.
 
-Route 2 is the one to take. Whoever does it should note that CI bootstraps into
-`../scaffold` for every template, so the compose *project* is `scaffold` regardless of
-language; the image tag is per-template now that `compose.yaml` names the published
-image, so either that or `matrix.template` can scope the cache.
+Route 2 is the way in if it is wanted, and it is not obviously worth taking. The old
+publish workflow did cache — `type=gha`, `mode=max`, scoped per template and
+architecture — against an Actions cache that is 10 GB for the whole repository. `haskell`
+alone is 6.4 GB, so the large legs evicted each other and the legs that hit were the fast
+ones anyway.
 
 The sting has also mostly been drawn: `haskell` was the one leg that made this urgent, and
 installing its linters from apt took it from never finishing to 99s. The slowest leg is now
@@ -141,7 +191,7 @@ installing its linters from apt took it from never finishing to 99s. The slowest
 
 ### Script quality
 
-Separate job, Linux only:
+Separate job, Linux only, and a gate on publishing:
 
 - `shellcheck bootstrap.sh`
 - `actionlint` over this repo's workflows and every template's `files/.github/workflows/`
@@ -194,39 +244,35 @@ generated test costs more than it proves.
 
 ## Publishing images
 
-`publish.yml`, on pushes to `main` that touch `templates/*/files/**`. It is the only
-workflow here with write scope of any kind, and it writes `packages` only.
+Not a workflow of its own any more — the last three steps of each `image` leg, and the
+`manifest` job after them. What gets published and when is covered in
+[what gates what](#what-gates-what) above; what follows is the shape of the artefact.
 
-Three things keep it inside Docker Hub's limit, which is counted **per account** and
-shared with the `bootstrap` job above — all three added after a run answered `429`:
+Four things keep the pipeline inside Docker Hub's limit, which is counted **per account**
+and shared by every leg in flight. The first three were added after a run answered `429`:
 
-- the `paths` filter, because a docs-only commit cannot change an image and was
-  rebuilding all fifty-one
+- `changed`, because a docs-only commit cannot change an image and was rebuilding all
+  fifty-one
 - a `concurrency` group, because successive pushes stacked whole matrices
-- `max-parallel: 8`, because every build resolves its `FROM` and fifty-one at once is
-  past the limit however well authenticated
+- `max-parallel: 8`, because every build resolves its `FROM` and fifty-one at once is past
+  the limit however well authenticated
+- the amd64 wave finishing before the arm64 wave starts, which is what keeps that eight
+  from becoming sixteen
 
 Nothing here is urgent, so spreading it out costs nothing that matters.
 
-Two architectures, on native runners rather than under QEMU: emulating a toolchain build
-costs more than the whole matrix, and public repositories get `ubuntu-24.04-arm` free.
-Each of the 52 jobs pushes its own `:main-<arch>` tag and a per-template `manifest` job
-merges them into the `:main` index `compose.yaml` names. The merge takes whichever
-architectures it finds rather than naming both, because `nim` has no `arm64` base — see
-[languages.md](languages.md).
+The build context is a **scaffold**, not `templates/<id>/files`, because the build happens
+where the bootstrap put the project. The raw template directory is not buildable anyway:
+the manifests the priming layers read still carry `{{TOKEN}}` placeholders — `elixir`'s
+`mix.exs` declares `app: :{{PROJECT_SNAKE}}`, which is not valid Elixir — and `haskell`'s
+cabal file is *named* with one. Five of the twenty-six failed this way on the first run.
+It also means the published image is exactly what a developer's own first build produces,
+which is now literally true: it is the same build, by the same script, in the same place.
 
-The build context is a **scaffold**, not `templates/<id>/files`. The raw template
-directory is not buildable: the manifests the priming layers read still carry
-`{{TOKEN}}` placeholders — `elixir`'s `mix.exs` declares `app: :{{PROJECT_SNAKE}}`, which
-is not valid Elixir — and `haskell`'s cabal file is *named* with one. Five of the
-twenty-six failed this way on the first run. Scaffolding first also means the published
-image is exactly what a developer's own first build would have produced.
-
-It is deliberately **not** gated on the `bootstrap` matrix. Publishing cannot make a
-broken template worse: the `Dockerfile` that fails to build is in the repository either
-way, and the bootstrap falls back to building it. Gating would put the slowest template's
-test run in front of every push. The images are a cache, not a release — see
-[containers.md](containers.md#published-images-are-a-cache-not-the-pin).
+The images are still a cache rather than a release — see
+[containers.md](containers.md#published-images-are-a-cache-not-the-pin). Publishing is
+gated on tests because the gate is cheap and per-template, not because a published image
+is a promise.
 
 ## What is not covered
 
@@ -241,16 +287,16 @@ Stated plainly, because the gaps are real:
 - **macOS is untested.** Lower risk, since it runs the same Linux containers through the
   same POSIX scripts.
 
-These follow from choosing a single-platform matrix. The alternative was 54 jobs mostly
+These follow from running one operating system. The alternative was 54 jobs mostly
 re-proving that Docker is Docker.
 
 ## Rate limits
 
 Docker Hub limits anonymous pulls, and GitHub Actions runners share IP addresses, so
 unauthenticated CI hits the limit routinely and reports it as an unrelated-looking build
-failure. This repository's `bootstrap` job authenticates first with
-`docker/login-action`; a generated project's does the same when the secrets are set.
+failure. This repository's `image` jobs authenticate first with `docker/login-action`; a
+generated project's CI does the same when the secrets are set.
 
-The publish workflow logs in to both, for opposite reasons: ghcr with `GITHUB_TOKEN`
-because that is where the image goes, Docker Hub because every `FROM` comes from there
-and fifty-two parallel builds off shared runner IPs are well past the anonymous limit.
+Each leg logs in to both registries, for opposite reasons: Docker Hub because every
+`FROM` comes from there and fifty-one builds off shared runner IPs are well past the
+anonymous limit, ghcr with `GITHUB_TOKEN` because that is where the image goes.
