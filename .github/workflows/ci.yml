@@ -198,7 +198,6 @@ jobs:
             fi
             echo "push failed; ghcr may still be creating the package" >&2
             sleep $((attempt * 10))
-            checked=$((checked + 1))
           done
 
           [ "$pushed" = yes ]
@@ -297,7 +296,6 @@ jobs:
             fi
             echo "push failed; ghcr may still be creating the package" >&2
             sleep $((attempt * 10))
-            checked=$((checked + 1))
           done
 
           [ "$pushed" = yes ]
@@ -359,7 +357,6 @@ jobs:
             if [ -f "pushed/pushed-$arch" ]; then
               set -- "$@" "$image:main-$arch"
             fi
-            checked=$((checked + 1))
           done
 
           # Nothing to do rather than an error: a marker is missing only when
@@ -512,7 +509,6 @@ jobs:
           for f in templates/*/files/Dockerfile; do
             echo "== $f"
             docker run --rm -i hadolint/hadolint:v2.15.1 < "$f"
-            checked=$((checked + 1))
           done
 
       # Explicit paths: actionlint only discovers .github/workflows at the repo
