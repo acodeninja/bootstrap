@@ -108,8 +108,13 @@ no CI edit — which is what the contract's "no registry to update" promise requ
 
 ### Layer caching
 
-Twenty-six cold image builds per run is a real cost, and it is **not implemented**. What
-follows is what it would take, because the obvious approach does not fit the code.
+The publish workflow caches: `type=gha`, scoped per template and architecture, which is
+straightforward because it drives `docker buildx` directly.
+
+The `bootstrap` job does not, and twenty-six cold image builds per run is a real cost.
+What follows is what it would take, because the obvious approach does not fit the code.
+Note that it cannot simply pull the published image instead — that is what `--no-pull`
+exists to prevent, since the Dockerfile is the thing this job is testing.
 
 The build does not happen in the workflow. `bootstrap.sh` runs `docker compose build
 --progress plain` in the target directory, and it offers no hook for extra flags — no
@@ -126,9 +131,9 @@ there are only two honest routes:
    and the generated project stays clean.
 
 Route 2 is the one to take. Whoever does it should note that CI bootstraps into
-`../scaffold` for every template, so the compose project and image tag are `scaffold` and
-`scaffold-dev` regardless of language — a per-template cache scope has to come from
-`matrix.template`, not from the tag.
+`../scaffold` for every template, so the compose *project* is `scaffold` regardless of
+language; the image tag is per-template now that `compose.yaml` names the published
+image, so either that or `matrix.template` can scope the cache.
 
 The sting has also mostly been drawn: `haskell` was the one leg that made this urgent, and
 installing its linters from apt took it from never finishing to 99s. The slowest leg is now
