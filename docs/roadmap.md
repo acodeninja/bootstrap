@@ -67,6 +67,9 @@ proving. One commit each, against the same definition of done below.
 `fortran` — official `gcc:16-trixie`, which already carried `gfortran`. The work was fpm
 for dependencies and test discovery, and a formatter.
 
+`pascal` — Debian carries the compiler and fpcunit. The work was generating the test
+runner, because fpcunit finds tests by RTTI but the program must name their units.
+
 ## Per-template definition of done
 
 1. `make test`, `make lint` and `make fmt` all work from a cold image.

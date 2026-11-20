@@ -1,7 +1,7 @@
 # Containers
 
 Every generated project runs its toolchain inside Docker. The host needs **Docker** and
-**make**, and that answer is the same for all 27 templates.
+**make**, and that answer is the same for all 28 templates.
 
 ## Why containers
 
@@ -100,15 +100,16 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | lua                    | `debian:trixie-slim` + lua, luarocks         | hand-rolled |
 | zig                    | `debian:trixie-slim` + release tarball       | hand-rolled |
 | elm                    | `node:26-trixie-slim` + elm, elm-test        | hand-rolled |
+| pascal                 | `debian:trixie-slim` + fpc 3.2.2             | hand-rolled |
 
-Across 27 templates that is **20 official, 4 vendor, 3 hand-rolled**. The hand-rolled
-set — zig, lua, elm — is the same three it was at 18 templates, because every language
-added since builds on an official image and merely adds a package. Under mise, six
-languages had no usable pin at all.
+Across 28 templates that is **20 official, 4 vendor, 4 hand-rolled**. The hand-rolled
+set — zig, lua, elm and pascal — stayed at three from 18 templates to 26, because every
+language added in between builds on an official image and merely adds a package. Under
+mise, six languages had no usable pin at all.
 
 ### One image, several templates
 
-Five images cover twelve templates. This is deliberate; do not "tidy up" by giving each
+Five images cover thirteen templates. This is deliberate; do not "tidy up" by giving each
 language its own.
 
 | Image                                 | Templates                   |
@@ -117,7 +118,7 @@ language its own.
 | `gradle:9.9-jdk25`                    | kotlin, java                |
 | `mcr.microsoft.com/dotnet/sdk:10.0`   | fsharp, csharp              |
 | `gcc:16-trixie`                       | c, cpp, fortran             |
-| `debian:trixie-slim`                  | zig, lua                    |
+| `debian:trixie-slim`                  | zig, lua, pascal            |
 
 Sharing a base image does not mean sharing a template. Each still has its own
 Dockerfile, Makefile and kitchen sink, because the image is the toolchain and the
@@ -139,8 +140,9 @@ Four cases, recorded here so they are not rediscovered per template:
   `/usr/bin/swift-format` alongside it. No separate install is needed. Use the full image:
   the `-slim` tags are runtime-only and carry no `swift` binary at all.
 
-Every reference above was resolved against the registry on 2026-11-19, tags included.
-`zig`, `lua` and `elm` returned `errors:` — no Docker Official Image exists for any of
+Every reference above was resolved against the registry on 2026-11-19, tags included, and
+each wave 4 row on the day it landed.
+`zig`, `lua`, `elm` and `pascal` returned `errors:` — no Docker Official Image exists for
 them. That is the only reason they are hand-rolled, so **re-check before writing one**:
 
 ```console

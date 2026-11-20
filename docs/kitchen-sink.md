@@ -137,6 +137,7 @@ the TDD loop for every invalid input a kata has.
 | Lua                     | `nil, "message"` multiple return                                  |
 | Prolog                  | the predicate simply fails                                        |
 | Fortran                 | a status argument (`iostat=`, `stat=`); no exceptions exist       |
+| Pascal                  | `raise` an `Exception` subclass, caught with `on E: ... do`       |
 
 ## Gotchas are deliberately not uniform
 

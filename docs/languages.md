@@ -1,6 +1,6 @@
 # Languages
 
-The 27 targets, their chosen tooling, and when each lands. This is the implementer's
+The 28 targets, their chosen tooling, and when each lands. This is the implementer's
 worksheet: one row is one template.
 
 Test runners are chosen **stdlib-first**. A built-in runner is one less dependency to
@@ -44,6 +44,7 @@ patches, so an old minor can outrank a current one. See
 | `c`          | `gcc:16.2.0-trixie` + Unity 2.7.0 (vendored)   | `Unity`                      | `clang-format` check / in place      | 3    |
 | `cpp`        | `gcc:16.2.0-trixie` + doctest 2.5.3 (vendored) | `doctest`                    | `clang-format` check / in place      | 3    |
 | `fortran`    | `gcc:16.2.0-trixie` + fpm 0.14.0               | `test-drive` via `fpm test`  | `fprettify --diff` / `fprettify`     | 4    |
+| `pascal`     | `debian:trixie-20261104-slim` + fpc 3.2.2      | `fpcunit`                    | `fpc -Sew` / —                       | 4    |
 
 ## Waves
 
@@ -683,6 +684,36 @@ compares its output against nothing. Compilation errors come from `make build`.
 ships in the gcc image but pip does not, so the Dockerfile installs `python3-pip` to
 install one formatter. The alternative was `prolog`'s documented no-op, and a real
 formatter was worth more than the layer it costs.
+
+**`pascal` has a real xUnit, and it was never a third-party one.** fpcunit ships in the
+Free Component Library, which Debian packages as `fp-units-fcl`, so the test framework
+costs one more apt package rather than a vendored tree like `c` and `cpp` need. Tests are
+`published` methods on a `TTestCase`, discovered through RTTI, which is as declaration-free
+as `go test`.
+
+What is not free is the runner. fpcunit finds the tests inside a unit but the *program*
+has to name every unit in a `uses` clause, which would name the kitchen sink and break
+when somebody deletes it. The image generates that clause from `tests/`, which is `c`'s
+`unity-discover` pattern rather than `zig`'s concession.
+
+**There is no formatter, and `ptop` is the reason rather than the absence of one.** It
+ships with Free Pascal, so it was tried: it capitalises every keyword to `Unit`, `Begin`
+and `End`, moves `end;` to column zero inside a procedure, and leaves trailing whitespace
+after `var`. The first is fixable by deleting `capital` from its generated config; the
+other two are not, and the last fights `.editorconfig`. `make fmt` is therefore `prolog`'s
+documented no-op, and `make lint` compiles every unit with `-Sew` instead — warnings as
+errors, which is a real check rather than a stand-in for one.
+
+That choice paid for itself immediately. `-Sew` caught an uninitialised managed result in
+the kitchen sink's own `Apply`, and the compiler separately refused `[LetterA, LetterB,
+LetterA]` outright: a duplicate in a *set constructor* is an error, while adding a member
+that is already there by union is fine. Both are in the suite now because the toolchain
+objected first.
+
+One trap worth stating because it has no error message worth reading: a unit name is an
+identifier in the same namespace as everything else, so a unit called `greet` hides a
+function called `Greet` and the compiler complains about a missing `.` instead. The test
+units are `*_test.pas` for that reason, not for symmetry with `ruby`.
 
 **`elixir` is the third BEAM template, and not redundant.** `erlang` shows the runtime
 raw, `gleam` shows a static type system on top of it, and `elixir` shows the ergonomic
