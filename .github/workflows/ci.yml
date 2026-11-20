@@ -179,6 +179,18 @@ jobs:
           done
 
           [ "$pushed" = yes ]
+          printf '%s\n' "$image" > pushed-amd64
+
+      # manifest cannot see a matrix sibling's result, and a stale :main-amd64
+      # left by an earlier run looks exactly like one this run wrote. This
+      # marker is how it tells the two apart.
+      - name: record that this architecture published
+        if: ${{ needs.scope.outputs.publish == 'true' && needs.lint.result == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: pushed-${{ matrix.template }}-amd64
+          path: pushed-amd64
+          retention-days: 1
 
   # The same steps on arm hardware, beside the amd64 matrix rather than behind
   # it, and gated on the same two jobs. A published arm64 image has now been run
@@ -250,6 +262,18 @@ jobs:
           done
 
           [ "$pushed" = yes ]
+          printf '%s\n' "$image" > pushed-arm64
+
+      # manifest cannot see a matrix sibling's result, and a stale :main-arm64
+      # left by an earlier run looks exactly like one this run wrote. This
+      # marker is how it tells the two apart.
+      - name: record that this architecture published
+        if: ${{ needs.scope.outputs.publish == 'true' && needs.lint.result == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: pushed-${{ matrix.template }}-arm64
+          path: pushed-arm64
+          retention-days: 1
 
   # The per-architecture tags above are the inputs; this is the tag compose
   # pulls, and it has to be an index covering both or an arm64 host gets an
@@ -276,22 +300,34 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Whichever architectures exist, rather than both by name: a template that
-      # gains or loses one should not need an edit here, and a template whose
-      # tests failed has no new tag to merge.
-      - name: merge the per-architecture tags
+      # Only what this run pushed. imagetools inspect cannot tell a tag written
+      # minutes ago from one left by an earlier run, so for a template whose
+      # legs both failed it re-merged the previous digests and reported a green
+      # publish that nothing had tested.
+      - continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: pushed-${{ matrix.template }}-*
+          path: pushed
+          merge-multiple: true
+
+      - name: merge the architectures this run published
         run: |
           image=ghcr.io/${{ github.repository }}/${{ matrix.template }}
           set --
           for arch in amd64 arm64; do
-            if docker buildx imagetools inspect "$image:main-$arch" >/dev/null 2>&1; then
+            if [ -f "pushed/pushed-$arch" ]; then
               set -- "$@" "$image:main-$arch"
             fi
           done
-          if [ "$#" -eq 0 ]; then
-            echo "no per-architecture tags published for $image" >&2
-            exit 1
+
+          # Nothing to do rather than an error: a marker is missing only when
+          # that architecture's leg failed, and that is already red.
+          if [ "$#" -ne 2 ]; then
+            echo "not republishing $image: $# of 2 architectures published" >&2
+            exit 0
           fi
+
           docker buildx imagetools create --tag "$image:main" "$@"
           docker buildx imagetools inspect "$image:main"
 
