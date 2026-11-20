@@ -34,7 +34,7 @@ patches, so an old minor can outrank a current one. See
 | `haskell`    | `haskell:9.14.1-slim-bookworm`                 | `hspec`                      | `hlint` / `ormolu`                   | 2    |
 | `kotlin`     | `gradle:9.9.1-jdk25`                           | `kotlin.test`                | `ktlint` / `ktlint -F`               | 2    |
 | `java`       | `gradle:9.9.1-jdk25`                           | `JUnit 5`                    | `checkstyle` / `spotless`            | 2    |
-| `fsharp`     | `mcr.microsoft.com/dotnet/sdk:10.0.404`        | `xUnit`                      | `dotnet format --verify-no-changes`  | 2    |
+| `fsharp`     | `mcr.microsoft.com/dotnet/sdk:10.0.404`        | `xUnit v3`                   | `fantomas --check` / `fantomas`      | 2    |
 | `csharp`     | `mcr.microsoft.com/dotnet/sdk:10.0.404`        | `xUnit`                      | `dotnet format --verify-no-changes`  | 2    |
 | `ocaml`      | `ocaml/opam:debian-13-ocaml-5.6`               | `alcotest` via `dune test`   | `dune build @lint` / `ocamlformat`   | 2    |
 | `nim`        | `nim:2.4.0`                                    | `unittest`                   | `nim check` / `nimpretty`            | 2    |
@@ -58,6 +58,28 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
   test framework because the language has no stdlib one.
 
 ## Notes on individual rows
+
+**`fsharp` cannot use `dotnet format`, so it uses Fantomas.** `dotnet format` supports C#
+and Visual Basic only: handed an F# project it prints "Format currently supports only C#
+and Visual Basic projects" and exits **0**, so a `lint` built on it can never go red —
+verified against deliberately mangled source. Fantomas is installed as a pinned
+`--tool-path` tool in the image, reads `.editorconfig`, and exits 99 on a violation.
+`csharp` keeps `dotnet format`, so the two .NET rows differ here on purpose.
+
+Two more .NET facts this template had to solve. **xUnit v3 runs on Microsoft.Testing
+Platform, and the .NET 10 SDK refuses the old VSTest path for it** — `dotnet test` fails
+before running anything unless a `global.json` carries
+`"test": { "runner": "Microsoft.Testing.Platform" }`. The .NET 9 spellings
+(`TestingPlatformDotnetTestSupport`, a `dotnet.config` runner section) do not work on
+10.0.404. And `make test` carries `--ignore-exit-code 8` because MTP exits 8 for "ran zero
+tests": without it, deleting the suite would turn `make test` red. It is scoped to that one
+code — a failing test still exits 2 — which was verified, so it is not a `|| true`.
+
+The SDK image is **Ubuntu 24.04, not Debian**, and Microsoft publishes no Debian default tag
+for the 10.0 SDK, so this pair is the one exception to the Debian-variant rule. Its `$HOME`
+problem is also distinctive: the image has a passwd entry for uid 1000 *only*, so at any
+other uid NuGet's migration runner dies creating a named mutex. `ENV HOME=/cache` fixes it;
+`DOTNET_CLI_HOME` alone does not, because NuGet reads `HOME`.
 
 **`swift` is the one template whose lint cannot gate on the tool's own exit code.**
 `swift format lint` reports every finding as a *warning* and exits 0 regardless, so

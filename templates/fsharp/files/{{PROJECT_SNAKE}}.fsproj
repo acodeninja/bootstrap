@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!-- F# compiles files in the order they are listed, and a wildcard expands
+       alphabetically. A source file that another one depends on needs its own
+       Compile line above this glob. -->
+  <ItemGroup>
+    <Compile Include="src/*.fs" />
+    <Compile Include="test/*.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" Version="4.0.3" />
+  </ItemGroup>
+
+</Project>
