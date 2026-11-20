@@ -38,6 +38,12 @@ AUTHOR=
 YEAR=
 REPLY_CONTENT=
 FILE_COUNT=0
+TEMP_ROOT=
+REMOTE_ROOT=
+
+# The ref this script was served from. A copy taken from a tag must fetch that
+# tag's templates -- see docs/install.md "Pinning a version".
+DEFAULT_REF=refs/heads/main
 
 usage() {
   printf '%s\n' \
@@ -121,10 +127,71 @@ parse_args() {
 # remote mode announces itself. See docs/install.md.
 script_root() {
   local src=${BASH_SOURCE[0]:-} dir
-  [ -n "$src" ] || return 0
+  # Tested for being a file, not for being non-empty: inside a function under
+  # `bash -c` bash sets this to the literal string `environment`, whose dirname
+  # is `.`, so an emptiness test hands back the caller's directory and remote
+  # mode silently scaffolds from whatever templates/ happens to sit there.
+  [ -f "$src" ] || return 0
   dir=$(cd -- "$(dirname -- "$src")" && pwd) || return 0
   [ -d "$dir/templates" ] || return 0
   printf '%s' "$dir"
+}
+
+# Trapped rather than called at the end: every failure path leaves through die,
+# and a user who interrupts a download should not be left a temporary directory
+# either.
+cleanup() {
+  [ -n "$TEMP_ROOT" ] || return 0
+  rm -rf "$TEMP_ROOT"
+  TEMP_ROOT=
+}
+
+# One archive rather than per-file requests: raw HTTP cannot list a directory.
+# See docs/install.md "Fetching templates".
+fetch_templates() {
+  local ref=${BOOTSTRAP_REF:-$DEFAULT_REF} url tarball root
+
+  TEMP_ROOT=$(mktemp -d 2>/dev/null) ||
+    die 6 'could not create a temporary directory' 'check that TMPDIR points somewhere writable'
+  trap cleanup EXIT HUP INT TERM
+
+  url="https://github.com/acodeninja/bootstrap/archive/$ref.tar.gz"
+  tarball=$TEMP_ROOT/templates.tar.gz
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL -o "$tarball" "$url" 2>/dev/null
+  elif command -v wget >/dev/null 2>&1; then
+    wget -qO "$tarball" "$url" 2>/dev/null
+  else
+    die 6 'neither curl nor wget is installed' \
+      'install either one, or use the clone form instead'
+  fi ||
+    die 6 "could not download templates from $url" \
+      'check the network, or set BOOTSTRAP_REF to a ref that exists'
+
+  root=$TEMP_ROOT/repo
+  mkdir -p "$root"
+  # --strip-components=1 drops the bootstrap-<ref>/ wrapper GitHub adds, whose
+  # name depends on the ref and so cannot be predicted from here.
+  tar -xzf "$tarball" -C "$root" --strip-components=1 2>/dev/null ||
+    die 6 'could not extract the template archive' \
+      'the download may be truncated; try again'
+  [ -d "$root/templates" ] ||
+    die 6 "the archive at $url carries no templates directory" \
+      'set BOOTSTRAP_REF to a ref that has one'
+
+  REMOTE_ROOT=$root
+}
+
+# docs/cli.md prints the ref's short name, so a default main reads as `@ main`
+# rather than `@ refs/heads/main`. A BOOTSTRAP_REF given as a bare branch or a
+# sha has no prefix to drop and shows as itself.
+fetch_step() {
+  local ref=${BOOTSTRAP_REF:-$DEFAULT_REF}
+  case $ref in
+    refs/heads/*) ref=${ref#refs/heads/} ;;
+    refs/tags/*) ref=${ref#refs/tags/} ;;
+  esac
+  step fetch "acodeninja/bootstrap @ $ref ($(template_count) templates)"
 }
 
 # Parsed, not sourced: template.env is display data, and sourcing it would
@@ -446,13 +513,19 @@ next_steps() {
 main() {
   parse_args "$@"
 
+  local remote=0
   TEMPLATE_ROOT=$(script_root)
   if [ -z "$TEMPLATE_ROOT" ]; then
-    die 6 'this build of bootstrap.sh only supports running from a clone' \
-      'git clone git@github.com:acodeninja/bootstrap.git && cd bootstrap' \
-      './bootstrap.sh javascript ../my-js'
+    # Not $(fetch_templates): command substitution is a subshell, so its
+    # TEMP_ROOT would not survive, its EXIT trap would delete the download on
+    # the way out, and a die inside it would exit the subshell rather than the
+    # script.
+    fetch_templates
+    TEMPLATE_ROOT=$REMOTE_ROOT
+    remote=1
   fi
   TEMPLATE_ROOT=$TEMPLATE_ROOT/templates
+  if [ "$remote" -eq 1 ]; then fetch_step; fi
 
   if [ "$OPT_LIST" -eq 1 ]; then
     list_templates
