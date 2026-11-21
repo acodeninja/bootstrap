@@ -182,6 +182,22 @@ jobs:
             exit 1
           fi
 
+      # A formatter on a freshly scaffolded project should have nothing to do,
+      # so this doubles as a check that the template files ship formatted. It
+      # is also the first time fmt runs in CI at all: lint and test were run,
+      # and a formatter that mangled the file it formatted was a developer's
+      # problem to find.
+      - name: fmt changes nothing
+        working-directory: ../scaffold
+        run: |
+          make fmt
+          dirt=$(git status --porcelain)
+          if [ -n "$dirt" ]; then
+            echo "make fmt reformatted files that shipped unformatted:" >&2
+            echo "$dirt" >&2
+            exit 1
+          fi
+
       - name: ghcr login
         if: ${{ needs.scope.outputs.publish == 'true' }}
         uses: docker/login-action@v4
@@ -283,6 +299,22 @@ jobs:
           dirt=$(git -C ../scaffold status --porcelain)
           if [ -n "$dirt" ]; then
             echo "make test wrote into the working tree:" >&2
+            echo "$dirt" >&2
+            exit 1
+          fi
+
+      # A formatter on a freshly scaffolded project should have nothing to do,
+      # so this doubles as a check that the template files ship formatted. It
+      # is also the first time fmt runs in CI at all: lint and test were run,
+      # and a formatter that mangled the file it formatted was a developer's
+      # problem to find.
+      - name: fmt changes nothing
+        working-directory: ../scaffold
+        run: |
+          make fmt
+          dirt=$(git status --porcelain)
+          if [ -n "$dirt" ]; then
+            echo "make fmt reformatted files that shipped unformatted:" >&2
             echo "$dirt" >&2
             exit 1
           fi
