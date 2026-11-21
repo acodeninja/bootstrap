@@ -543,3 +543,10 @@ anonymous limit, ghcr with `GITHUB_TOKEN` because that is where the image goes.
 The `lint` job is the exception: it pulls `hadolint` and `actionlint` from Docker
 Hub anonymously. Two pulls against a six-hour allowance is not worth a login, and
 an image-free job has no scaffold to push.
+
+Dependabot is the other one, and it is not a free pass: resolving a `FROM` across
+thirty-seven templates is thirty-seven manifest lookups a week, anonymously, from GitHub's
+own shared addresses. Authenticating it means a `registries:` block in `dependabot.yml`
+and the two Docker Hub secrets copied into the **Dependabot** secret store, which is a
+different store from the Actions one the `image` jobs read. Until that is done, a weekly
+`docker` update job that fails to resolve a tag is the symptom to expect.
