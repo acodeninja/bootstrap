@@ -244,6 +244,22 @@ jobs:
             exit 1
           fi
 
+      # Last of the scaffold checks, because deleting a tracked file dirties
+      # the tree the two above assert is clean.
+      #
+      # Four documents promise the sink is deletable and nothing checked it.
+      # zig is the one to watch: build.zig names the sink, which the contract
+      # allows as a concession, so it is the template where this can break.
+      - name: the kitchen sink is deletable
+        run: |
+          sink=$(sed -n 's/^KITCHEN_SINK="\(.*\)"$/\1/p' templates/${{ matrix.template }}/template.env)
+          if [ -z "$sink" ]; then
+            echo "no KITCHEN_SINK in templates/${{ matrix.template }}/template.env" >&2
+            exit 1
+          fi
+          rm -r "../scaffold/$sink"
+          make -C ../scaffold test
+
       - name: ghcr login
         if: ${{ needs.scope.outputs.publish == 'true' }}
         uses: docker/login-action@v4
@@ -410,6 +426,22 @@ jobs:
             echo "the second run repeated the first: nothing is cached" >&2
             exit 1
           fi
+
+      # Last of the scaffold checks, because deleting a tracked file dirties
+      # the tree the two above assert is clean.
+      #
+      # Four documents promise the sink is deletable and nothing checked it.
+      # zig is the one to watch: build.zig names the sink, which the contract
+      # allows as a concession, so it is the template where this can break.
+      - name: the kitchen sink is deletable
+        run: |
+          sink=$(sed -n 's/^KITCHEN_SINK="\(.*\)"$/\1/p' templates/${{ matrix.template }}/template.env)
+          if [ -z "$sink" ]; then
+            echo "no KITCHEN_SINK in templates/${{ matrix.template }}/template.env" >&2
+            exit 1
+          fi
+          rm -r "../scaffold/$sink"
+          make -C ../scaffold test
 
       - name: ghcr login
         if: ${{ needs.scope.outputs.publish == 'true' }}
