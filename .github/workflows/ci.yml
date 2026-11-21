@@ -169,6 +169,19 @@ jobs:
         working-directory: ../scaffold
         run: make lint
 
+      # bootstrap.sh finishes on make test, so this is the check containers.md
+      # asks for and the contract job cannot make: it runs before any build, so
+      # a lock file or a build artefact written into the bind mount is invisible
+      # to it and lands here instead.
+      - name: the suite left the tree clean
+        run: |
+          dirt=$(git -C ../scaffold status --porcelain)
+          if [ -n "$dirt" ]; then
+            echo "make test wrote into the working tree:" >&2
+            echo "$dirt" >&2
+            exit 1
+          fi
+
       - name: ghcr login
         if: ${{ needs.scope.outputs.publish == 'true' }}
         uses: docker/login-action@v4
@@ -260,6 +273,19 @@ jobs:
       - name: lint the scaffold
         working-directory: ../scaffold
         run: make lint
+
+      # bootstrap.sh finishes on make test, so this is the check containers.md
+      # asks for and the contract job cannot make: it runs before any build, so
+      # a lock file or a build artefact written into the bind mount is invisible
+      # to it and lands here instead.
+      - name: the suite left the tree clean
+        run: |
+          dirt=$(git -C ../scaffold status --porcelain)
+          if [ -n "$dirt" ]; then
+            echo "make test wrote into the working tree:" >&2
+            echo "$dirt" >&2
+            exit 1
+          fi
 
       - name: ghcr login
         if: ${{ needs.scope.outputs.publish == 'true' }}
