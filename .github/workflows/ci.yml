@@ -198,6 +198,14 @@ jobs:
             exit 1
           fi
 
+      # Not shell. It opens an interactive shell, which on a runner with no
+      # terminal holds the leg until the timeout rather than failing.
+      - name: the remaining targets run
+        working-directory: ../scaffold
+        run: |
+          make build
+          make help
+
       - name: ghcr login
         if: ${{ needs.scope.outputs.publish == 'true' }}
         uses: docker/login-action@v4
@@ -318,6 +326,14 @@ jobs:
             echo "$dirt" >&2
             exit 1
           fi
+
+      # Not shell. It opens an interactive shell, which on a runner with no
+      # terminal holds the leg until the timeout rather than failing.
+      - name: the remaining targets run
+        working-directory: ../scaffold
+        run: |
+          make build
+          make help
 
       - name: ghcr login
         if: ${{ needs.scope.outputs.publish == 'true' }}
