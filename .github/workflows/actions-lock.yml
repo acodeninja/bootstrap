@@ -1,0 +1,77 @@
+# The lockfiles pin actions to commits, and a pin only stays honest while
+# something re-resolves it. Dependabot covers this repository's own workflow,
+# but it cannot see templates/*/files/.github/workflows/, and a shipped lockfile
+# that has gone stale is worse than a floating tag: the runner rejects a locked
+# commit that is no longer reachable from the ref recorded for it, which would
+# fail somebody's first CI run on a project they just scaffolded.
+name: actions lock
+
+on:
+  schedule:
+    - cron: '41 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  ACTIONS_LOCK: v0.5.1
+
+jobs:
+  relock:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      # For the dispatch at the end. A push made with GITHUB_TOKEN starts no
+      # workflow run of its own, so without this a relock would land unverified.
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - run: gh extension install github/gh-actions-lock --pin "$ACTIONS_LOCK"
+
+      # --relock advances a ref that moved. It does not take v7.0.1 to v8:
+      # version bumps are Dependabot's job here and pins.yml's for the
+      # templates, which Dependabot cannot reach.
+      - name: relock this repository
+        run: gh actions-lock --relock
+
+      # The template workflow is not one of this repository's, so the tool
+      # cannot see it in place. It is relocked in a scratch tree and copied
+      # back into all thirty-seven, which is sound because every template
+      # ships the same workflow and the lockfile keys it by path.
+      - name: relock the shipped copy
+        run: |
+          work=$(mktemp -d)
+          mkdir -p "$work/.github/workflows"
+          cp templates/c/files/.github/workflows/ci.yml "$work/.github/workflows/"
+          cp templates/c/files/.github/workflows/actions.lock "$work/.github/workflows/"
+          (cd "$work" && gh actions-lock --relock && gh actions-lock --verify)
+          for d in templates/*/files/.github/workflows; do
+            cp "$work/.github/workflows/ci.yml" "$d/ci.yml"
+            cp "$work/.github/workflows/actions.lock" "$d/actions.lock"
+          done
+
+      # Both of these run in the lint job too, but that is after the push, and
+      # a relock that broke a workflow would already be on main by then.
+      - name: check what it produced
+        run: |
+          gh actions-lock --verify
+          docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 \
+            -color .github/workflows/*.yml templates/*/files/.github/workflows/ci.yml
+
+      - name: commit anything that moved
+        run: |
+          if git diff --quiet; then
+            echo "every pin still resolves to the commit it did yesterday"
+            exit 0
+          fi
+          git diff --stat
+          git config user.name 'bootstrap ci'
+          git config user.email 'ci@example.invalid'
+          git commit -qam 'chore: relock action dependencies'
+          git push
+          gh workflow run ci.yml
