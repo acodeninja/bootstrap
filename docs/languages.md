@@ -164,6 +164,15 @@ refuses to emit without one, and that is the compiler's own documented answer ra
 dodge. `elm-format` needs `--yes` to rewrite without prompting, and `elm-test` exits 1 on an
 empty `tests/`.
 
+**`elm make` deadlocks on arm64 now and then, and the cure costs more than the disease.**
+One CI leg died with GHC's `thread blocked indefinitely in an MVar operation` at
+`Reporting.hs:445` *after* printing "Success! Compiled 1 module.", then passed on a rerun
+with nothing changed. A probe on the same native `ubuntu-24.04-arm` runner compiled the
+module 153 times across 200 invocations without a single failure, so the rate is low — and
+the obvious fix, `--report=json`, trades the reporting path for JSON error output on every
+failure a human would rather read. Apple Silicon runs the same binary: if `make build`
+hangs, run it again.
+
 **`gleam format` sorts a module's imports, and that quietly makes the obvious test entry
 module name-dependent.** With `import {{PROJECT_SNAKE}}` beside `import gleeunit`, exactly
 one ordering is correct — and which one depends on how the project name sorts against
