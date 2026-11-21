@@ -844,6 +844,64 @@ jobs:
           docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 \
             -color .github/workflows/*.yml templates/*/files/.github/workflows/ci.yml
 
+      # Nothing held any of this. Every invariant in the contract was enforced
+      # by convention and a reviewer's eye, which is how two .dockerignore
+      # files lost their source exclusions without a leg ever going red.
+      - name: every template honours the contract
+        run: |
+          status=0
+          note() { echo "$1: $2" >&2; status=1; }
+
+          for env in templates/*/template.env; do
+            id=${env%/template.env}; id=${id#templates/}
+            files=templates/$id/files
+
+            for f in Dockerfile compose.yaml Makefile README.md LICENSE \
+                     .dockerignore .gitignore .editorconfig .gitattributes \
+                     .github/workflows/ci.yml; do
+              [ -e "$files/$f" ] || note "$id" "missing $f"
+            done
+
+            # Three files no template has any business differing on. They are
+            # copied, not written, and a diff means someone edited one copy.
+            for f in LICENSE .gitattributes .github/workflows/ci.yml; do
+              cmp -s "$files/$f" "templates/c/files/$f" \
+                || note "$id" "$f differs from the c template"
+            done
+
+            sink=$(sed -n 's/^KITCHEN_SINK="\(.*\)"$/\1/p' "$env")
+            if [ -z "$sink" ] || [ ! -e "$files/$sink" ]; then
+              note "$id" "KITCHEN_SINK does not resolve: ${sink:-unset}"
+            fi
+
+            keys=$(sed -n 's/^\([A-Z_]*\)=.*/\1/p' "$env" | sort | tr '\n' ' ')
+            [ "$keys" = "DISPLAY_NAME KITCHEN_SINK " ] \
+              || note "$id" "template.env declares: $keys"
+
+            # The suite must not reach the build context: an image that can see
+            # it can depend on it, and then deleting the sink breaks the build.
+            for pattern in .git .github .env src "${sink%%/*}"; do
+              grep -qxF "$pattern" "$files/.dockerignore" \
+                || note "$id" ".dockerignore does not exclude $pattern"
+            done
+
+            for target in help test lint fmt build shell; do
+              grep -q "^$target:" "$files/Makefile" \
+                || note "$id" "Makefile has no $target target"
+            done
+            grep -qF '.DEFAULT_GOAL := help' "$files/Makefile" \
+              || note "$id" "Makefile does not default to help"
+
+            # Windows make runs recipes through cmd.exe, which has none of
+            # these. Until now this was documented as a review responsibility.
+            if sed -n 's/^\t//p' "$files/Makefile" \
+                 | grep -qE '(^|[^-[:alnum:]_])(grep|awk|sed|column|id)([^-[:alnum:]_]|$)'; then
+              note "$id" "a Makefile recipe calls a POSIX tool"
+            fi
+          done
+
+          exit $status
+
   # bootstrap.ps1 had no job at all: six hundred lines of the product that
   # nothing ran, beside a twin that every push exercised. The parity step is
   # the one that matters, because the two are kept in step by hand.
