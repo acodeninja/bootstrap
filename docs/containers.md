@@ -277,7 +277,9 @@ mount a second named volume *inside* the bind mount. `clojure` needs this: the C
 The host is left an empty directory at the mount point, which git does not track, so the
 clean-project check passes without gitignoring anything. Reach for this only after
 confirming no environment variable or flag exists — it is the least obvious of the three
-remedies and the only one that leaves a visible artefact in the user's project.
+remedies and the only one that leaves a visible artefact in the user's project. Five
+templates need it: `clojure` for `.cpcache`, `gleam` and `fortran` for `build/`, `dart`
+for `.dart_tool`, and `elm` for `elm-stuff`.
 
 Where the toolchain reads an environment variable for its cache location, point it
 inside the volume rather than letting it write next to the source. Zig does this with
