@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM mcr.microsoft.com/dotnet/sdk:10.0.404
+FROM mcr.microsoft.com/dotnet/sdk:11.0.100
 
 # The image has a passwd entry for uid 1000 only, so at any other uid $HOME is
 # / and NuGet's migration runner dies creating a named mutex under it.

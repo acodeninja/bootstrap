@@ -2,7 +2,7 @@
 # The long tag looks fully pinned and is not: no patch-level temurin tag is
 # published, so temurin-25 floats and a JDK rebuild would move this image with
 # no commit behind it. The digest is the index, so it covers both architectures.
-FROM clojure:temurin-25-tools-deps-1.12.7.1681-trixie-slim@sha256:01f9d7e42a6f3a22ae0e2a654ef9830aca4ff73798219427f175f6697fb55eac
+FROM clojure:temurin-27-tools-deps-1.12.6.1673-trixie-slim@sha256:95f73d2d4f6495a83b1cddfeee7538e5d5a48bb229813fb508644260940d2dee
 
 ARG CLJ_KONDO_VERSION=2026.10.26
 ARG CLJFMT_VERSION=0.16.6
