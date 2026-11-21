@@ -206,6 +206,16 @@ jobs:
           make build
           make help
 
+      # The contract job greps one scaffold, for javascript, because building
+      # thirty-seven images to read thirty-seven files would be absurd there.
+      # Here the image is already built and the scaffold already on disk.
+      - name: every placeholder was substituted
+        run: |
+          if grep -rn '{{[A-Z_]\{2,\}}}' ../scaffold --exclude-dir=.git; then
+            echo "the lines above still carry template tokens" >&2
+            exit 1
+          fi
+
       - name: ghcr login
         if: ${{ needs.scope.outputs.publish == 'true' }}
         uses: docker/login-action@v4
@@ -334,6 +344,16 @@ jobs:
         run: |
           make build
           make help
+
+      # The contract job greps one scaffold, for javascript, because building
+      # thirty-seven images to read thirty-seven files would be absurd there.
+      # Here the image is already built and the scaffold already on disk.
+      - name: every placeholder was substituted
+        run: |
+          if grep -rn '{{[A-Z_]\{2,\}}}' ../scaffold --exclude-dir=.git; then
+            echo "the lines above still carry template tokens" >&2
+            exit 1
+          fi
 
       - name: ghcr login
         if: ${{ needs.scope.outputs.publish == 'true' }}
