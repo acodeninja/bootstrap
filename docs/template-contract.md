@@ -59,7 +59,7 @@ Every template's `files/` must contain:
 | `Dockerfile`               | `FROM` a pinned image, dependencies installed, `WORKDIR /work`     |
 | `compose.yaml`             | the `dev` service: bind mount, cache volumes, `user`, `image`      |
 | `Makefile`                 | `test`, `lint`, `fmt`, `build`, `shell`, `help`                    |
-| `.dockerignore`            | `.git`, build output, `.env`                                       |
+| `.dockerignore`            | `.git`, `.github`, `.env`, `src`, the suite, build output          |
 | `README.md`                | What this is, how to run it, the prerequisites                     |
 | the kitchen sink           | The one-page suite, at `KITCHEN_SINK` — see [kitchen-sink.md](kitchen-sink.md) |
 | `.gitignore`               | Build artefacts for this language, plus `.env`                     |
@@ -72,6 +72,10 @@ Every template's `files/` must contain:
 
 `.env` is **not** in `files/`. The bootstrap script generates it — see
 [containers.md](containers.md#file-ownership).
+
+`compose.yaml` is the same fifteen lines in every template, differing only in `image:`
+and in any cache volume nested inside the bind mount. Beyond the four keys the table
+names it also carries `name: {{PROJECT_SLUG}}`, `working_dir: /work` and `init: true`.
 
 `compose.yaml` carries both `build: .` and
 `image: ghcr.io/acodeninja/bootstrap/<template-id>:main`, and the `image` name is not
