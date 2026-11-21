@@ -823,6 +823,34 @@ jobs:
           echo "checked $checked templates"
           [ "$drift" -eq 0 ]
 
+      # --list is advertised in the README and was invoked nowhere. Written
+      # from PowerShell for the same reason the file lists are: the bash
+      # PowerShell finds on PATH is not the shell bootstrap.sh runs under.
+      - name: list the templates as powershell sees it
+        if: ${{ runner.os == 'Windows' }}
+        shell: powershell
+        run: |
+          $lines = & powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1 --list
+          [IO.File]::WriteAllLines((Resolve-Path ..).Path + "\list.ps.txt", @($lines))
+
+      - name: the two entry points agree on --list
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          ./bootstrap.sh --list > ../list.sh.txt
+          diff -u ../list.sh.txt <(tr -d '\r' < ../list.ps.txt)
+
+          # cli.md calls the format machine-readable and stable, so the shape
+          # is asserted too and not just the agreement between the two: one
+          # tab-separated id and display name per template, sorted by id.
+          count=$(find templates -mindepth 1 -maxdepth 1 -type d | wc -l)
+          [ "$(wc -l < ../list.sh.txt)" -eq "$count" ]
+          awk -F'\t' '
+            NF != 2 || $1 !~ /^[a-z0-9-]+$/ || $2 == "" { print "bad line: " $0; bad = 1 }
+            END { exit bad }
+          ' ../list.sh.txt
+          cut -f1 ../list.sh.txt > ../ids.txt
+          sort ../ids.txt | diff -u ../ids.txt -
+
   lint:
     runs-on: ubuntu-latest
     timeout-minutes: 10
