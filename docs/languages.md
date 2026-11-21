@@ -622,10 +622,13 @@ the lint task, and the two-template split is cheaper than conditionals in one.
 did, in three places.
 
 It has **no test discovery**. A test file runs only if something names it as a module
-root, and since 0.17 `build.zig` runs in a sandboxed configurer with no `std.fs`, so it
-cannot find the files for itself. `build.zig` names `src/kitchen_sink.zig` explicitly and
-deleting the suite means deleting that block too — the one template so far where the
-kitchen sink is not self-contained. See [kitchen-sink.md](kitchen-sink.md#it-is-meant-to-be-deleted).
+root, so `build.zig` names `src/kitchen_sink.zig` rather than finding it. It names it
+behind a probe, which is what keeps the suite deletable: `dependOnDirectoryMetadata` on
+`src/` makes the configure phase re-run when a file there appears or disappears, and
+without it the cached graph outlives the deleted file and names a source that is gone.
+The one cost is in the image: `.dockerignore` keeps `src/` out of the build context, and
+the configure phase fails outright on a missing directory, so the prime creates an empty
+one.
 
 It ships **no `build.zig.zon`**. The manifest is optional for a project with no
 dependencies, and that is the only reason this works: `.fingerprint` is checked against

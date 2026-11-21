@@ -53,7 +53,10 @@ COPY build.zig ./
 # passwd entry or a writable $HOME. See docs/containers.md "File ownership". The
 # chmod shares this layer deliberately: run separately it rewrites the mode of
 # every file the prime just cached, and overlayfs then copies all of it again.
-RUN zig build --help >/dev/null \
+# The empty src is what build.zig's directory dependency needs: .dockerignore
+# keeps the real one out, and the configure phase fails outright without it.
+RUN mkdir src \
+    && zig build --help >/dev/null \
     && rm -rf /prime \
     && chmod -R 777 /cache
 

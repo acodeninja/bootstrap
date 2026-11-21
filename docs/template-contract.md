@@ -130,12 +130,12 @@ load-bearing twice over: `node --test <path>` treats the path as a module to loa
 exits `1` even when every assertion passes.
 
 Some languages have no discovery to use. Zig runs a file's tests only if something names
-it as a module root, and since 0.17 `build.zig` is evaluated without `std.fs`, so it
-cannot look for the files itself. The rule still binds the Makefile — `make test` is
-`zig build test` and names nothing — but the build script names the suite, and deleting
-it means deleting that block. Where this happens, the declaration carries a comment
-saying so, and [kitchen-sink.md](kitchen-sink.md#it-is-meant-to-be-deleted) states the
-concession rather than pretending the rule held.
+it as a module root, so `build.zig` has to name the suite. It must name it
+*conditionally*: `templates/zig` probes for the file, and declares
+`dependOnDirectoryMetadata` on `src/` so the probe is sound against a configure phase
+that is otherwise cached on `build.zig`'s own contents. The promise then holds unmodified
+— delete the file, change nothing else — and the Makefile stays clean too, because
+`make test` is `zig build test` and names nothing.
 
 Targets must not call host shell tools beyond `docker` — no `grep`, `awk`, `sed` or
 `id`. Windows `make` runs through `cmd.exe` and has none of them. The reasoning and the

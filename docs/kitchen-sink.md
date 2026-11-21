@@ -215,14 +215,10 @@ $ make test
 
 still builds and passes.
 
-**One concession, and it is Zig's.** Where the language's build system has no test
-discovery, the build script has to name the suite, and deleting the file means deleting
-that declaration with it. `templates/zig` is the first case: `build.zig` carries a
-five-line block with a comment saying to remove it. The rule that survives is the one
-that matters — nothing you write depends on the suite, and no target points at it — but
-"one file" is now "one file, and the lines that name it". Do not extend this to a
-language whose runner can find its own tests; see
-[template-contract.md](template-contract.md#the-makefile-targets).
+**No exceptions, including Zig's.** Where a build system has no test discovery the build
+script has to name the suite, and for a while that meant deleting a five-line block along
+with the file — the one case where the sink was not self-contained. `templates/zig` names
+it conditionally instead, so the rule is the plain one everywhere.
 
 There is no companion `KITCHEN-SINK.md`. An earlier design had one, to keep the
 explanation out of the generated `README.md` — the README is about the project you are
