@@ -903,16 +903,26 @@ jobs:
 
             for f in Dockerfile compose.yaml Makefile README.md LICENSE \
                      .dockerignore .gitignore .editorconfig .gitattributes \
-                     .github/workflows/ci.yml; do
+                     .github/workflows/ci.yml .github/workflows/actions.lock; do
               [ -e "$files/$f" ] || note "$id" "missing $f"
             done
 
-            # Three files no template has any business differing on. They are
+            # Four files no template has any business differing on. They are
             # copied, not written, and a diff means someone edited one copy.
-            for f in LICENSE .gitattributes .github/workflows/ci.yml; do
+            for f in LICENSE .gitattributes .github/workflows/ci.yml \
+                     .github/workflows/actions.lock; do
               cmp -s "$files/$f" "templates/c/files/$f" \
                 || note "$id" "$f differs from the c template"
             done
+
+            # The shipped lockfile pins only what it lists, so a uses: line
+            # added without re-running the tool would fail in somebody's new
+            # project rather than here.
+            while read -r ref; do
+              grep -qF "'$ref'" "$files/.github/workflows/actions.lock" \
+                || note "$id" "the lockfile does not pin $ref"
+            done < <(sed -n 's/^[[:space:]]*\(- \)\{0,1\}uses:[[:space:]]*//p' \
+                       "$files/.github/workflows/ci.yml")
 
             sink=$(sed -n 's/^KITCHEN_SINK="\(.*\)"$/\1/p' "$env")
             if [ -z "$sink" ] || [ ! -e "$files/$sink" ]; then
