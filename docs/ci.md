@@ -470,6 +470,42 @@ real run met a backlog of a thousand and ran out of its timeout part-way through
 is still what `:main` points at, and deleting it then would break the tag it was about to
 replace.
 
+## Keeping the pins current
+
+Every version here is pinned: seventy-four `FROM` lines, twelve `ARG *_VERSION` pins inside
+`RUN` steps, three of those beside a hand-computed `ARG *_SHA256`, and the actions in
+`.github/workflows/`. For a long time nothing moved any of them, which is the other half of
+pinning — an unmaintained pin is not reproducible, it is just old, and the first symptom is
+a tag upstream has since deleted.
+
+Four kinds of pin, three mechanisms:
+
+| Pin                              | What moves it                                                                            |
+| -------------------------------- | ---------------------------------------------------------------------------------------- |
+| `uses:` in this repo's workflows | Dependabot, weekly and grouped; it regenerates the matching `actions.lock` entry in the same pull request |
+| `FROM` in every template         | Dependabot, weekly, grouped into one pull request across all thirty-seven                |
+| the shipped `actions.lock`       | [actions-lock.yml](../.github/workflows/actions-lock.yml), nightly, `gh actions-lock --relock` |
+| `ARG *_VERSION`                  | nobody — [pins.yml](../.github/workflows/pins.yml) reports them and a human edits the Dockerfile |
+
+**Dependabot cannot see a version inside a `RUN` step**, which is the whole reason
+`pins.yml` exists. It reads each `ARG *_VERSION` out of the Dockerfile and asks upstream
+what the current release is. For the seven that live on GitHub the owner and repo come out
+of the download URL the pin interpolates into, so there is no manifest to drift from what
+it describes — and `lci`, which publishes no release at all, is read from its tags instead.
+`fantomas` comes from `api.nuget.org`, the three opam packages from the `packages/` tree of
+`ocaml/opam-repository`, and `zig` from `ziglang.org/download/index.json`. The job exits
+non-zero when anything is behind, so a stale pin is a red scheduled run rather than a
+notification nobody reads. It also checks `ACTIONS_LOCK`, the one version pinned in a `run`
+step rather than a `uses:` line, and that every workflow agrees on it.
+
+**A grouped Dependabot pull request touches every template**, which makes `scope` select
+all thirty-seven. The full matrix is then what reviews it, which is the point of grouping
+rather than a cost of it.
+
+**The nightly relock does not bump versions.** `--relock` advances a ref that has moved; it
+does not take `v7.0.1` to `v8`. It is there because a lockfile is only as good as its last
+resolution, and the thirty-seven shipped copies have no Dependabot of their own.
+
 ## What is not covered
 
 Stated plainly, because the gaps are real:

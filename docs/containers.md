@@ -215,6 +215,11 @@ FROM node:26.13.1-trixie-slim
 Not `node`, not `node:latest`, not `node:26`. A floating tag means a green suite can go
 red with no commit in between.
 
+A pin nobody updates is not reproducible either, it is just old. Dependabot moves the
+`FROM` lines and the workflow actions, `pins.yml` reports the `ARG *_VERSION` pins it
+cannot see, and `actions-lock.yml` re-resolves the lockfiles nightly — see
+[ci.md](ci.md#keeping-the-pins-current).
+
 ### Published images are a cache, not the pin
 
 Every template's image is built and pushed to
