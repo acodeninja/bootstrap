@@ -3,12 +3,15 @@ RUN := docker compose run --rm dev
 .DEFAULT_GOAL := help
 .PHONY: help test lint fmt build shell
 
+# $(info) is make's own, so the text and its columns survive cmd.exe, which
+# prints the quotes echo needs; @cd . stops "Nothing to be done for 'help'".
 help:
-	@echo "make test    Run the kitchen sink suite"
-	@echo "make lint    Check types, lint rules and formatting"
-	@echo "make fmt     Reformat in place"
-	@echo "make build   Compile to JavaScript"
-	@echo "make shell   Open a shell in the container"
+	$(info make test    Run the kitchen sink suite)
+	$(info make lint    Check types, lint rules and formatting)
+	$(info make fmt     Reformat in place)
+	$(info make build   Compile to JavaScript)
+	$(info make shell   Open a shell in the container)
+	@cd .
 
 # Bare, with no path. `node --test kitchen-sink.test.ts` treats the argument
 # as a module to load and exits 1 with MODULE_NOT_FOUND even when the suite

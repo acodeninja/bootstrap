@@ -4,12 +4,15 @@ SOURCES := src test
 .DEFAULT_GOAL := help
 .PHONY: help test lint fmt build shell
 
+# $(info) is make's own, so the text and its columns survive cmd.exe, which
+# prints the quotes echo needs; @cd . stops "Nothing to be done for 'help'".
 help:
-	@echo "make test    Run the test suite"
-	@echo "make lint    Check formatting and types"
-	@echo "make fmt     Reformat in place"
-	@echo "make build   Compile to BEAM bytecode"
-	@echo "make shell   Open a shell in the container"
+	$(info make test    Run the test suite)
+	$(info make lint    Check formatting and types)
+	$(info make fmt     Reformat in place)
+	$(info make build   Compile to BEAM bytecode)
+	$(info make shell   Open a shell in the container)
+	@cd .
 
 test:
 	$(RUN) gleam test
