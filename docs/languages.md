@@ -1,6 +1,6 @@
 # Languages
 
-The 36 targets, their chosen tooling, and when each lands. This is the implementer's
+The 37 targets, their chosen tooling, and when each lands. This is the implementer's
 worksheet: one row is one template.
 
 Test runners are chosen **stdlib-first**. A built-in runner is one less dependency to
@@ -53,6 +53,7 @@ patches, so an old minor can outrank a current one. See
 | `r`          | `debian:trixie-20261104-slim` + R 4.5.0        | `testthat`                   | `lintr` / `formatR`                  | 4    |
 | `ada`        | `debian:trixie-20261104-slim` + GNAT 14.2      | `AUnit`                      | `gnatc` + `gnatwae` / —              | 4    |
 | `forth`      | `debian:bookworm-20261104-slim` + gforth 0.7.3 | TAP, own `T{ -> }T`          | `gforth` compile / —                 | 4    |
+| `arm32`      | `debian:trixie-20261104-slim` + binutils, qemu | TAP over semihosting         | `as --fatal-warnings` / —            | 4    |
 
 ## Waves
 
@@ -71,17 +72,18 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 
 ## Where lint and fmt prove nothing
 
-Ten of the lint and fmt targets above do nothing, across eight templates, and they
-are worth one list rather than eight notes. **`basic` and `lolcode` have no `lint`**:
+Eleven of the lint and fmt targets above do nothing, across nine templates, and they
+are worth one list rather than nine notes. **`basic` and `lolcode` have no `lint`**:
 neither Bywater BASIC nor `lci` has a check mode, a syntax-only flag or a
 third-party checker, so `make lint` prints why and exits 0. CI runs it, and for
 those two it is theatre.
 
-**Eight have no `fmt`** — `ada`, `basic`, `cobol`, `forth`, `intercal`, `lolcode`,
-`pascal` and `prolog`. `gnatpp` ships only with AdaCore's own distribution; GnuCOBOL,
-lci, gforth and SWI-Prolog publish no formatter; Free Pascal's `ptop` capitalises
-keywords and dedents `end;` to column 0, which is worse than leaving the file alone.
-Each one's `.editorconfig` carries the indent the language expects instead.
+**Nine have no `fmt`** — `ada`, `arm32`, `basic`, `cobol`, `forth`, `intercal`,
+`lolcode`, `pascal` and `prolog`. `gnatpp` ships only with AdaCore's own distribution;
+GnuCOBOL, lci, gforth, GNU as and SWI-Prolog publish no formatter; Free Pascal's
+`ptop` capitalises keywords and dedents `end;` to column 0, which is worse than
+leaving the file alone. Each one's `.editorconfig` carries the indent the language
+expects instead.
 
 The alternative in both cases was a target that looked like a check. A reader
 cannot tell a check that passed from one that was never made, so these say so.
@@ -1003,6 +1005,47 @@ assumed.
 check, because an undefined word is a compile-time error and gforth exits 1. It covers
 `src/` and the test vocabulary but not the test bodies, because `require`-ing a test
 *runs* it — and running them is `make test`'s job.
+
+
+**`arm32` is the first template that emulates a machine, and the first whose tests are
+firmware.** The toolchain targets a chip the host is not, so `make test` assembles each
+test together with `src/`, links it into an image with the project's own linker script,
+and boots it on QEMU's MPS2 AN385 — a Cortex-M3 development board — one test at a time.
+`binutils-arm-none-eabi` rather than `gcc-arm-none-eabi`: pure assembly wants an
+assembler and a linker, and the compiler package is an order of magnitude larger for a C
+compiler nothing invokes.
+
+**There is no operating system, so the output channel is the emulator itself.** ARM
+semihosting is a `bkpt 0xAB` with an operation number in `r0`, and `src/start.S` uses two
+of them: `SYS_WRITE0` to print a NUL-terminated string and `SYS_EXIT` to stop the
+machine. That is the whole of the template's I/O, and it is what makes TAP possible at
+all — the alternative was a UART and a serial console to read it from.
+
+**The timeout is the crash signal, and this is the template that needed one.** Assembly's
+characteristic failure is a branch to itself: no fault, no exit status, no output, just a
+chip running forever. Every image therefore boots under a ten-second `timeout`, which was
+verified by writing the infinite loop on purpose — it reports `exited 124` after ten
+seconds rather than hanging the suite. The plan line catches the other half, an image
+that faults part way through and prints fewer results than it promised.
+
+**Each test is a whole program because bare metal leaves no alternative.** There is no
+loader to link against at run time, so `src/start.S` supplies the vector table — the
+initial stack pointer and the reset address, at address zero, where the chip looks — and
+a test supplies `main`. One main per test file is `ada`'s shape for a different reason.
+
+**The gotchas slot had no competition.** Every address of Thumb code carries its low bit
+set, and that bit is not part of the address: it tells the processor which instruction set
+to switch into. So `bx` to an even address faults, and a function pointer built by
+arithmetic rather than by asking the assembler for a symbol is not callable. The
+assertion is `ldr r0, =double` followed by `ands r0, r0, #1`, which is `1`.
+
+**It is the one template that cannot honour "one page".** `kitchen-sink.md` asks for a
+file read top to bottom in under a minute, and fifteen assertions in assembly is 246
+lines: four instructions to set up each comparison, a `.asciz` for each name, and the
+helper routines the assertions call. The assertions themselves are still fifteen and
+still one idea each, and `report_eq` exists precisely so a case is four lines rather than
+twenty — but the budget that holds everywhere else is a line count this language cannot
+meet, and pretending otherwise would mean cutting assertions to flatter the rule.
 
 ## Deferred
 

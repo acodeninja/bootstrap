@@ -146,6 +146,7 @@ the TDD loop for every invalid input a kata has.
 | R                       | `stop`, matched by message with `expect_error`                    |
 | Ada                     | `raise`, caught by name in an exception handler                   |
 | Forth                   | `THROW`, whose code `CATCH` returns in place of an exception       |
+| ARM32 assembly          | nothing is raised; the condition flags are the error channel       |
 
 ## Gotchas are deliberately not uniform
 

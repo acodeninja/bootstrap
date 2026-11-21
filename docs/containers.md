@@ -1,7 +1,7 @@
 # Containers
 
 Every generated project runs its toolchain inside Docker. The host needs **Docker** and
-**make**, and that answer is the same for all 36 templates.
+**make**, and that answer is the same for all 37 templates.
 
 ## Why containers
 
@@ -109,13 +109,14 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | r                      | `debian:trixie-slim` + R 4.5, 3 r-cran pkgs  | hand-rolled |
 | ada                    | `debian:trixie-slim` + GNAT 14, AUnit        | hand-rolled |
 | forth                  | `debian:bookworm-slim` + gforth 0.7.3        | hand-rolled |
+| arm32                  | `debian:trixie-slim` + binutils, qemu-arm    | hand-rolled |
 
-Across 36 templates that is **21 official, 4 vendor, 11 hand-rolled**. The hand-rolled
-set — zig, lua, elm, pascal, cobol, basic, lolcode, intercal, r, ada and forth — held
-at three from 18 templates to 26, because every language added in between built on an
-official image and merely added a package. Wave 4 added the other eight, which are the
-languages with no official image to build on at all. Under mise, six languages had
-no usable pin.
+Across 37 templates that is **21 official, 4 vendor, 12 hand-rolled**. The hand-rolled
+set — zig, lua, elm, pascal, cobol, basic, lolcode, intercal, r, ada, forth and arm32 —
+held at three from 18 templates to 26, because every language added in between built on
+an official image and merely added a package. Wave 4 added the other nine, which are
+the languages with no official image to build on at all. Under mise, six languages
+had no usable pin.
 
 ### One image, several templates
 

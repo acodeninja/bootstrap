@@ -177,7 +177,11 @@ an image; they test the script instead, which is a different job.
 
 There are two *architectures*, on native runners rather than under QEMU: emulating a
 toolchain build costs more than the whole matrix, and public repositories get
-`ubuntu-24.04-arm` free. Two matrices, one per architecture, both gated on `scope` and
+`ubuntu-24.04-arm` free. That is about the runners, not about the templates --
+`arm32` runs QEMU *inside* its image on both of them, because its tests are firmware
+for a chip neither runner is.
+
+Two matrices, one per architecture, both gated on `scope` and
 `lint` and neither waiting on the other. They ran in series for exactly one revision; the
 barrier made every arm64 leg wait for the slowest amd64 one and bought nothing beyond
 "amd64 ships first".

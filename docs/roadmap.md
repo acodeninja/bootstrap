@@ -95,6 +95,10 @@ suite is a single file and nothing has to be generated to find it.
 manager to add one through, so the project defines `T{ -> }T` itself in twenty lines
 and prints TAP.
 
+`arm32` — binutils and qemu-system-arm, both from Debian. Each test is firmware for a
+Cortex-M3, printing TAP over ARM semihosting because there is no operating system to
+print through, and booted under a timeout because a spinning chip reports nothing.
+
 ## Per-template definition of done
 
 1. `make test`, `make lint` and `make fmt` all work from a cold image.
