@@ -926,6 +926,13 @@ jobs:
                  | grep -qE '(^|[^-[:alnum:]_])(grep|awk|sed|column|id)([^-[:alnum:]_]|$)'; then
               note "$id" "a Makefile recipe calls a POSIX tool"
             fi
+
+            # cmd.exe does not strip the quotes echo needs on sh, so it printed
+            # them. $(info) is make's own and reaches help without a shell.
+            if awk '/^help:/{h=1;next} h && !/^\t/{exit} h' "$files/Makefile" \
+                 | grep -q '@echo'; then
+              note "$id" "the help recipe calls echo"
+            fi
           done
 
           exit $status
