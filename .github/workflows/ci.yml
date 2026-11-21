@@ -20,6 +20,12 @@ on:
 permissions:
   contents: read
 
+# The version of the tool that verifies this repository's action pins, pinned
+# like everything else here -- an unpinned one would be the joke writing itself.
+# pins.yml checks it against upstream beside the Dockerfile pins.
+env:
+  ACTIONS_LOCK: v0.5.1
+
 # One workflow now builds, tests and publishes, so a stacked run holds every
 # build in flight against a Docker Hub limit that is counted per account.
 concurrency:
@@ -871,6 +877,17 @@ jobs:
         run: |
           docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 \
             -color .github/workflows/*.yml templates/*/files/.github/workflows/ci.yml
+
+      # The lockfile is the whole of this repository's action pinning, so a
+      # workflow edited without re-running the tool has to fail here rather
+      # than run an action nobody locked. --verify re-checks provenance over
+      # the network; the runner checks it again at job start.
+      - name: the lockfile pins every action
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh extension install github/gh-actions-lock --pin "$ACTIONS_LOCK"
+          gh actions-lock --verify
 
       # Nothing held any of this. Every invariant in the contract was enforced
       # by convention and a reviewer's eye, which is how two .dockerignore
