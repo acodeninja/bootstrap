@@ -142,7 +142,8 @@ that is otherwise cached on `build.zig`'s own contents. The promise then holds u
 `make test` is `zig build test` and names nothing.
 
 Targets must not call host shell tools beyond `docker` — no `grep`, `awk`, `sed` or
-`id`. Windows `make` runs through `cmd.exe` and has none of them. The reasoning and the
+`id`, and not `echo` either, whose quotes `cmd.exe` prints rather than strips. Windows
+`make` runs through `cmd.exe` and has none of them. The reasoning and the `$(info)`
 `help` pattern that follows from it are in [containers.md](containers.md#the-makefile-may-not-use-host-shell-tools).
 
 ## Vendored code

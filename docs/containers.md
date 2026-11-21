@@ -50,20 +50,31 @@ Beyond `docker` itself, a Makefile target must not call `grep`, `awk`, `sed`, `c
 `cmd.exe` and has none of them, and a `help` target that works on Linux and dies on
 Windows is worse than no `help` target.
 
-In practice this means `help` is plain `@echo` lines rather than something clever that
-parses `##` comments out of `$(MAKEFILE_LIST)`:
+In practice this means `help` is a list of literal lines rather than something clever
+that parses `##` comments out of `$(MAKEFILE_LIST)`.
+
+`@echo` is not safe enough either, which took a while to notice. `cmd.exe` does not
+strip the quotes `sh` needs around a run of spaces, so it printed them —
+`"make test    Run the kitchen sink suite"`. Dropping the quotes fixes Windows and
+breaks the alignment on Linux, where the shell collapses the run instead. `$(info)` is
+make's own and reaches the text without a shell at all, so both print the same thing:
 
 ```make
 .DEFAULT_GOAL := help
 
 help:
-	@echo "make test    Run the kitchen sink suite"
-	@echo "make lint    Check formatting"
-	@echo "make fmt     Reformat in place"
-	@echo "make shell   Open a shell in the container"
+	$(info make test    Run the kitchen sink suite)
+	$(info make lint    Check formatting)
+	$(info make fmt     Reformat in place)
+	$(info make shell   Open a shell in the container)
+	@cd .
 ```
 
-It repeats the target names. That is the cost of working everywhere, and it is six
+`@cd .` is a no-op in either shell and is there for one reason: a recipe of nothing but
+`$(info)` runs no command, and make then prints "Nothing to be done for 'help'" under
+the text it just gave you.
+
+It repeats the target names. That is the cost of working everywhere, and it is seven
 lines.
 
 ## Base images

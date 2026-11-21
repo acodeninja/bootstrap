@@ -314,9 +314,10 @@ One job, `lint`, and a gate on everything after it:
 
 `lint` also sweeps the templates themselves, which nothing did before: the required
 files, the three that must stay byte-identical to `templates/c/files/`, the
-`.dockerignore` exclusions, the six Makefile targets, and the ban on POSIX tools in a
-recipe. Every one of those was a contract rule held up by review alone, which is how two
-`.dockerignore` files lost their source exclusions without a leg going red.
+`.dockerignore` exclusions, the six Makefile targets, the ban on POSIX tools in a recipe,
+and a `help` that reaches its text without a shell. Every one of those was a contract
+rule held up by review alone, which is how two `.dockerignore` files lost their source
+exclusions without a leg going red.
 
 Those two diffs are the only things that have ever compared the two entry points. They are
 kept in step by hand, and a drift between them would otherwise be invisible. Each side
@@ -467,10 +468,11 @@ Stated plainly, because the gaps are real:
   `contract` and `remote` run on all three, because every assertion in both is
   `--dry-run` or `--no-build`.
 - **The Windows `make` path is still untested.** No Windows runner invokes `make` at all,
-  so nothing proves a target works through `cmd.exe`. The one part of this that is now
-  machine-checked is the constraint behind it: `lint` greps every Makefile recipe for
-  `grep`, `awk`, `sed`, `column` and `id`, so a target that reaches for a POSIX toolbox
-  fails here rather than on somebody's laptop.
+  so nothing proves a target works through `cmd.exe`. Two halves of the constraint behind
+  it are machine-checked instead: `lint` greps every Makefile recipe for `grep`, `awk`,
+  `sed`, `column` and `id`, and asserts that `help` reaches its text through `$(info)`
+  rather than the `@echo` whose quotes `cmd.exe` printed literally. A target that reaches
+  for a POSIX toolbox fails here rather than on somebody's laptop.
 - **`make shell` is never run.** It opens an interactive shell, so a runner with no
   terminal would hold the leg until its timeout rather than failing. Its presence is
   asserted; its behaviour is not.
