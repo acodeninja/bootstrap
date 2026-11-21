@@ -365,12 +365,15 @@ build — `Cargo.lock`, `package-lock.json`, `Gemfile.lock`, `pubspec.lock`, `mi
 directory does not stop it, so the generated project is dirty the moment the bootstrap runs
 its own first `make test`, and the committed scaffold stops matching the working tree.
 
-Two fixes, in order of preference:
+Three fixes, in order of preference:
 
 1. **Install dependencies outside the project entirely**, so no lock is written there.
    `javascript` does this: `npm install` runs in `/deps` and the result moves to
    `/node_modules`.
-2. **Ship a pre-generated, tokenised lock file** in `files/`, so the first build finds one
+2. **Redirect the lock file itself**, where the build tool has an option for it. `elixir`
+   does this: `mix.exs` sets `lockfile: "/cache/mix.lock"`, so the lock lives in the cache
+   volume beside everything else it writes.
+3. **Ship a pre-generated, tokenised lock file** in `files/`, so the first build finds one
    that already matches. `rust` does this with a two-line `Cargo.lock` whose `name` is
    `{{PROJECT_SLUG}}`.
 
