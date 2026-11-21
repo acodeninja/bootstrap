@@ -45,6 +45,13 @@ the download cache lives in the container's `/cache` volume.
 `.github/workflows/ci.yml` builds the image and runs lint and tests on every
 push, and needs no secrets to do it.
 
+`.github/workflows/actions.lock` pins the actions that workflow uses to exact
+commits, so a tag that moves upstream cannot change what runs. It is
+machine-generated: after you add a workflow or edit a `uses:` line, install the
+tool once with `gh extension install github/gh-actions-lock` and run
+`gh actions-lock` to rebuild it. Turning on Dependabot for `github-actions`
+keeps the workflow and the lockfile in step without that.
+
 `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` are optional, and worth setting only
 if the build starts failing to pull its base image: Docker Hub rate-limits
 anonymous pulls and GitHub's runners share IP addresses, so the error looks
