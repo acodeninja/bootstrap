@@ -51,27 +51,43 @@ jobs:
           module=$(ls src/*/Greeter.elm)
           echo "module: $module, iterations: $iterations"
 
+          # Each iteration appends to the module, because elm compiles nothing
+          # when nothing changed: without this the loop measures a cache hit at
+          # a quarter-second a go, and the deadlock is in the path that runs
+          # after "Success! Compiled 1 module."
+          #
           # The count goes to stdout and everything else to stderr, so the
           # caller can capture one without swallowing the other.
           run_spelling() {
             fails=0
-            for _ in $(seq "$iterations"); do
-              if ! timeout 120 docker compose run --rm dev \
+            compiles=0
+            i=0
+            while [ "$i" -lt "$iterations" ]; do
+              i=$((i + 1))
+              printf '\n-- probe %s\n' "$i" >> "$module"
+              if timeout 120 docker compose run --rm dev \
                    elm make "$module" --output=/dev/null "$@" >/tmp/probe.log 2>&1; then
+                if grep -qF "Compiled 1 module" /tmp/probe.log; then
+                  compiles=$((compiles + 1))
+                fi
+              else
                 fails=$((fails + 1))
-                { echo "-- failure $fails"; tail -20 /tmp/probe.log; } >&2
+                { echo "-- failure $fails on iteration $i"; tail -20 /tmp/probe.log; } >&2
               fi
             done
-            echo "$fails"
+            echo "$fails $compiles"
           }
 
           plain=$(run_spelling)
           json=$(run_spelling --report=json)
 
-          printf 'current spelling: %s/%s failed\n' "$plain" "$iterations"
-          printf '  --report=json:  %s/%s failed\n' "$json" "$iterations"
-          {
-            printf '| spelling | failures |\n| --- | --- |\n'
-            printf '| --output=/dev/null | %s/%s |\n' "$plain" "$iterations"
-            printf '| --output=/dev/null --report=json | %s/%s |\n' "$json" "$iterations"
-          } >> "$GITHUB_STEP_SUMMARY"
+          report() {
+            printf '%s: %s of %s failed, %s really compiled\n' "$1" "$2" "$iterations" "$3"
+            printf '| %s | %s | %s | %s |\n' "$1" "$2" "$3" "$iterations" \
+              >> "$GITHUB_STEP_SUMMARY"
+          }
+
+          printf '| spelling | failures | compiles | of |\n| --- | --- | --- | --- |\n' \
+            >> "$GITHUB_STEP_SUMMARY"
+          report '--output=/dev/null' "${plain% *}" "${plain#* }"
+          report 'plus --report=json' "${json% *}" "${json#* }"
