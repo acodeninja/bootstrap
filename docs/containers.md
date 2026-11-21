@@ -120,16 +120,16 @@ had no usable pin.
 
 ### One image, several templates
 
-Five images cover nineteen templates. This is deliberate; do not "tidy up" by giving each
+Five images cover twenty templates. This is deliberate; do not "tidy up" by giving each
 language its own.
 
-| Image                                 | Templates                                                 |
-| ------------------------------------- | --------------------------------------------------------- |
-| `node:26-trixie-slim`                 | javascript, typescript, elm                               |
-| `gradle:9.9-jdk25`                    | kotlin, java                                              |
-| `mcr.microsoft.com/dotnet/sdk:10.0`   | fsharp, csharp                                            |
-| `gcc:16-trixie`                       | c, cpp, fortran                                           |
-| `debian:trixie-slim`                  | zig, lua, pascal, cobol, basic, lolcode, intercal, r, ada |
+| Image                                 | Templates                                                         |
+| ------------------------------------- | ----------------------------------------------------------------- |
+| `node:26-trixie-slim`                 | javascript, typescript, elm                                       |
+| `gradle:9.9-jdk25`                    | kotlin, java                                                      |
+| `mcr.microsoft.com/dotnet/sdk:10.0`   | fsharp, csharp                                                    |
+| `gcc:16-trixie`                       | c, cpp, fortran                                                   |
+| `debian:trixie-slim`                  | zig, lua, pascal, cobol, basic, lolcode, intercal, r, ada, arm32  |
 
 Sharing a base image does not mean sharing a template. Each still has its own
 Dockerfile, Makefile and kitchen sink, because the image is the toolchain and the
@@ -439,7 +439,7 @@ use — writing this document exhausted it after three `docker manifest inspect`
 before `docker login` cleared it. Two places it matters:
 
 - **This repository's CI** builds from shared runner IPs — two images per changed
-  template, one per architecture, and all seventy of them on the weekly run — and
+  template, one per architecture, and all seventy-four of them on the weekly run — and
   `--no-pull` means it really does build them. Authenticate with `docker/login-action`
   before any build. See [ci.md](ci.md).
 - **First run on a developer machine** now pulls from ghcr, which has no such limit, so

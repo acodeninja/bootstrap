@@ -1,7 +1,7 @@
 # Template contract
 
 A template is a directory under `templates/`. The directory name is the template ID.
-Adding language number 36 means satisfying this contract and nothing else — no
+Adding language number 38 means satisfying this contract and nothing else — no
 registry to update, no script to edit, no case statement to extend.
 
 ## Layout
@@ -117,11 +117,11 @@ A language with no separate linter uses its formatter in check mode for `lint`.
 
 **Two of the no-ops are `lint`, and that is the one place this contract does not
 hold.** `basic` and `lolcode` have no checker of any kind to run in any mode, so
-their `lint` prints why and exits 0 — CI runs a target that cannot fail. Seven
+their `lint` prints why and exits 0 — CI runs a target that cannot fail. Nine
 templates' `fmt` is a no-op for the same reason, which the row above now admits.
 The alternative was a target that pretended, and a reader cannot tell a check
-that passed from one that was never made. [languages.md](languages.md) names all
-nine.
+that passed from one that was never made. [languages.md](languages.md) names
+them.
 
 **`test` must not name the kitchen sink.** The suite is meant to be deleted, so a target
 that points at it breaks the moment someone does. Use whatever spelling of the runner

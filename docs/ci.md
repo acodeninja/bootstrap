@@ -141,12 +141,12 @@ tag pushed here cannot drift from the one `compose` will pull.
   ungated and run first; the image jobs `needs` all three plus `scope`, with an `if` that
   checks only `scope`'s selection. Wrapping that `if` in `!cancelled()` — which it used to
   be — overrides the success requirement `needs` already carries, so a broken script or a
-  shellcheck nit spent seventy builds proving itself. Three minutes against seventy builds
-  is not a trade worth thinking about.
+  shellcheck nit spent seventy-four builds proving itself. Three minutes against
+  seventy-four builds is not a trade worth thinking about.
 - **`manifest` and `cleanup` are ordered, not gated.** Both `needs` what comes before them
   and both keep `!cancelled()`, because a matrix reports one aggregate result: a strict
   gate on `image-amd64` would let one template's failed leg withhold publishing for the
-  other thirty-four. Per-template granularity comes from the tags instead — see
+  other thirty-six. Per-template granularity comes from the tags instead — see
   [publishing images](#publishing-images).
 
 `packages: write` is granted to the three jobs that push, never at workflow level, so the
