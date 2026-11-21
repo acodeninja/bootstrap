@@ -1,7 +1,7 @@
 # Containers
 
 Every generated project runs its toolchain inside Docker. The host needs **Docker** and
-**make**, and that answer is the same for all 35 templates.
+**make**, and that answer is the same for all 36 templates.
 
 ## Why containers
 
@@ -108,11 +108,12 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | intercal               | `debian:trixie-slim` + C-INTERCAL 0.30       | hand-rolled |
 | r                      | `debian:trixie-slim` + R 4.5, 3 r-cran pkgs  | hand-rolled |
 | ada                    | `debian:trixie-slim` + GNAT 14, AUnit        | hand-rolled |
+| forth                  | `debian:bookworm-slim` + gforth 0.7.3        | hand-rolled |
 
-Across 35 templates that is **21 official, 4 vendor, 10 hand-rolled**. The hand-rolled
-set — zig, lua, elm, pascal, cobol, basic, lolcode, intercal, r and ada — held at three
-from 18 templates to 26, because every language added in between built on an official
-image and merely added a package. Wave 4 added the other seven, which are the
+Across 36 templates that is **21 official, 4 vendor, 11 hand-rolled**. The hand-rolled
+set — zig, lua, elm, pascal, cobol, basic, lolcode, intercal, r, ada and forth — held
+at three from 18 templates to 26, because every language added in between built on an
+official image and merely added a package. Wave 4 added the other eight, which are the
 languages with no official image to build on at all. Under mise, six languages had
 no usable pin.
 
@@ -176,10 +177,13 @@ correctness — Python on Alpine loses manylinux wheels. The measured saving acr
 that could use it was about 400 MB compressed, against a build cache that routinely holds
 ten times that.
 
-Three rows cannot follow the rule:
+Four rows cannot follow the rule:
 
-- **`haskell`** publishes no `slim-trixie`, so it pins `9.14.1-slim-bookworm` — the one row
-  a Debian generation behind. Re-check when touching it.
+- **`haskell`** publishes no `slim-trixie`, so it pins `9.14.1-slim-bookworm`. Re-check
+  when touching it.
+- **`forth`** is on `debian:bookworm-20261104-slim` because gforth is not in trixie: it
+  was dropped before the release and is back in testing. Same datestamp as every other
+  Debian base here, one generation back. Re-check when trixie or forky carries it again.
 - **`fsharp` and `csharp`** are on `mcr.microsoft.com/dotnet/sdk`, which is **Ubuntu 24.04**.
   Microsoft publishes no Debian default tag for the 10.0 SDK, so there is nothing to switch
   to.

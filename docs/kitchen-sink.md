@@ -145,6 +145,7 @@ the TDD loop for every invalid input a kata has.
 | INTERCAL                | nothing is raised; overflow lands in a variable, or it stops      |
 | R                       | `stop`, matched by message with `expect_error`                    |
 | Ada                     | `raise`, caught by name in an exception handler                   |
+| Forth                   | `THROW`, whose code `CATCH` returns in place of an exception       |
 
 ## Gotchas are deliberately not uniform
 

@@ -1,6 +1,6 @@
 # Languages
 
-The 35 targets, their chosen tooling, and when each lands. This is the implementer's
+The 36 targets, their chosen tooling, and when each lands. This is the implementer's
 worksheet: one row is one template.
 
 Test runners are chosen **stdlib-first**. A built-in runner is one less dependency to
@@ -52,6 +52,7 @@ patches, so an old minor can outrank a current one. See
 | `intercal`   | `debian:trixie-20261104-slim` + C-INTERCAL     | TAP from Roman numerals      | `ick -c` / —                         | 4    |
 | `r`          | `debian:trixie-20261104-slim` + R 4.5.0        | `testthat`                   | `lintr` / `formatR`                  | 4    |
 | `ada`        | `debian:trixie-20261104-slim` + GNAT 14.2      | `AUnit`                      | `gnatc` + `gnatwae` / —              | 4    |
+| `forth`      | `debian:bookworm-20261104-slim` + gforth 0.7.3 | TAP, own `T{ -> }T`          | `gforth` compile / —                 | 4    |
 
 ## Waves
 
@@ -70,17 +71,17 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 
 ## Where lint and fmt prove nothing
 
-Nine of the lint and fmt targets above do nothing, across seven templates, and they
-are worth one list rather than seven notes. **`basic` and `lolcode` have no `lint`**:
+Ten of the lint and fmt targets above do nothing, across eight templates, and they
+are worth one list rather than eight notes. **`basic` and `lolcode` have no `lint`**:
 neither Bywater BASIC nor `lci` has a check mode, a syntax-only flag or a
 third-party checker, so `make lint` prints why and exits 0. CI runs it, and for
 those two it is theatre.
 
-**Seven have no `fmt`** — `ada`, `basic`, `cobol`, `intercal`, `lolcode`, `pascal`
-and `prolog`. `gnatpp` ships only with AdaCore's own distribution; GnuCOBOL, lci
-and SWI-Prolog publish no formatter; Free Pascal's `ptop` capitalises keywords and
-dedents `end;` to column 0, which is worse than leaving the file alone. Each one's
-`.editorconfig` carries the indent the language expects instead.
+**Eight have no `fmt`** — `ada`, `basic`, `cobol`, `forth`, `intercal`, `lolcode`,
+`pascal` and `prolog`. `gnatpp` ships only with AdaCore's own distribution; GnuCOBOL,
+lci, gforth and SWI-Prolog publish no formatter; Free Pascal's `ptop` capitalises
+keywords and dedents `end;` to column 0, which is worse than leaving the file alone.
+Each one's `.editorconfig` carries the indent the language expects instead.
 
 The alternative in both cases was a target that looked like a check. A reader
 cannot tell a check that passed from one that was never made, so these say so.
@@ -972,6 +973,36 @@ compiler's reach. And with more than one `"="` in scope, comparing a `String` ex
 raw, `gleam` shows a static type system on top of it, and `elixir` shows the ergonomic
 mainstream dialect with the best test tooling of the three — ExUnit is in the stdlib,
 `mix test` needs no configuration, and doctests are executable.
+
+
+**`forth` is the first stack language, and the test framework is twenty lines of the
+project's own.** `T{ <code> -> <expected> }T` is what the Forth 2012 test suite reads
+like, so it is already familiar, and defining it rather than depending on it is what the
+language is for — `docs/template-contract.md`'s bar for a third vendored framework is
+deliberately high and Forth clears nothing by meeting it. `T{` remembers the stack depth,
+`->` stashes whatever the code left, `}T` compares that against the values after the
+arrow and prints one TAP line with the rest of the line as its name.
+
+**The hour this template cost was spent in the return stack and in `ENDCASE`.** `index-of`
+first saved its wanted character with `>r` and read it back with `r@` inside a `?do` loop,
+which returns a loop control parameter instead — the loop keeps its own state on the same
+stack — so the character lives in a variable. And a `CASE` whose default branch yields a
+value returns the *selector*: `ENDCASE` compiles a `DROP` to discard the selector that an
+`OF` branch would already have consumed, so it eats the default's result instead. The
+kitchen sink shows the working form, which pushes a throwaway zero for `ENDCASE` to take,
+and the gotchas slot asserts the broken one.
+
+**gforth is not in trixie.** It was dropped before the release and is back in testing, so
+the base is `debian:bookworm-20261104-slim` — same datestamp as every other Debian base
+here, one generation back. Upstream's 1.0.2 was tried first and builds in about forty
+seconds, but `make install` fights libtool over a video4linux wrapper nothing here wants;
+0.7.3 has every word the template uses, which was checked against the suite rather than
+assumed.
+
+**`make lint` is real and deliberately partial.** Compiling a Forth file is a genuine
+check, because an undefined word is a compile-time error and gforth exits 1. It covers
+`src/` and the test vocabulary but not the test bodies, because `require`-ing a test
+*runs* it — and running them is `make test`'s job.
 
 ## Deferred
 
