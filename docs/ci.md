@@ -76,6 +76,12 @@ Each `image` leg is one template on one architecture:
       - name: lint the scaffold
         working-directory: ../scaffold
         run: make lint
+      - name: the suite left the tree clean       # git status --porcelain
+      - name: fmt changes nothing                 # make fmt, then status again
+      - name: the remaining targets run           # make build, make help
+      - name: every placeholder was substituted   # grep for a leftover token
+      - name: a second test run reuses the first  # down -v, cold, warm, compare
+      - name: the kitchen sink is deletable       # rm the sink, make test
       - name: push what the tests passed
         if: ${{ needs.scope.outputs.publish == 'true' }}
         run: |
@@ -85,6 +91,13 @@ Each `image` leg is one template on one architecture:
           docker push "${image}-amd64"                     # both retried; see
           docker push "${image%:*}:${GITHUB_SHA}-amd64"    # the first-push race
 ```
+
+**The six checks between the lint and the push were all documented promises that
+nothing verified.** The contract's definition of done has eleven items and CI enforced
+two of them; `make fmt` had never run anywhere, no test had ever deleted a kitchen sink,
+and `git status` was only ever asserted before a build, where the lock files it is meant
+to catch cannot have appeared yet. Each sits ahead of the push deliberately: a template
+that fails one withholds its own publish and leaves `:main` where it was.
 
 **The second tag is how `manifest` knows what this run pushed.** It runs per template and
 cannot see a matrix sibling's result, and a `:main-amd64` written minutes ago is
@@ -296,8 +309,16 @@ One job, `lint`, and a gate on everything after it:
 - `PSScriptAnalyzer`, with the repo's own settings file
 - the same five exit codes the other two legs assert of `bootstrap.sh`
 - a diff of both scripts' `--dry-run` file list, for every template
+- a diff of both scripts' `--list` output, byte for byte, and the shape `cli.md`
+  specifies: one tab-separated id and display name per template, sorted by id
 
-That last one is the only thing that has ever compared the two entry points. They are
+`lint` also sweeps the templates themselves, which nothing did before: the required
+files, the three that must stay byte-identical to `templates/c/files/`, the
+`.dockerignore` exclusions, the six Makefile targets, and the ban on POSIX tools in a
+recipe. Every one of those was a contract rule held up by review alone, which is how two
+`.dockerignore` files lost their source exclusions without a leg going red.
+
+Those two diffs are the only things that have ever compared the two entry points. They are
 kept in step by hand, and a drift between them would otherwise be invisible. Each side
 generates its list in its own shell: `bash` invoked from PowerShell is whatever is first
 on `PATH`, which on a machine with WSL is not Git Bash.
@@ -445,12 +466,14 @@ Stated plainly, because the gaps are real:
   so the toolchains are proven on Linux only. What those runners do cover is the script:
   `contract` and `remote` run on all three, because every assertion in both is
   `--dry-run` or `--no-build`.
-- **The Windows `make` path is untested**, including the `cmd.exe`-shell constraint that
-  bans `grep`/`awk`/`sed` from Makefile targets. Nothing will catch a violation
-  automatically; it is a review responsibility. The constraint is about `make` itself,
-  which the Windows legs never invoke.
-- **`make fmt` is never run.** `lint` and `test` are; a formatter that mangles the file
-  it formats would be caught by a developer, not here.
+- **The Windows `make` path is still untested.** No Windows runner invokes `make` at all,
+  so nothing proves a target works through `cmd.exe`. The one part of this that is now
+  machine-checked is the constraint behind it: `lint` greps every Makefile recipe for
+  `grep`, `awk`, `sed`, `column` and `id`, so a target that reaches for a POSIX toolbox
+  fails here rather than on somebody's laptop.
+- **`make shell` is never run.** It opens an interactive shell, so a runner with no
+  terminal would hold the leg until its timeout rather than failing. Its presence is
+  asserted; its behaviour is not.
 - **No test asserts the interactive prompt.** Both scripts ask for a missing template
   only when stdin is a terminal, and a runner has none, so `contract` can assert the
   usage error and nothing else. The prompt is hand-tested.
