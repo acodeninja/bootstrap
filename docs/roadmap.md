@@ -91,6 +91,10 @@ is built on Debian testing, so this one is not: see its row for why.
 `ada` — GNAT, gprbuild and AUnit, all from Debian. Each test is one procedure body, so a
 suite is a single file and nothing has to be generated to find it.
 
+`forth` — bookworm, because gforth is not in trixie. No framework and no package
+manager to add one through, so the project defines `T{ -> }T` itself in twenty lines
+and prints TAP.
+
 ## Per-template definition of done
 
 1. `make test`, `make lint` and `make fmt` all work from a cold image.
@@ -137,11 +141,13 @@ languages with verified official images listed under "Deferred" in
 [languages.md](languages.md). Both are additions under the existing contract, not
 changes to it.
 
-Two known gaps are also deferred rather than solved: `bootstrap.ps1` has no CI coverage,
-and the Windows `make` path is unverified. Both are consequences of the single-platform
-matrix — see [ci.md](ci.md#what-is-not-covered). Revisit if Windows users report
-breakage, or if the PowerShell script grows past the point where hand-testing it is
-honest.
+One known gap is also deferred rather than solved: the Windows `make` path is
+unverified, because no Windows runner can run a Linux container and so none of them
+invokes `make` at all — see [ci.md](ci.md#what-is-not-covered). `bootstrap.ps1`
+itself is no longer in that list: the Windows leg of `contract` runs PSScriptAnalyzer
+over it, asserts the same exit codes the other legs assert of `bootstrap.sh`, diffs
+the two scripts across every template, and `remote` runs the documented scriptblock
+one-liner.
 
 A release process is also still to define, and the version-pinning design depends on it:
 tagging must bake the tag into both scripts' default ref, or a script served from
