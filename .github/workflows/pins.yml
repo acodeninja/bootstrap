@@ -1,0 +1,96 @@
+# Dependabot updates a FROM line and a uses: line. It cannot see a version
+# baked into a RUN step, which is how twelve tools across nine templates are
+# pinned -- three of them beside a hand-computed SHA256. Nothing watched those,
+# so one could sit years behind upstream with no signal anywhere.
+name: pins
+
+on:
+  schedule:
+    - cron: '23 5 * * 2'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  behind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+
+      - name: every pinned tool is current
+        run: |
+          status=0
+          report() {
+            if [ "$2" = "$3" ]; then
+              printf 'ok      %-30s %s\n' "$1" "$2"
+            else
+              printf 'BEHIND  %-30s %s -> %s\n' "$1" "$2" "$3"
+              status=1
+            fi
+          }
+
+          # Tags, not releases, for a project that publishes none -- lci ships
+          # by tag archive and has no release at all.
+          github_latest() {
+            tag=$(gh release view --repo "$1" --json tagName --jq .tagName 2>/dev/null) || tag=
+            if [ -z "$tag" ]; then
+              tag=$(gh api "repos/$1/tags" --jq '.[].name' | sed 's/^v//' | sort -V | tail -1)
+            fi
+            printf '%s\n' "${tag#v}"
+          }
+
+          # A package's versions are the directories under its opam-repository
+          # entry. Asking the ocaml image instead would answer as of the day it
+          # was built.
+          opam_latest() {
+            gh api "repos/ocaml/opam-repository/contents/packages/$1" --jq '.[].name' \
+              | sed "s/^$1\.//" | sort -V | tail -1
+          }
+
+          for f in templates/*/files/Dockerfile; do
+            id=${f#templates/}; id=${id%/files/Dockerfile}
+            while read -r pin; do
+              name=${pin%%=*}
+              have=${pin#*=}
+              case "$id.$name" in
+                ocaml.*)
+                  want=$(opam_latest "$(printf '%s' "${name%_VERSION}" \
+                           | tr '[:upper:]' '[:lower:]')") ;;
+                fsharp.FANTOMAS_VERSION)
+                  want=$(curl -fsSL https://api.nuget.org/v3-flatcontainer/fantomas/index.json \
+                           | jq -r '[.versions[] | select(test("-") | not)] | last') ;;
+                zig.ZIG_VERSION)
+                  want=$(curl -fsSL https://ziglang.org/download/index.json \
+                           | jq -r 'keys[]' | grep -v master | sort -V | tail -1) ;;
+                *)
+                  # The owner and repo are already in the Dockerfile, in the
+                  # download URL this pin interpolates into. Reading them from
+                  # there beats a manifest that can drift from what it lists.
+                  nwo=$(grep -F "\${$name}" "$f" \
+                          | sed -n 's|.*github\.com/\([^/]*\)/\([^/]*\)/.*|\1/\2|p' | head -1)
+                  if [ -z "$nwo" ]; then
+                    echo "no upstream found for $id $name" >&2
+                    status=1
+                    continue
+                  fi
+                  want=$(github_latest "$nwo") ;;
+              esac
+              report "$id $name" "$have" "$want"
+            done < <(sed -n 's/^ARG \([A-Z0-9_]*_VERSION\)=\(.*\)$/\1=\2/p' "$f")
+          done
+
+          # Pinned in a run step rather than a uses: line, so the lockfile that
+          # covers every other pin in .github/ does not cover this one.
+          lock=$(sed -n 's/^  ACTIONS_LOCK: \(.*\)$/\1/p' .github/workflows/*.yml | sort -u)
+          if [ "$(printf '%s\n' "$lock" | wc -l)" -ne 1 ]; then
+            echo "the workflows disagree on ACTIONS_LOCK: $lock" >&2
+            status=1
+          else
+            report 'gh-actions-lock' "${lock#v}" "$(github_latest github/gh-actions-lock)"
+          fi
+
+          exit $status
