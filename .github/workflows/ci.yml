@@ -216,6 +216,34 @@ jobs:
             exit 1
           fi
 
+      # The procedure the timing table in containers.md came from: wipe the
+      # cache volume, time a cold run, time a warm one. The mandatory rule is
+      # that no run repeats work an earlier one did, and until now nothing
+      # measured it.
+      #
+      # Asserted only above four seconds. Below that the figure is almost all
+      # container startup -- a floor of about 0.9s -- and the two runs differ
+      # by noise in either direction. Nine templates clear the threshold and
+      # the slimmest real margin among them is java at 10.0s against 5.8s, so
+      # a plain comparison is lenient and still catches a template that caches
+      # nothing at all.
+      - name: a second test run reuses the first
+        working-directory: ../scaffold
+        run: |
+          docker compose down -v
+          start=$(date +%s%3N)
+          make test
+          mid=$(date +%s%3N)
+          make test
+          end=$(date +%s%3N)
+          cold=$((mid - start))
+          warm=$((end - mid))
+          echo "cold ${cold}ms, warm ${warm}ms"
+          if [ "$cold" -ge 4000 ] && [ "$warm" -ge "$cold" ]; then
+            echo "the second run repeated the first: nothing is cached" >&2
+            exit 1
+          fi
+
       - name: ghcr login
         if: ${{ needs.scope.outputs.publish == 'true' }}
         uses: docker/login-action@v4
@@ -352,6 +380,34 @@ jobs:
         run: |
           if grep -rn '{{[A-Z_]\{2,\}}}' ../scaffold --exclude-dir=.git; then
             echo "the lines above still carry template tokens" >&2
+            exit 1
+          fi
+
+      # The procedure the timing table in containers.md came from: wipe the
+      # cache volume, time a cold run, time a warm one. The mandatory rule is
+      # that no run repeats work an earlier one did, and until now nothing
+      # measured it.
+      #
+      # Asserted only above four seconds. Below that the figure is almost all
+      # container startup -- a floor of about 0.9s -- and the two runs differ
+      # by noise in either direction. Nine templates clear the threshold and
+      # the slimmest real margin among them is java at 10.0s against 5.8s, so
+      # a plain comparison is lenient and still catches a template that caches
+      # nothing at all.
+      - name: a second test run reuses the first
+        working-directory: ../scaffold
+        run: |
+          docker compose down -v
+          start=$(date +%s%3N)
+          make test
+          mid=$(date +%s%3N)
+          make test
+          end=$(date +%s%3N)
+          cold=$((mid - start))
+          warm=$((end - mid))
+          echo "cold ${cold}ms, warm ${warm}ms"
+          if [ "$cold" -ge 4000 ] && [ "$warm" -ge "$cold" ]; then
+            echo "the second run repeated the first: nothing is cached" >&2
             exit 1
           fi
 
