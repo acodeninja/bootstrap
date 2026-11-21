@@ -1,0 +1,21 @@
+version: 2
+
+# What keeps .github/workflows/actions.lock current. Dependabot regenerates the
+# matching lockfile entry in the same pull request as the version bump, so the
+# workflow and the lockfile cannot drift apart -- and nothing else here updates
+# an action at all.
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # Conventional Commits, like every other commit in this repository. Without
+    # this the subject is "Bump actions/checkout from ...".
+    commit-message:
+      prefix: chore
+    # One pull request, because these are four actions across one workflow and
+    # reviewing them apart buys nothing.
+    groups:
+      actions:
+        patterns:
+          - "*"
