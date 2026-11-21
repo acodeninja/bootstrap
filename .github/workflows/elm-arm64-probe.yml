@@ -1,0 +1,77 @@
+# Throwaway. templates/elm's make build died once on native arm64 with a GHC
+# "thread blocked indefinitely in an MVar operation", after printing that it had
+# compiled successfully, and passed on a rerun with nothing changed. One sample
+# is not a failure rate, and --report=json is a guess until it is measured
+# against the spelling it would replace.
+#
+# Delete this file with the commit that acts on the numbers.
+name: elm arm64 probe
+
+on:
+  workflow_dispatch:
+    inputs:
+      iterations:
+        description: how many times to run each spelling
+        default: '30'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
+    env:
+      BUILDX_NO_DEFAULT_ATTESTATIONS: 1
+      dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
+      iterations: ${{ inputs.iterations }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: git identity
+        run: |
+          git config --global user.name 'bootstrap ci'
+          git config --global user.email 'ci@example.invalid'
+
+      - if: env.dockerhub_username != ''
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - uses: docker/setup-buildx-action@v4
+
+      - run: ./bootstrap.sh elm ../scaffold --no-pull
+
+      # timeout, because the failure mode is a deadlock: the RTS aborted it last
+      # time, but one that is not detected would hold the job to its limit and
+      # lose the count that is the whole point of running this.
+      - name: count failures of each spelling
+        working-directory: ../scaffold
+        run: |
+          module=$(ls src/*/Greeter.elm)
+          echo "module: $module, iterations: $iterations"
+
+          # The count goes to stdout and everything else to stderr, so the
+          # caller can capture one without swallowing the other.
+          run_spelling() {
+            fails=0
+            for _ in $(seq "$iterations"); do
+              if ! timeout 120 docker compose run --rm dev \
+                   elm make "$module" --output=/dev/null "$@" >/tmp/probe.log 2>&1; then
+                fails=$((fails + 1))
+                { echo "-- failure $fails"; tail -20 /tmp/probe.log; } >&2
+              fi
+            done
+            echo "$fails"
+          }
+
+          plain=$(run_spelling)
+          json=$(run_spelling --report=json)
+
+          printf 'current spelling: %s/%s failed\n' "$plain" "$iterations"
+          printf '  --report=json:  %s/%s failed\n' "$json" "$iterations"
+          {
+            printf '| spelling | failures |\n| --- | --- |\n'
+            printf '| --output=/dev/null | %s/%s |\n' "$plain" "$iterations"
+            printf '| --output=/dev/null --report=json | %s/%s |\n' "$json" "$iterations"
+          } >> "$GITHUB_STEP_SUMMARY"
