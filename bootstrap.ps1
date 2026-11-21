@@ -3,8 +3,8 @@
 #
 # It is a separate implementation of that contract, not a port of bootstrap.sh.
 # The two must agree on flags, exit codes, --list output byte for byte, and the
-# set of files produced -- see docs/cli.md "Parity". Nothing enforces it: CI is
-# Linux only, so this side is hand-tested.
+# set of files produced -- see docs/cli.md "Parity". A windows-latest job holds
+# three of those four; what it cannot reach is anything needing a container.
 #
 # Windows PowerShell 5.1 and nothing else. No modules, no classes (5.1 parses
 # them but the remote form is a scriptblock, where a class declaration is a

@@ -149,10 +149,10 @@ the other. They must agree on:
 
 They are free to differ in how they do it.
 
-**Two of those three are enforced.** A `windows-latest` job asserts the exit codes
-and diffs the file lists for every template, so the two cannot drift apart
-unnoticed. `--list` is not compared, and neither is anything that needs a
-container: no Windows runner can run one. See
+**Three of those four are enforced.** A `windows-latest` job asserts the exit
+codes, diffs `--list` byte for byte, and diffs the file lists for every
+template, so the two cannot drift apart unnoticed. What is left out is anything
+needing a container: no Windows runner can run one. See
 [ci.md](ci.md#what-is-not-covered).
 
 ## Explicit implementation constraints
