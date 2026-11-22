@@ -1,6 +1,6 @@
 # Languages
 
-The 41 targets, their chosen tooling, and when each lands. This is the implementer's
+The 44 targets, their chosen tooling, and when each lands. This is the implementer's
 worksheet: one row is one template.
 
 Test runners are chosen **stdlib-first**. A built-in runner is one less dependency to
@@ -58,6 +58,9 @@ patches, so an old minor can outrank a current one. See
 | `objc`       | `debian:trixie-20261104-slim` + gobjc 14, GNUstep 1.31 | TAP, own `tap.h`             | `gcc -fsyntax-only -Wall -Werror` / `clang-format` | 5    |
 | `asp`        | `debian:trixie-20261104-slim` + clingo 5.6.2    | clingo exit status to TAP    | `gringo --warn=all` / —              | 5    |
 | `ats`        | `debian:trixie-20261104-slim` + ATS2 0.4.2      | TAP, own `tap.hats`          | `patsopt --typecheck` / —            | 5    |
+| `julia`      | `julia:1.13.4-trixie`                          | `Test` (stdlib)              | `JuliaFormatter --check` / `--inplace` | 5    |
+| `groovy`     | `gradle:9.9.1-jdk25` + Groovy 6.0.0            | `Spock 2.5`                  | `codenarc` / —                       | 5    |
+| `flix`       | `eclipse-temurin:25.0.5.1_2-jdk-noble` + flix 0.80.0 | `flix test`            | `flix check` / `flix format`         | 5    |
 
 ## Waves
 
@@ -80,18 +83,20 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 
 ## Where lint and fmt prove nothing
 
-Thirteen of the lint and fmt targets above do nothing, across eleven templates, and they
-are worth one list rather than eleven notes. **`basic` and `lolcode` have no `lint`**:
+Fourteen of the lint and fmt targets above do nothing, across twelve templates, and they
+are worth one list rather than twelve notes. **`basic` and `lolcode` have no `lint`**:
 neither Bywater BASIC nor `lci` has a check mode, a syntax-only flag or a third-party
 checker, so `make lint` prints why and exits 0. CI runs it, and for those two it is
 theatre.
 
-**Eleven have no `fmt`** — `ada`, `arm32`, `asp`, `ats`, `basic`, `cobol`, `forth`,
-`intercal`, `lolcode`, `pascal` and `prolog`. Potassco publish no formatter for ASP and
-nothing third-party is packaged; ATS2 ships `patscc` and `patsopt` and nothing that
-formats; `gnatpp` ships only with AdaCore's own distribution; GnuCOBOL, lci, gforth, GNU
-as and SWI-Prolog publish no formatter; Free Pascal's `ptop` capitalises keywords and
-dedents `end;` to column 0, which is worse than leaving the file alone. Each one's
+**Twelve have no `fmt`** — `ada`, `arm32`, `asp`, `ats`, `basic`, `cobol`, `forth`,
+`groovy`, `intercal`, `lolcode`, `pascal` and `prolog`. Potassco publish no formatter
+for ASP and nothing third-party is packaged; ATS2 ships `patscc` and `patsopt` and
+nothing that formats; Spotless's `greclipse` step deletes the space before every `>`,
+so `n > 1` comes back as `n> 1` and seven Eclipse formatter options will not stop it;
+`gnatpp` ships only with AdaCore's own distribution; GnuCOBOL, lci, gforth, GNU as and
+SWI-Prolog publish no formatter; Free Pascal's `ptop` capitalises keywords and dedents
+`end;` to column 0, which is worse than leaving the file alone. Each one's
 `.editorconfig` carries the indent the language expects instead.
 
 The alternative in both cases was a target that looked like a check. A reader
@@ -1105,19 +1110,66 @@ reverse: the kitchen sink's fixtures are `private` because they are the suite's 
 business, and `greet` carries a ddoc comment because a public declaration without one is a
 finding. No check is disabled and there is no `dscanner.ini`.
 
+**`julia` was declined as "array-scientific, not kata-shaped", and the row that landed
+answers that**: nothing in its kitchen sink is a matrix, a broadcast or a `LinearAlgebra`
+call. Its gotcha slot goes to array aliasing rather than 1-based indexing, because 1-based
+is advertised everywhere and turns up free in the strings and iteration slots, while `alias
+= items` binding instead of copying is the one that costs an hour.
+
+The deferred table's `julia:1.11` was two minors stale. `1.13.4` is current, and `1.11.9`
+and `1.10.13` both sort *above* it by last-updated — exactly the trap
+[containers.md](containers.md#base-images) describes.
+
+**Two traps worth keeping.** `JULIA_DEPOT_PATH=/cache/julia` *replaces* the depot list
+rather than prepending to it, discarding the pkgimages Julia ships for its own stdlib: the
+trailing separator is load-bearing, and without it `make lint` goes from 2.4s to 55.7s.
+And `Pkg.test()` writes `Manifest.toml` into the project, whose `project_hash` varies with
+the project name, so it cannot be shipped pre-resolved the way
+[containers.md](containers.md#file-ownership) prefers — it is gitignored instead, which is
+also the ecosystem's convention for a package rather than an application.
+
+**`groovy` is the second row whose formatter would make the source worse.** Spotless's
+`greclipse` step deletes the space before every `>`, so `n > 1` comes back as `n> 1`, in
+method bodies, in `expect:` blocks and inside closures; `>=` and `<` survive, so it is
+misreading `>` as a closing type-argument bracket. Seven Eclipse formatter options
+(`insert_space_before_relational_operator` among them) changed nothing, and the only
+Spotless version that runs at all pins Eclipse 4.41. `fmt` therefore says why and exits 0,
+and `lint` takes CodeNarc's `formatting` ruleset as well as the correctness ones so that
+spacing and indentation are still checked by something.
+
+CodeNarc's `convention` and `naming` rulesets are deliberately absent: enabled, they
+report 100 violations on a clean project — `NoDef` on every `def`, `MethodName` on all
+sixteen Spock sentence names, `ImplicitReturnStatement` on idiomatic Groovy. A linter
+tuned to reject the language it is linting is worse than no linter.
+
+**`flix` is the row where `lint` and `fmt` swap their usual relationship.** `flix format`
+rewrites in place and has no check mode, so `lint` cannot check layout; `flix check` is a
+non-mutating compile instead, and the compiler is strict enough that an unused local
+variable and an unexpected `IO` effect are both errors. The shipped sources are the
+formatter's own output, so `make fmt` on a fresh scaffold changes nothing.
+
+Its Datalog constraints are what earn the row, and they sit in the iteration slot: a
+self-referential `Path(x, z) :- Path(x, y), Edge(y, z).` is the loop you do not write,
+which is the honest place for it in a language with no `while` outside a region.
+
+**`eclipse-temurin` publishes no Debian variant** — only Ubuntu, Alpine, UBI and Windows —
+so this row cannot honour the Debian preference, the same way `fsharp` and `csharp` cannot.
+There is also nothing to prime into the image: Flix has no incremental build and
+recompiles its standard library every invocation, so the only reusable artefact is the
+JVM's class-data archive, which the launcher creates in `/cache` on first use rather than
+baking 57MB keyed to one exact JDK build into the image.
+
 ## Deferred
 
 Frameworks are out of the first cut, but the ID namespace reserves them:
 `javascript-react`, `python-fastapi`, `rust-axum`, `go-chi`. They are additional
 template directories under the same contract, not a new mechanism.
 
-Four more languages have official images, verified on 2026-11-19, and were declined for
+Two more languages have official images, verified on 2026-11-19, and were declined for
 now rather than ruled out — adding one is a mechanical job:
 
 | id       | image              | test runner         | why it was declined                      |
 | -------- | ------------------ | ------------------- | ---------------------------------------- |
-| `julia`  | `julia:1.11`       | `Test` (stdlib)     | array-scientific, not kata-shaped        |
-| `groovy` | `groovy:4.0-jdk21` | `Spock`             | duplicates a JVM already covered twice   |
 | `raku`   | `rakudo-star`      | `Test` (core)       | distinct, but very small audience        |
 | `haxe`   | `haxe:4.3`         | `utest`             | cross-compilation is the draw, not idiom |
 
