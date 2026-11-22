@@ -229,20 +229,40 @@ the cache tracks upstream — see [ci.md](ci.md). The weekly run means a tag can
 no commit behind it, which is the sense in which these are a cache: the `Dockerfile` is
 the authority on versions, not the registry.
 
-`compose.yaml` names it beside `build: .`:
+`compose.yaml` names it twice, once to run it and once to build from it:
 
 ```yaml
 services:
   dev:
-    build: .
+    build:
+      context: .
+      cache_from:
+        - ghcr.io/acodeninja/bootstrap/python:main
+      cache_to:
+        - type=inline
     image: ghcr.io/acodeninja/bootstrap/python:main
 ```
 
-Both keys together are what makes this work: `docker compose pull` fetches it, and
-`docker compose build` tags a local build with the same name, so the two paths are
-interchangeable. The bootstrap tries the pull first and falls back to the build, which
-turns a first run from a toolchain compile into a download. The registry is public, so
-the pull needs no credentials.
+`image` and `build` together are what make the two paths interchangeable: `docker compose
+pull` fetches it, and `docker compose build` tags a local build with the same name. The
+bootstrap tries the pull first and falls back to the build, which turns a first run from a
+toolchain compile into a download. The registry is public, so the pull needs no credentials.
+
+`cache_from` makes that same image a *layer* cache for the builds that must not use it as a
+substitute. CI builds with `--no-pull` on purpose: the point of that job is the `Dockerfile`,
+and running the previous commit's toolchain against this commit's templates would let a
+broken one go green. Reusing layers is not that. Buildkit matches a layer only when the
+instruction and its inputs are identical, so an edit rebuilds from the edit down.
+
+`cache_to: type=inline` is the half that is easy to leave out. It records the layer manifest
+inside the image, which is what makes the pushed `:main` importable as a cache at all;
+without it `cache_from` resolves to nothing and caches nothing, quietly. A ref that does not
+resolve — a template whose image has never been pushed, a machine with no network — is a
+warning rather than an error, which is what makes shipping this in every template safe.
+
+What no cache can do is prove that a build from nothing still works. `--no-cache` is for
+that, and the runs that build everything pass it: the Monday schedule and a manual
+dispatch.
 
 **The `Dockerfile` is still the pin and still the authority.** Nothing downstream
 depends on the package existing: a template with no image yet, an architecture that was

@@ -57,7 +57,7 @@ Every template's `files/` must contain:
 | Path                             | Purpose                                                                        |
 | -------------------------------- | ------------------------------------------------------------------------------ |
 | `Dockerfile`                     | `FROM` a pinned image, dependencies installed, `WORKDIR /work`                 |
-| `compose.yaml`                   | the `dev` service: bind mount, cache volumes, `user`, `image`                  |
+| `compose.yaml`                   | the `dev` service: bind mount, cache volumes, `user`, `image`, build cache     |
 | `Makefile`                       | `test`, `lint`, `fmt`, `build`, `shell`, `help`                                |
 | `.dockerignore`                  | `.git`, `.github`, `.env`, `src`, the suite, build output                      |
 | `README.md`                      | What this is, how to run it, the prerequisites                                 |
@@ -74,16 +74,21 @@ Every template's `files/` must contain:
 `.env` is **not** in `files/`. The bootstrap script generates it — see
 [containers.md](containers.md#file-ownership).
 
-`compose.yaml` is the same fifteen lines in every template, differing only in `image:`
+`compose.yaml` is the same twenty lines in every template, differing only in `image:`
 and in any cache volume nested inside the bind mount. Beyond the four keys the table
 names it also carries `name: {{PROJECT_SLUG}}`, `working_dir: /work` and `init: true`.
 
-`compose.yaml` carries both `build: .` and
+`compose.yaml` carries both a `build:` section and
 `image: ghcr.io/acodeninja/bootstrap/<template-id>:main`, and the `image` name is not
 free-form — the publish workflow pushes to exactly that path and the bootstrap pulls it.
 A new template's image does not exist until the first push to `main` lands, which is
 fine: the pull fails and the `Dockerfile` beside it builds. See
 [containers.md](containers.md#published-images-are-a-cache-not-the-pin).
+
+The `build:` section names that same image again under `cache_from`, so a build that may
+not pull can still reuse the layers it would have pulled. The two copies have to agree,
+and CI asserts it: caching from another template's image builds correctly and caches
+nothing, which is a mistake nothing else would notice.
 
 `.gitattributes` is one line, `* text=auto eol=lf`, and it is not decoration. The
 toolchain runs in a Linux container while the project may be checked out on Windows, where

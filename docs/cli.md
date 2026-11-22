@@ -39,6 +39,7 @@ error and exit `1` as normal.
 | `--no-git`      | Skip `git init` and the initial commit.                              |
 | `--no-build`    | Skip `docker compose build` and the verification test run.           |
 | `--no-pull`     | Build the image locally instead of pulling the published one.        |
+| `--no-cache`    | Rebuild every layer instead of reusing the published cache.          |
 | `--dry-run`     | Print the files that would be written and exit `0`. Touches nothing. |
 | `--list`        | Print available templates and exit `0`.                              |
 | `--help`        | Print usage and exit `0`.                                            |
@@ -54,6 +55,13 @@ The image step pulls `ghcr.io/acodeninja/bootstrap/<template-id>:main` when it c
 builds the `Dockerfile` when it cannot, reporting which in its step line. `--no-pull`
 forces the build: this repository's own CI passes it, because a pull would test the
 previous commit's toolchain against the current commit's templates.
+
+`--no-cache` is the other half of that. A build that reuses layers from the published
+image is still a build of the `Dockerfile` — buildkit matches a layer only when the
+instruction and its inputs are identical — but it cannot prove the image builds from
+nothing. CI passes `--no-cache` on the runs that build everything — the Monday schedule
+and a manual dispatch — and nowhere else, so those are the cold builds and every other
+run is a fast one.
 
 PowerShell accepts the same spellings. Do not add `-Force`-style aliases: one spelling
 per flag keeps the docs, the tests and the two implementations honest.

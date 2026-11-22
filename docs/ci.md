@@ -82,7 +82,9 @@ each drives bootstrap.ps1 rather than bootstrap.sh
 Each `image` leg is one template on one architecture:
 
 ```yaml
-      - run: ./bootstrap.sh ${{ matrix.template }} ../scaffold --no-pull
+      - run: >-
+          ./bootstrap.sh ${{ matrix.template }} ../scaffold --no-pull
+          ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '--no-cache' || '' }}
       - name: lint the scaffold
         working-directory: ../scaffold
         run: make lint
@@ -121,6 +123,13 @@ That is the whole idea: **the bootstrap builds it, the bootstrap tests it, and t
 that passed is the thing that ships.** `--no-pull` because the point is the `Dockerfile`;
 pulling the published image would test the previous commit's toolchain against this
 commit's templates, and a broken `Dockerfile` would go green.
+
+Layers are a different question from images. Every template's `compose.yaml` names its
+published image under `cache_from` as well as under `image`, so a `--no-pull` build still
+reuses what the last one produced — buildkit matches a layer only when the instruction and
+its inputs are identical, so an edited `Dockerfile` rebuilds from the edit down and a
+broken one still goes red. See
+[containers.md](containers.md#published-images-are-a-cache-not-the-pin).
 
 It used to be two workflows that did not know about each other. `ci` built twenty-six
 images, tested them and threw them away; `publish` built fifty-one more and pushed those,
@@ -263,6 +272,10 @@ because scheduled runs on the hour are the ones GitHub delays.
 than belt-and-braces: a template nobody has touched since it landed is proven on Monday
 or not at all. If it ever stops running, the first symptom will be a template that has
 been broken for a while.
+
+**It is also the run that builds from nothing**: the schedule and a manual dispatch are
+the only two that pass `--no-cache`. Every other run reuses published layers, which is
+fast and cannot tell you whether a `Dockerfile` still builds without them.
 
 `workflow_dispatch` is there because a run that matters this much should not be
 testable only by waiting for Monday. It selects every template for the same
