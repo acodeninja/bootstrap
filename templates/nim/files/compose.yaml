@@ -2,7 +2,12 @@ name: {{PROJECT_SLUG}}
 
 services:
   dev:
-    build: .
+    build:
+      context: .
+      cache_from:
+        - ghcr.io/acodeninja/bootstrap/nim:main
+      cache_to:
+        - type=inline
     image: ghcr.io/acodeninja/bootstrap/nim:main
     working_dir: /work
     init: true
