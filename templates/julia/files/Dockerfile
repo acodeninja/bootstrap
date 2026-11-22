@@ -1,8 +1,10 @@
 # syntax=docker/dockerfile:1
 FROM julia:1.13.4-trixie
 
-# Pkg installs by registry name, which carries no URL, so the upstream is named
-# here: ${JULIAFORMATTER_VERSION} is at https://github.com/JuliaEditorSupport/JuliaFormatter.jl/releases
+# Pkg installs by registry name, which carries no URL, so the upstream is named here
+# instead. pins.yml finds it by grepping for the variable and reading the link off the
+# same line, so those two have to stay together:
+# ${JULIAFORMATTER_VERSION} is at https://github.com/JuliaEditorSupport/JuliaFormatter.jl/releases
 ARG JULIAFORMATTER_VERSION=2.14.12
 
 # The trailing separator keeps the image's own depots on the path, so the
