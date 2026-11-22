@@ -1,7 +1,7 @@
 # Containers
 
 Every generated project runs its toolchain inside Docker. The host needs **Docker** and
-**make**, and that answer is the same for all 37 templates.
+**make**, and that answer is the same for all 41 templates.
 
 ## Why containers
 
@@ -122,7 +122,7 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | forth                  | `debian:bookworm-slim` + gforth 0.7.3        | hand-rolled |
 | arm32                  | `debian:trixie-slim` + binutils, qemu-arm    | hand-rolled |
 
-Across 37 templates that is **21 official, 4 vendor, 12 hand-rolled**. The hand-rolled
+Across 41 templates that is **21 official, 4 vendor, 16 hand-rolled**. The hand-rolled
 set — zig, lua, elm, pascal, cobol, basic, lolcode, intercal, r, ada, forth and arm32 —
 held at three from 18 templates to 26, because every language added in between built on
 an official image and merely added a package. Wave 4 added the other nine, which are

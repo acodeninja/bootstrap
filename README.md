@@ -35,14 +35,14 @@ The same whichever language you pick:
 You do not install the language. The toolchain lives in a container, so trying Zig costs
 you nothing on your machine and leaves nothing behind.
 
-All thirty-seven: javascript, typescript, zig, go, rust, python, ruby, elixir, php,
+All forty-one: javascript, typescript, zig, go, rust, python, ruby, elixir, php,
 swift, dart, erlang, gleam, clojure, haskell, kotlin, java, fsharp, csharp, ocaml, nim,
 prolog, elm, lua, c, cpp, fortran, pascal, perl, cobol, basic, lolcode, intercal, r, ada,
-forth, arm32.
+forth, arm32, d, objc, asp, ats.
 
 ## Status
 
-All thirty-seven templates work. Each one scaffolds from a cold Docker cache, runs its own
+All forty-one templates work. Each one scaffolds from a cold Docker cache, runs its own
 suite green, keeps the generated project's git tree clean, and still builds when you
 delete the kitchen sink:
 
@@ -65,6 +65,6 @@ no network, or `--no-pull` and it builds locally instead.
 
 Both entry points are complete: `bootstrap.sh` for macOS and Linux, `bootstrap.ps1` for
 Windows, each in clone mode and in remote mode, and CI exercises each on the platform it
-is for. The Windows leg also diffs the two across all thirty-seven templates, so they
+is for. The Windows leg also diffs the two across all forty-one templates, so they
 cannot drift apart quietly. The design is written up in **[docs/](docs/README.md)**;
 [roadmap.md](docs/roadmap.md) has what is left.
