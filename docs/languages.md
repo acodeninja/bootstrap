@@ -1068,6 +1068,43 @@ still one idea each, and `report_eq` exists precisely so a case is four lines ra
 twenty — but the budget that holds everywhere else is a line count this language cannot
 meet, and pretending otherwise would mean cutting assertions to flatter the rule.
 
+**`asp` asserts by being unsatisfiable, and clingo's exit status is the trap.** A test is a
+program whose integrity constraints throw away every answer set where its expectations do
+not hold, so a pass has no output to parse — only a status. There are two success statuses,
+not one: **30** when the search exhausts, which plain facts reach, and **10** when a choice
+rule stops it at the first model. A runner that knows only about 10 reports every
+plain-facts test as a failure. 20 is a violated constraint and 65 is clingo refusing the
+file. The Dockerfile carries the table.
+
+Two of its kitchen-sink sections assert what the language does *instead* of the construct,
+which [kitchen-sink.md](kitchen-sink.md) allows and this is the template that needed it: a
+string is one opaque term nothing opens, so text has to be spread over a `char(Position,
+Letter)` relation first, and nothing returns, so an operator becomes a constant and the
+answer becomes one more argument.
+
+**`ats` is the only row here that manages its own memory**, and `make lint` is what proves
+it: `patsopt --typecheck` rejects a linear value that is preserved rather than consumed,
+naming the variable. Every other functional template in the set is garbage collected, so
+that error message is the whole reason this row exists. It is also the hardest fifteen
+assertions in the repo to write.
+
+**`objc` wants `libgnustep-base-dev`, not `gnustep-devel`.** Both give you Foundation; the
+metapackage also drags in a GUI backend, an interface builder and an IDE, for 240MB that a
+template with no window never opens. Two smaller traps: `gnustep-config --objc-flags`
+carries `-MMD -MP`, so a syntax-only check leaves `.d` files in the bind mount and dirties
+the tree unless every invocation adds `-MF /dev/null`; and gcc's Objective-C front end
+still defaults to C89, so a `for` loop declaring its index is an error until `-std=gnu11`
+says otherwise. The import-ordering hazard it also found is in
+[template-contract.md](template-contract.md#token-substitution), because it applies to any
+template whose formatter sorts.
+
+**`d`'s linter is not packaged anywhere**, so `dscanner` and `dfmt` are built from their
+release tarballs during the image build — 70 seconds and 36 seconds respectively, which the
+layer cache pays once. `dscanner --styleCheck` then shaped the source rather than the
+reverse: the kitchen sink's fixtures are `private` because they are the suite's own
+business, and `greet` carries a ddoc comment because a public declaration without one is a
+finding. No check is disabled and there is no `dscanner.ini`.
+
 ## Deferred
 
 Frameworks are out of the first cut, but the ID namespace reserves them:
