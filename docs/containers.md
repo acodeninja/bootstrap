@@ -121,6 +121,10 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | ada                    | `debian:trixie-slim` + GNAT 14, AUnit        | hand-rolled |
 | forth                  | `debian:bookworm-slim` + gforth 0.7.3        | hand-rolled |
 | arm32                  | `debian:trixie-slim` + binutils, qemu-arm    | hand-rolled |
+| d                      | `debian:trixie-slim` + LDC 1.40, dub 1.40    | hand-rolled |
+| objc                   | `debian:trixie-slim` + gobjc, GNUstep Base   | hand-rolled |
+| asp                    | `debian:trixie-slim` + clingo 5.6            | hand-rolled |
+| ats                    | `debian:trixie-slim` + ATS2 0.4.2            | hand-rolled |
 
 Across 41 templates that is **21 official, 4 vendor, 16 hand-rolled**. The hand-rolled
 set — zig, lua, elm, pascal, cobol, basic, lolcode, intercal, r, ada, forth and arm32 —
