@@ -1,3 +1,5 @@
+/* The gap matters: clang-format sorts a contiguous include block, and a project
+ * named after anything sorting past "tap" would have these two swapped by fmt. */
 #import "tap.h"
 
 #import "{{PROJECT_SNAKE}}.h"

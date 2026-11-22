@@ -205,6 +205,13 @@ is exactly what the paragraph above forbids. Where a language offers a free esca
 keyword check at no cost in readability. Where it does not, the failure is immediate and
 the message names the offending identifier, which is a tolerable outcome for a rare input.
 
+**A formatter that sorts can see the substituted name too.** `objc` imports `tap.h` and
+`{{PROJECT_SNAKE}}.h` with a blank line between them, because `clang-format` sorts a
+contiguous include block and would otherwise swap the two for any project whose name
+sorts after `tap`. `make fmt` would then rewrite a file that shipped formatted, which CI
+rejects. A template is only format-stable if it is stable for every project name, so try
+yours with a name at each end of the alphabet.
+
 CI bootstraps into `../scaffold` rather than `../out` for this reason: the matrix should
 exercise a realistic project name, not an adversarial one.
 
