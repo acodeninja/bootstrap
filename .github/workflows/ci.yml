@@ -220,7 +220,7 @@ jobs:
           make help
 
       # The contract job greps one scaffold, for javascript, because building
-      # forty-one images to read forty-one files would be absurd there.
+      # every image to read one file from each would be absurd there.
       # Here the image is already built and the scaffold already on disk.
       - name: every placeholder was substituted
         run: |
@@ -405,7 +405,7 @@ jobs:
           make help
 
       # The contract job greps one scaffold, for javascript, because building
-      # forty-one images to read forty-one files would be absurd there.
+      # every image to read one file from each would be absurd there.
       # Here the image is already built and the scaffold already on disk.
       - name: every placeholder was substituted
         run: |

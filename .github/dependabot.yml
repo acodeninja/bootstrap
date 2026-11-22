@@ -20,7 +20,7 @@ updates:
         patterns:
           - "*"
 
-  # Seventy-four FROM lines across thirty-seven templates, none of which any
+  # Every FROM line in every template, none of which any
   # tool has ever looked at. directories globs because each template's build
   # context is its own directory.
   - package-ecosystem: docker
@@ -30,7 +30,7 @@ updates:
       interval: weekly
     commit-message:
       prefix: chore
-    # One pull request rather than up to thirty-seven. It touches every
+    # One pull request rather than one per template. It touches every
     # template, which makes scope select all of them, so the full matrix is
     # what reviews it -- the point of grouping, not a cost of it.
     groups:

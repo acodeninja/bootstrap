@@ -41,7 +41,7 @@ jobs:
 
       # The template workflow is not one of this repository's, so the tool
       # cannot see it in place. It is relocked in a scratch tree and copied
-      # back into all thirty-seven, which is sound because every template
+      # back into every one of them, which is sound because every template
       # ships the same workflow and the lockfile keys it by path.
       - name: relock the shipped copy
         run: |
