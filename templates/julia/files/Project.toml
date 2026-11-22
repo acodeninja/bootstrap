@@ -1,0 +1,13 @@
+name = "{{PROJECT_SNAKE}}"
+uuid = "5d2b7f84-9c1e-4a63-bf07-3e8a1c60d94b"
+authors = ["{{AUTHOR}}"]
+version = "0.1.0"
+
+[compat]
+julia = "1.13"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
