@@ -1,0 +1,1 @@
+pub def greet(name: String): String = "Hello, ${name}!"

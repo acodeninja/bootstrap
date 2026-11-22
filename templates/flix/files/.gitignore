@@ -1,0 +1,8 @@
+/artifact
+/build
+/lib
+*.fpkg
+*.jar
+crash_report_*.txt
+.GITHUB_TOKEN
+.env

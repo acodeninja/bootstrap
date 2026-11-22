@@ -1,0 +1,7 @@
+[package]
+# Must move with ARG FLIX_VERSION in the Dockerfile: flix refuses a manifest
+# asking for a version newer than the jar in the image.
+flix    = "0.80.0"
+version = "0.1.0"
+
+# repository = "github:<owner>/{{PROJECT_SLUG}}"
