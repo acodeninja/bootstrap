@@ -1,6 +1,6 @@
 # Languages
 
-The 37 targets, their chosen tooling, and when each lands. This is the implementer's
+The 41 targets, their chosen tooling, and when each lands. This is the implementer's
 worksheet: one row is one template.
 
 Test runners are chosen **stdlib-first**. A built-in runner is one less dependency to
@@ -54,6 +54,10 @@ patches, so an old minor can outrank a current one. See
 | `ada`        | `debian:trixie-20261104-slim` + GNAT 14.2      | `AUnit`                      | `gnatc` + `gnatwae` / —              | 4    |
 | `forth`      | `debian:bookworm-20261104-slim` + gforth 0.7.3 | TAP, own `T{ -> }T`          | `gforth` compile / —                 | 4    |
 | `arm32`      | `debian:trixie-20261104-slim` + binutils, qemu | TAP over semihosting         | `as --fatal-warnings` / —            | 4    |
+| `d`          | `debian:trixie-20261104-slim` + LDC 1.40.0, dub 1.40.0 | `dub test`                   | `dscanner --styleCheck` / `dfmt`     | 5    |
+| `objc`       | `debian:trixie-20261104-slim` + gobjc 14, GNUstep 1.31 | TAP, own `tap.h`             | `gcc -fsyntax-only -Wall -Werror` / `clang-format` | 5    |
+| `asp`        | `debian:trixie-20261104-slim` + clingo 5.6.2    | clingo exit status to TAP    | `gringo --warn=all` / —              | 5    |
+| `ats`        | `debian:trixie-20261104-slim` + ATS2 0.4.2      | TAP, own `tap.hats`          | `patsopt --typecheck` / —            | 5    |
 
 ## Waves
 
@@ -69,21 +73,26 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
   test framework because the language has no stdlib one.
 - **Wave 4** is everything added after the first twenty-six shipped. Its rows are not
   ordered by difficulty, because they arrive when somebody asks for them.
+- **Wave 5** is the paradigm pass: rows picked because a cell in the language matrix was
+  empty rather than because somebody asked. A second logic language, a systems language
+  with a tracing GC, a systems language with dynamic types, and the first functional
+  language here that manages its own memory.
 
 ## Where lint and fmt prove nothing
 
-Eleven of the lint and fmt targets above do nothing, across nine templates, and they
-are worth one list rather than nine notes. **`basic` and `lolcode` have no `lint`**:
-neither Bywater BASIC nor `lci` has a check mode, a syntax-only flag or a
-third-party checker, so `make lint` prints why and exits 0. CI runs it, and for
-those two it is theatre.
+Thirteen of the lint and fmt targets above do nothing, across eleven templates, and they
+are worth one list rather than eleven notes. **`basic` and `lolcode` have no `lint`**:
+neither Bywater BASIC nor `lci` has a check mode, a syntax-only flag or a third-party
+checker, so `make lint` prints why and exits 0. CI runs it, and for those two it is
+theatre.
 
-**Nine have no `fmt`** — `ada`, `arm32`, `basic`, `cobol`, `forth`, `intercal`,
-`lolcode`, `pascal` and `prolog`. `gnatpp` ships only with AdaCore's own distribution;
-GnuCOBOL, lci, gforth, GNU as and SWI-Prolog publish no formatter; Free Pascal's
-`ptop` capitalises keywords and dedents `end;` to column 0, which is worse than
-leaving the file alone. Each one's `.editorconfig` carries the indent the language
-expects instead.
+**Eleven have no `fmt`** — `ada`, `arm32`, `asp`, `ats`, `basic`, `cobol`, `forth`,
+`intercal`, `lolcode`, `pascal` and `prolog`. Potassco publish no formatter for ASP and
+nothing third-party is packaged; ATS2 ships `patscc` and `patsopt` and nothing that
+formats; `gnatpp` ships only with AdaCore's own distribution; GnuCOBOL, lci, gforth, GNU
+as and SWI-Prolog publish no formatter; Free Pascal's `ptop` capitalises keywords and
+dedents `end;` to column 0, which is worse than leaving the file alone. Each one's
+`.editorconfig` carries the indent the language expects instead.
 
 The alternative in both cases was a target that looked like a check. A reader
 cannot tell a check that passed from one that was never made, so these say so.
