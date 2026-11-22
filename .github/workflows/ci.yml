@@ -164,8 +164,15 @@ jobs:
 
       # --no-pull because the point of this job is the Dockerfile. Pulling the
       # published image would test the previous commit's toolchain against this
-      # commit's templates, and a broken Dockerfile would go green.
-      - run: ./bootstrap.sh ${{ matrix.template }} ../scaffold --no-pull
+      # commit's templates, and a broken Dockerfile would go green. Reusing its
+      # layers is not the same thing: buildkit matches a layer only when the
+      # instruction and its inputs are identical, so an edit still rebuilds
+      # from the edit down. The runs that build everything pass --no-cache, which
+      # is what still proves a build from nothing works: the one thing a cache
+      # can hide.
+      - run: >-
+          ./bootstrap.sh ${{ matrix.template }} ../scaffold --no-pull
+          ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '--no-cache' || '' }}
 
       # bootstrap.sh finishes on make test. The generated workflow runs make
       # lint as well and this one never has, which is how a lint target that
@@ -348,7 +355,9 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - uses: docker/setup-buildx-action@v4.4.1
 
-      - run: ./bootstrap.sh ${{ matrix.template }} ../scaffold --no-pull
+      - run: >-
+          ./bootstrap.sh ${{ matrix.template }} ../scaffold --no-pull
+          ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '--no-cache' || '' }}
 
       # bootstrap.sh finishes on make test. The generated workflow runs make
       # lint as well and this one never has, which is how a lint target that

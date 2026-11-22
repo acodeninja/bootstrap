@@ -22,6 +22,7 @@ $script:OptForce = $false
 $script:OptNoGit = $false
 $script:OptNoBuild = $false
 $script:OptNoPull = $false
+$script:OptNoCache = $false
 $script:OptDryRun = $false
 $script:OptList = $false
 $script:TemplateId = ''
@@ -67,6 +68,7 @@ function Write-Usage {
         '  --no-git        Skip git init and the initial commit.'
         '  --no-build      Skip the image build and the verification test run.'
         '  --no-pull       Build the image locally instead of pulling the published one.'
+        '  --no-cache      Rebuild every layer instead of reusing the published cache.'
         '  --dry-run       Print the files that would be written and exit 0.'
         '  --list          Print available templates and exit 0.'
         '  --help          Print this and exit 0.'
@@ -118,6 +120,7 @@ function Read-Args {
             '--no-git' { $script:OptNoGit = $true }
             '--no-build' { $script:OptNoBuild = $true }
             '--no-pull' { $script:OptNoPull = $true }
+            '--no-cache' { $script:OptNoCache = $true }
             '--dry-run' {
                 $script:OptDryRun = $true
                 $script:OptNoGit = $true
@@ -520,7 +523,9 @@ function Invoke-ImageBuild {
     try {
         # --progress plain keeps the stream line-oriented; reading it at all
         # costs buildkit its TTY renderer, which docs/cli.md allows for.
-        & docker compose build --progress plain 2>&1 | ForEach-Object {
+        $buildArgs = @('--progress', 'plain')
+        if ($script:OptNoCache) { $buildArgs += '--no-cache' }
+        & docker compose build @buildArgs 2>&1 | ForEach-Object {
             $line = [string]$_
             Write-Output $line
             if ($line -match 'toomanyrequests' -or $line -match 'pull rate limit') { $rateLimited = $true }

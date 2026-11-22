@@ -24,6 +24,7 @@ OPT_FORCE=0
 OPT_NO_GIT=0
 OPT_NO_BUILD=0
 OPT_NO_PULL=0
+OPT_NO_CACHE=0
 OPT_DRY=0
 OPT_LIST=0
 TEMPLATE_ID=
@@ -59,6 +60,7 @@ usage() {
     '  --no-git        Skip git init and the initial commit.' \
     '  --no-build      Skip the image build and the verification test run.' \
     '  --no-pull       Build the image locally instead of pulling the published one.' \
+    '  --no-cache      Rebuild every layer instead of reusing the published cache.' \
     '  --dry-run       Print the files that would be written and exit 0.' \
     '  --list          Print available templates and exit 0.' \
     '  --help          Print this and exit 0.' \
@@ -96,6 +98,7 @@ parse_args() {
       --no-git) OPT_NO_GIT=1 ;;
       --no-build) OPT_NO_BUILD=1 ;;
       --no-pull) OPT_NO_PULL=1 ;;
+      --no-cache) OPT_NO_CACHE=1 ;;
       --dry-run)
         OPT_DRY=1
         OPT_NO_GIT=1
@@ -494,9 +497,11 @@ pull_image() {
 # --progress plain keeps it line-oriented rather than emitting redraws.
 build_image() {
   local status
+  local args=(--progress plain)
+  if [ "$OPT_NO_CACHE" -eq 1 ]; then args+=(--no-cache); fi
   (
     cd "$TARGET" || exit 1
-    docker compose build --progress plain 2>&1 |
+    docker compose build "${args[@]}" 2>&1 |
       {
         rate_limited=0
         while IFS= read -r line; do
