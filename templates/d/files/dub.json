@@ -1,0 +1,9 @@
+{
+    "name": "{{PROJECT_SLUG}}",
+    "description": "{{PROJECT_NAME}}",
+    "authors": ["{{AUTHOR}}"],
+    "copyright": "Copyright © {{YEAR}}, {{AUTHOR}}",
+    "license": "MIT",
+    "targetType": "library",
+    "targetPath": "bin"
+}
