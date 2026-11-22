@@ -1,0 +1,5 @@
+.env
+*_dats.c
+*_sats.c
+*.o
+a.out
