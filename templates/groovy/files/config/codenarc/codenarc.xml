@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset xmlns="http://codenarc.org/ruleset/1.0">
+  <description>Rules that find mistakes, not rules that argue with Groovy.</description>
+
+  <!-- convention.xml and naming.xml are left out on purpose: they want a
+       declared type on every variable, a return type on every method and an
+       identifier for a method name, which rules out def, Groovy's implicit
+       returns and every Spock feature name in the suite. -->
+  <ruleset-ref path="rulesets/basic.xml"/>
+  <ruleset-ref path="rulesets/exceptions.xml"/>
+  <ruleset-ref path="rulesets/groovyism.xml"/>
+  <ruleset-ref path="rulesets/imports.xml"/>
+  <ruleset-ref path="rulesets/unused.xml"/>
+
+  <!-- With no formatter to run, these are the only thing checking layout. -->
+  <ruleset-ref path="rulesets/formatting.xml">
+    <exclude name="ClassEndsWithBlankLine"/>
+    <exclude name="ClassStartsWithBlankLine"/>
+    <exclude name="SpaceAroundMapEntryColon"/>
+  </ruleset-ref>
+</ruleset>

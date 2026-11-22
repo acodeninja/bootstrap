@@ -1,0 +1,29 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # Optional, and read by the `if` below. Docker Hub rate-limits anonymous
+    # pulls and GitHub's runners share IP addresses, so resolving the base image
+    # can fail with a registry error that looks nothing like the real cause.
+    # Setting the two secrets lifts the limit; without them this still works.
+    env:
+      dockerhub_username: ${{ secrets.DOCKERHUB_USERNAME }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - if: env.dockerhub_username != ''
+        uses: docker/login-action@v4.8.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - run: docker compose build
+      - run: make lint
+      - run: make test

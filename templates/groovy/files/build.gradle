@@ -1,0 +1,58 @@
+plugins {
+  id 'groovy'
+  id 'codenarc'
+}
+
+// Gradle writes build/ beside the sources, and here that is a bind mount the
+// clean-tree check watches. /cache is the one writable place that is not the project.
+layout.buildDirectory = file('/cache/build')
+
+// Gradle's own layout is src/main/groovy and src/test/groovy. The template puts
+// the module at src/ so its filename can carry the project name.
+sourceSets {
+  main {
+    groovy.setSrcDirs(['src'])
+  }
+  test {
+    groovy.setSrcDirs(['test'])
+  }
+}
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  implementation 'org.apache.groovy:groovy:6.0.0'
+  testImplementation platform('org.junit:junit-bom:5.14.4')
+  testImplementation 'org.spockframework:spock-core:2.5-groovy-6.0'
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// Spock's failure message is a table of every value in the condition, and
+// Gradle's default leaves it in an HTML report inside the cache volume, where
+// nothing on the host can open it.
+test {
+  useJUnitPlatform()
+  testLogging {
+    exceptionFormat = 'full'
+  }
+}
+
+codenarc {
+  toolVersion = '4.0.0'
+  configFile = file('config/codenarc/codenarc.xml')
+}
+
+// Same reason, and CodeNarc has no console report: writing the text one to the
+// container's stdout puts the violations in the output of make lint. Tracking
+// has to go with it, because Gradle will not fingerprint a character device as
+// a task output.
+tasks.withType(CodeNarc).configureEach {
+  doNotTrackState('the report is the console output')
+  reports {
+    html.required = false
+    text.required = true
+    text.outputLocation = file('/dev/stdout')
+  }
+}
