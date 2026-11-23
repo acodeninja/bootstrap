@@ -199,7 +199,7 @@ syntax error because `out` is a Nim keyword. `out` is also a keyword in C# and a
 Kotlin.
 
 This is inherent to literal substitution and is accepted rather than solved: detecting
-forty-four languages' reserved words would mean per-language logic in `bootstrap.sh`, which
+forty-seven languages' reserved words would mean per-language logic in `bootstrap.sh`, which
 is exactly what the paragraph above forbids. Where a language offers a free escape, take it
 — `nim` imports `"../src/{{PROJECT_SNAKE}}"` as a string literal, which bypasses the
 keyword check at no cost in readability. Where it does not, the failure is immediate and
