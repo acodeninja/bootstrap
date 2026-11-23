@@ -1,6 +1,6 @@
 # Languages
 
-The 60 targets, their chosen tooling, and when each lands. This is the implementer's
+The 64 targets, their chosen tooling, and when each lands. This is the implementer's
 worksheet: one row is one template.
 
 Test runners are chosen **stdlib-first**. A built-in runner is one less dependency to
@@ -77,6 +77,10 @@ patches, so an old minor can outrank a current one. See
 | `bqn`        | `debian:trixie-20261104-slim` + CBQN 0.12.0 from source | TAP, own `Ok` vocabulary | `•BQN` compile-only / —              | 6    |
 | `befunge`    | `debian:trixie-20261104-slim` + cfunge 1,001 from source | TAP, `q` carries the count | — / —                              | 6    |
 | `smalltalk`  | `debian:trixie-20261104-slim` + GNU Smalltalk 3.2.5 from source | `SUnit`      | `gst` compile / —                    | 6    |
+| `bash`       | `debian:trixie-20261104-slim` + bats 1.11.1, ShellCheck 0.10.0, shfmt 3.8.0 | `bats`   | `shellcheck -x` + `shfmt -d` / `shfmt -w` | 7    |
+| `powershell` | `debian:trixie-20261104-slim` + PowerShell 7.7.0 release tarball | `Pester` 6.2.0            | `Invoke-ScriptAnalyzer` 1.25.0 / `Invoke-Formatter` | 7    |
+| `visualbasic` | `mcr.microsoft.com/dotnet/sdk:10.0.404`       | `xUnit v3`                   | `dotnet format --verify-no-changes`  | 7    |
+| `octave`     | `debian:trixie-20261104-slim` + Octave 9.4.0, MISS_HIT 0.9.44 | `%!test` blocks via `test`   | `mh_style` + `mh_lint` / `mh_style --fix` | 7    |
 
 ## Waves
 
@@ -100,6 +104,14 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
   a two-dimensional playfield, an image-based object system, actors with reference
   capabilities, a quantum language — rather than for a cell in the paradigm matrix.
   Some, like `scheme` and `tcl`, are instead languages that were simply overdue.
+- **Wave 7** is the mainstream pass, and it exists because the first sixty covered
+  Befunge, INTERCAL, BQN and Answer Set Programming while leaving out four languages
+  that every popularity ranking puts near the top. `bash` was the glaring one: nothing
+  here had declined it, it simply had no row. `powershell` is the same oversight with a
+  second reason to have noticed, since this repository is partly written in it.
+  `visualbasic` had been hidden behind two unrelated ids — `basic` is Bywater BASIC and
+  `asp` is Answer Set Programming — and `octave` is the numerical row that `r`, `julia`
+  and `bqn` only half covered.
 
 ## Paradigm coverage
 
@@ -1567,6 +1579,100 @@ comes from Unison Share over the network, and the only non-interactive driver is
 `ucm transcript`. A template whose source of truth is a binary database fights `git init`
 and cannot have a deletable kitchen sink, which is two of this contract's load-bearing
 assertions. The language is interesting and the template would have been a lie.
+
+**`bash` is the cheapest row in the table and the one that was missing longest.** bats,
+ShellCheck and shfmt are all trixie binary packages — `shfmt` arrives from the
+`golang-mvdan-sh` source — so the Dockerfile is one `apt-get install` and the image
+needs no second stage. `make test` is `bats tests`, naming the directory rather than a
+file, and bats 1.11.1 prints `1..0` and exits 0 on a directory with nothing in it, so
+the sink is deletable without the Makefile knowing anything about it.
+
+Two ShellCheck directives in the shipped source are load-bearing rather than noise.
+`src/` carries `# shellcheck shell=bash` because a file meant to be sourced has no
+shebang to infer a dialect from, and ShellCheck declines to check a file whose shell it
+cannot determine — the template would have shipped a lint target that checked one file
+out of three. The test files carry `# shellcheck source-path=SCRIPTDIR` because `-x`
+resolves a followed path against the working directory, not the file, so without it the
+`.` into `src/` is reported as a path that does not exist. ShellCheck does understand
+`.bats` files, which is why the suite is linted beside the module rather than excluded.
+
+The one `disable` is in the gotchas assertion, and it is there because ShellCheck agrees
+with it: SC2030 and SC2031 say a variable modified in a pipeline is lost to its caller,
+which is exactly what the assertion demonstrates.
+
+**`powershell` is hand-rolled because Microsoft's image has no arm64.** The
+`mcr.microsoft.com/powershell` Debian tags stop at bookworm, and `7.5-debian-12` answers
+a manifest request with a single image rather than a list — the arm64 variants are Azure
+Linux and Mariner only. The GitHub release ships `linux-x64` and `linux-arm64` tarballs
+with a published `hashes.sha256`, so the toolchain comes from there on the same
+`TARGETARCH` pattern as `zig` and `lua`. This is the one wave 7 row the architecture
+filter touched, and it passed rather than being removed by it.
+
+`libicu76` and `libssl3t64` are installed rather than setting
+`DOTNET_SYSTEM_GLOBALIZATION_INVARIANT`: the flag would also start PowerShell, and would
+then change what every string comparison does, which the suite asserts on.
+
+**`make test` is not `Invoke-Pester -CI`, and the reason is worth recording.** `-CI` is
+three settings at once, and two of them are wrong here. It writes `testResults.xml` into
+the bind mount, which CI asserts stays clean; and building that report asks for the
+current user's name, which at a uid with no passwd entry prints `id: cannot find name
+for user ID 1000` on stderr after every green run. `Run.Exit` alone is what was wanted.
+Pester also raises "No test files were found" rather than reporting an empty run, so the
+driver counts the files first — without that, deleting the last test would fail the build.
+
+`PSAlignAssignmentStatement` is absent from the analyzer settings and the file says why:
+it pads the left of an `=` to line a block up, and `PSUseConsistentWhitespace`'s
+`CheckOperator` then rejects the padding it just added. `Invoke-Formatter` applies the
+alignment, so enabling both produces a `make fmt` whose output `make lint` refuses. This
+was found by enabling both.
+
+**`visualbasic` inherits every .NET answer from `csharp`, which inherits them from
+`fsharp`.** The SDK tag, xUnit v3, the `global.json` MTP opt-in, `HOME=/cache`,
+`Directory.Build.props` and `--ignore-exit-code 8` are all carried over unchanged, and
+the two rows deliberately do not differ on them. Sharing the SDK tag is not sharing an
+image: this row has its own `Dockerfile` and its own published image, the same way
+`csharp` and `fsharp` do.
+
+`dotnet format` is a real check here, verified red at exit 2 on a mangled indent. That
+is worth stating next to the `fsharp` row above, where the same tool exits 0 and had to
+be replaced by Fantomas: `dotnet format` supports C# and Visual Basic, and VB is on the
+supported side of that line.
+
+The project file turns on `OptionStrict`, `OptionInfer` and `OptionExplicit`, none of
+which the SDK enables by default, and empties `RootNamespace`. The last one is not
+cosmetic: VB prefixes every declared namespace with the root namespace, which defaults
+to the assembly name — so `Namespace Greeting` would really be `<project>.Greeting` and
+would change with the project name. The sources keep a hardcoded `Greeting` namespace
+for the same reason `csharp` does, so only the `.vbproj` filename carries a token.
+
+**`octave` uses `test`, not `oruntests`, and not `runtests` at all.** `runtests` is
+MATLAB's name and does not exist in Octave 9; `oruntests` is the Octave spelling and
+prints a summary while returning nothing, so a red block would leave `make test` green.
+`test` is the one that answers: it returns the blocks it ran and the blocks it found,
+and the driver sums those across every `.m` file under `src/` and `tests/`.
+
+A module whose code stopped parsing reports 0 of 1 rather than disappearing, which was
+verified against a deliberately broken file. What `make test` cannot see is a file with
+no `%!` blocks at all that does not parse — `test` prints "has no tests available" on
+stdout, leaves stderr empty, and returns zero of zero, which is what an honestly empty
+file returns too. `make lint` catches that one, because MISS_HIT parses every file
+whether it carries tests or not, and CI runs lint before test.
+
+MISS_HIT gives this row a real `lint` and a real `fmt`, which is why `octave` is absent
+from the list above. `--octave latest` is not optional: the tool defaults to MATLAB, and
+the two languages disagree about `#` comments, `endfunction`, `unwind_protect` and the
+`%!` blocks the tests are written in. Three rules are suppressed in `miss_hit.cfg` —
+`copyright_notice`, because the project ships one `LICENSE`, and the two naming rules,
+because the entry point is named after the project and a project name is whatever was
+typed on the command line.
+
+**Three more languages were considered for wave 7 and are not here.** Solidity is
+dominant in its domain and lost on the same architecture filter as J: the `solc` static
+builds are `linux-amd64` only, and `ethereum/solc` publishes no arm64 image either.
+MATLAB itself cannot be containerised without a licence server, which is the whole
+reason the row is `octave`. And x86-64 assembly would have duplicated `arm32` while
+failing the arm64 leg outright — `arm32` is the assembly row precisely because
+`qemu-system-arm` runs on both architectures and a native amd64 assembler does not.
 
 ## Deferred
 
