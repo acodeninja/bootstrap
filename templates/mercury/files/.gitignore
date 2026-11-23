@@ -1,0 +1,9 @@
+.env
+Mercury/
+Mercury.modules
+*.err
+*.mh
+*.init
+*.o
+*.a
+*.so
