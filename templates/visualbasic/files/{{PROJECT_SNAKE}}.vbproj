@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <!-- VB's defaults are the gotcha this template refuses to ship. Strict off
+         permits narrowing conversions and late binding in silence; infer off
+         makes every unannotated local an Object. Both are on here. -->
+    <OptionStrict>On</OptionStrict>
+    <OptionInfer>On</OptionInfer>
+    <OptionExplicit>On</OptionExplicit>
+    <!-- Empty on purpose. VB prefixes every declared namespace with the root
+         one, which defaults to the assembly name, so `Namespace Greeting`
+         would really be `project.Greeting` and would change with the project
+         name. -->
+    <RootNamespace></RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" Version="4.0.3" />
+  </ItemGroup>
+
+</Project>
