@@ -178,7 +178,7 @@ tag pushed here cannot drift from the one `compose` will pull.
 - **`manifest` and `cleanup` are ordered, not gated.** Both `needs` what comes before them
   and both keep `!cancelled()`, because a matrix reports one aggregate result: a strict
   gate on `image-amd64` would let one template's failed leg withhold publishing for the
-  other thirty-six. Per-template granularity comes from the tags instead — see
+  other sixty-three. Per-template granularity comes from the tags instead — see
   [publishing images](#publishing-images).
 
 `packages: write` is granted to the three jobs that push, never at workflow level, so the
@@ -485,11 +485,11 @@ replace.
 
 ## Keeping the pins current
 
-Every version here is pinned: seventy-four `FROM` lines, twelve `ARG *_VERSION` pins inside
-`RUN` steps, three of those beside a hand-computed `ARG *_SHA256`, and the actions in
-`.github/workflows/`. For a long time nothing moved any of them, which is the other half of
-pinning — an unmaintained pin is not reproducible, it is just old, and the first symptom is
-a tag upstream has since deleted.
+Every version here is pinned: seventy-six `FROM` lines, thirty-two `ARG *_VERSION` pins
+across twenty-five templates, ten `ARG *_SHA256` checksums across eight of them, and the
+actions in `.github/workflows/`. For a long time nothing moved any of them, which is the
+other half of pinning — an unmaintained pin is not reproducible, it is just old, and the
+first symptom is a tag upstream has since deleted.
 
 Four kinds of pin, three mechanisms:
 
