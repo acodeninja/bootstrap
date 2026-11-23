@@ -1,6 +1,6 @@
 # Languages
 
-The 57 targets, their chosen tooling, and when each lands. This is the implementer's
+The 60 targets, their chosen tooling, and when each lands. This is the implementer's
 worksheet: one row is one template.
 
 Test runners are chosen **stdlib-first**. A built-in runner is one less dependency to

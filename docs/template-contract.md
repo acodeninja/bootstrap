@@ -1,7 +1,7 @@
 # Template contract
 
 A template is a directory under `templates/`. The directory name is the template ID.
-Adding language number 38 means satisfying this contract and nothing else — no
+Adding language number 61 means satisfying this contract and nothing else — no
 registry to update, no script to edit, no case statement to extend.
 
 ## Layout
@@ -125,13 +125,13 @@ All six, in every template, even where two are the same command:
 
 A language with no separate linter uses its formatter in check mode for `lint`.
 
-**Two of the no-ops are `lint`, and that is the one place this contract does not
-hold.** `basic` and `lolcode` have no checker of any kind to run in any mode, so
-their `lint` prints why and exits 0 — CI runs a target that cannot fail. Nine
-templates' `fmt` is a no-op for the same reason, which the row above now admits.
-The alternative was a target that pretended, and a reader cannot tell a check
-that passed from one that was never made. [languages.md](languages.md) names
-them.
+**Three of the no-ops are `lint`, and that is the one place this contract does not
+hold.** `basic`, `befunge` and `lolcode` have no checker of any kind to run in any
+mode, so their `lint` prints why and exits 0 — CI runs a target that cannot fail.
+Twenty-five templates' `fmt` is a no-op for the same reason, which the row above
+now admits. The alternative was a target that pretended, and a reader cannot tell
+a check that passed from one that was never made. [languages.md](languages.md)
+names them.
 
 **`test` must not name the kitchen sink.** The suite is meant to be deleted, so a target
 that points at it breaks the moment someone does. Use whatever spelling of the runner
@@ -199,7 +199,7 @@ syntax error because `out` is a Nim keyword. `out` is also a keyword in C# and a
 Kotlin.
 
 This is inherent to literal substitution and is accepted rather than solved: detecting
-fifty languages' reserved words would mean per-language logic in `bootstrap.sh`, which
+sixty languages' reserved words would mean per-language logic in `bootstrap.sh`, which
 is exactly what the paragraph above forbids. Where a language offers a free escape, take it
 — `nim` imports `"../src/{{PROJECT_SNAKE}}"` as a string literal, which bypasses the
 keyword check at no cost in readability. Where it does not, the failure is immediate and
