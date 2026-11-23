@@ -1587,6 +1587,13 @@ needs no second stage. `make test` is `bats tests`, naming the directory rather 
 file, and bats 1.11.1 prints `1..0` and exits 0 on a directory with nothing in it, so
 the sink is deletable without the Makefile knowing anything about it.
 
+**There is a Docker Official Image for bash and this row does not use it**, which the
+contract asks to be justified rather than assumed. Every `library/bash` tag is Alpine,
+so taking it would mean musl, `apk`, and another exception to the Debian preference in
+[containers.md](containers.md#debian-variants-and-the-four-exceptions) — and it carries
+none of bats, ShellCheck or shfmt, which is the entire toolchain. The image would supply
+the one thing `debian:trixie-slim` already has.
+
 Two ShellCheck directives in the shipped source are load-bearing rather than noise.
 `src/` carries `# shellcheck shell=bash` because a file meant to be sourced has no
 shebang to infer a dialect from, and ShellCheck will not guess: without it the module is
