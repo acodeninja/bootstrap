@@ -147,6 +147,10 @@ the TDD loop for every invalid input a kata has.
 | Ada                     | `raise`, caught by name in an exception handler                   |
 | Forth                   | `THROW`, whose code `CATCH` returns in place of an exception       |
 | ARM32 assembly          | nothing is raised; the condition flags are the error channel       |
+| Bash                    | a non-zero exit status, read back from `run`'s `$status`          |
+| PowerShell              | `throw` terminates; `Write-Error` does not — `Should -Throw`       |
+| Visual Basic            | `Throw`, with `Catch ... When` filtering without unwinding         |
+| Octave                  | `error("pkg:id", ...)`, caught by `identifier` rather than message |
 
 ## Gotchas are deliberately not uniform
 
@@ -172,6 +176,10 @@ is lexicographic `sort()`, which quietly produces a wrong answer instead of an e
 | C          | array decay to pointers, `sizeof` on a parameter, integer promotion, `strncpy` not terminating |
 | Java       | `==` on boxed `Integer`, autoboxing a `null`, `String` interning, erased generics              |
 | PHP        | `==` vs `===`, string-to-number comparison rules, arrays being list and map at once            |
+| Bash       | a loop in a pipeline is a subshell, unquoted expansion word-splits, `set -e` is porous        |
+| PowerShell | the pipeline unrolls a single match, `-eq` on an array filters, `$null` belongs on the left    |
+| VB.NET     | `And`/`Or` do not short-circuit, `Dim a(5)` holds six, identifiers are case-insensitive        |
+| Octave     | `if` on an array demands every element, assigning past the end grows it, `int32` rounds        |
 
 The bar is the same everywhere: a surprise, not a syntax reminder. If an assertion would
 not surprise anyone, it belongs in another section or nowhere.
