@@ -99,6 +99,29 @@ and prints TAP.
 Cortex-M3, printing TAP over ARM semihosting because there is no operating system to
 print through, and booted under a timeout because a spinning chip reports nothing.
 
+## Wave 7 — the mainstream four
+
+Languages any popularity ranking puts near the top, and that the first sixty had
+somehow skipped while covering Befunge and Answer Set Programming. One commit each,
+against the same definition of done below.
+
+`bash` — bats, ShellCheck and shfmt are all trixie packages, so the image is one
+`apt-get install`. The work was the ShellCheck directives: a sourced file has no shebang
+to infer a dialect from, and `-x` resolves a followed path against the working directory
+rather than the file.
+
+`powershell` — hand-rolled, because Microsoft's own image has no arm64 and its Debian
+tags stop at bookworm. The work was the test driver: Pester's `-CI` writes a report into
+the bind mount and shells out to `id` to build it, so only its exit-code half was wanted.
+
+`visualbasic` — the .NET SDK image `csharp` already pins, and almost nothing else new.
+The work was proving the two risks out: that xUnit v3 runs from a `.vbproj` at all, and
+that `dotnet format` really goes red on VB where it silently exits 0 on F#.
+
+`octave` — Debian carries Octave and MISS_HIT comes from PyPI in a venv. The work was
+finding the runner: `runtests` is MATLAB's and does not exist, `oruntests` returns
+nothing, and `test` is the one that reports counts a driver can exit on.
+
 ## Per-template definition of done
 
 1. `make test`, `make lint` and `make fmt` all work from a cold image.
