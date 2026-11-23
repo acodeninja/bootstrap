@@ -1,0 +1,7 @@
+.git
+.github
+.env
+src
+test
+.lake
+*.md

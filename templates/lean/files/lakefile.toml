@@ -1,0 +1,16 @@
+name = "{{PROJECT_SNAKE}}"
+version = "0.1.0"
+defaultTargets = ["{{PROJECT_SNAKE}}"]
+testDriver = "test"
+leanOptions = { warningAsError = true, autoImplicit = false, relaxedAutoImplicit = false }
+
+[[lean_lib]]
+name = "{{PROJECT_SNAKE}}"
+srcDir = "src"
+
+# The glob is what keeps `make test` from naming the kitchen sink: Lake has no
+# directory-wide discovery, but a submodule glob enumerates test/ at build time,
+# so adding or deleting a file there needs no edit here.
+[[lean_lib]]
+name = "test"
+globs = ["test", "test.+"]
