@@ -1589,12 +1589,13 @@ the sink is deletable without the Makefile knowing anything about it.
 
 Two ShellCheck directives in the shipped source are load-bearing rather than noise.
 `src/` carries `# shellcheck shell=bash` because a file meant to be sourced has no
-shebang to infer a dialect from, and ShellCheck declines to check a file whose shell it
-cannot determine — the template would have shipped a lint target that checked one file
-out of three. The test files carry `# shellcheck source-path=SCRIPTDIR` because `-x`
-resolves a followed path against the working directory, not the file, so without it the
-`.` into `src/` is reported as a path that does not exist. ShellCheck does understand
-`.bats` files, which is why the suite is linted beside the module rather than excluded.
+shebang to infer a dialect from, and ShellCheck will not guess: without it the module is
+SC2148, which is an error rather than a warning, so `make lint` goes red on a file that is
+perfectly correct. The test files carry `# shellcheck source-path=SCRIPTDIR` because `-x`
+resolves a followed path against the working directory rather than the file, so without
+it the `.` into `src/` is reported as a path that does not exist. ShellCheck does
+understand `.bats` files, which is why the suite is linted beside the module rather than
+excluded.
 
 The one `disable` is in the gotchas assertion, and it is there because ShellCheck agrees
 with it: SC2030 and SC2031 say a variable modified in a pipeline is lost to its caller,
