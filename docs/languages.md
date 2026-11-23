@@ -74,6 +74,9 @@ patches, so an old minor can outrank a current one. See
 | `scala`      | `eclipse-temurin:25.0.5.1_2-jdk-noble` + scala-cli 1.19.0 | `munit` 1.3.6      | `scalac -Wunused:all -Werror` / `scala-cli fmt` | 6    |
 | `pony`       | `debian:trixie-20261104-slim` + ponyc 0.78.2    | `PonyTest`                   | `ponyc --pass verify` / —            | 6    |
 | `qsharp`     | `python:3.15.2-slim-trixie` + QDK 1.34.0        | `qdk.test_utils.run_tests`   | QDK type checker / —                 | 6    |
+| `bqn`        | `debian:trixie-20261104-slim` + CBQN 0.12.0 from source | TAP, own `Ok` vocabulary | `•BQN` compile-only / —              | 6    |
+| `befunge`    | `debian:trixie-20261104-slim` + cfunge 1,001 from source | TAP, `q` carries the count | — / —                              | 6    |
+| `smalltalk`  | `debian:trixie-20261104-slim` + GNU Smalltalk 3.2.5 from source | `SUnit`      | `gst` compile / —                    | 6    |
 
 ## Waves
 
@@ -133,31 +136,36 @@ popularity alone.
 
 ## Where lint and fmt prove nothing
 
-Twenty-four of the lint and fmt targets above do nothing, across twenty-two templates,
-and they are worth one list rather than twenty-two notes. **`basic` and `lolcode` have no
-`lint`**: neither Bywater BASIC nor `lci` has a check mode, a syntax-only flag or a
-third-party checker, so `make lint` prints why and exits 0. CI runs it, and for those
-two it is theatre.
+Twenty-eight of the lint and fmt targets above do nothing, across twenty-five templates,
+and they are worth one list rather than twenty-five notes. **`basic`, `befunge` and
+`lolcode` have no `lint`**: neither Bywater BASIC nor `lci` has a check mode, a
+syntax-only flag or a third-party checker, and in Befunge there is no such thing as a
+syntax error — every byte is a valid playfield cell — so `make lint` prints why and exits
+0. CI runs it, and for those three it is theatre.
 
-**Twenty-two have no `fmt`** — `ada`, `arm32`, `asp`, `ats`, `basic`, `cobol`,
-`commonlisp`, `forth`, `groovy`, `intercal`, `koka`, `lean`, `lolcode`, `mercury`,
-`pascal`, `pony`, `prolog`, `qsharp`, `racket`, `raku`, `scheme` and `tcl`. Koka ships
-one binary with no format subcommand and issue 521 has been open since 2024; Lean's
-release tarball carries a compiler, a linker and a build tool and nothing that rewrites
-source; Pony ships no formatter and no third-party one exists; the released QDK wheel
-installs no console scripts at all, and Q#'s formatter lives only inside the language
-server; Potassco publish no formatter for ASP and nothing third-party is packaged; ATS2
-ships `patscc` and `patsopt` and nothing that formats; Common Lisp indentation is a
-function of what each macro means, which is why editors ship indent tables rather than
-formatters, and Scheme has the same problem with nothing packaged to solve it; Racket's
-`raco fmt` lives in a third-party package that publishes no version tags, so there is no
-version to pin; nothing packaged formats Tcl and no third-party candidate is stable
-enough to pin; Raku's only candidate, `Perl6::Tidy`, reaches into compiler internals
-that no longer exist and fails on any input; Spotless's `greclipse` step deletes the
-space before every `>`, so `n > 1` comes back as `n> 1` and seven Eclipse formatter
-options will not stop it; `gnatpp` ships only with AdaCore's own distribution; GnuCOBOL,
-lci, gforth, GNU as and SWI-Prolog publish no formatter; Free Pascal's `ptop` capitalises
-keywords and dedents `end;` to column 0, which is worse than leaving the file alone.
+**Twenty-five have no `fmt`** — `ada`, `arm32`, `asp`, `ats`, `basic`, `befunge`, `bqn`,
+`cobol`, `commonlisp`, `forth`, `groovy`, `intercal`, `koka`, `lean`, `lolcode`,
+`mercury`, `pascal`, `pony`, `prolog`, `qsharp`, `racket`, `raku`, `scheme`, `smalltalk`
+and `tcl`. Koka ships one binary with no format subcommand and issue 521 has been open
+since 2024; Lean's release tarball carries a compiler, a linker and a build tool and
+nothing that rewrites source; no BQN formatter exists for any implementation; a Befunge
+program is a grid and a column position is as much a part of it as the characters are, so
+there is nothing a formatter could safely do; nothing packaged formats Smalltalk, and
+`gst-convert` translates between chunk and bracket syntax rather than formatting either;
+Pony ships no formatter and no third-party one exists; the released QDK wheel installs no
+console scripts at all, and Q#'s formatter lives only inside the language server;
+Potassco publish no formatter for ASP and nothing third-party is packaged; ATS2 ships
+`patscc` and `patsopt` and nothing that formats; Common Lisp indentation is a function of
+what each macro means, which is why editors ship indent tables rather than formatters,
+and Scheme has the same problem with nothing packaged to solve it; Racket's `raco fmt`
+lives in a third-party package that publishes no version tags, so there is no version to
+pin; nothing packaged formats Tcl and no third-party candidate is stable enough to pin;
+Raku's only candidate, `Perl6::Tidy`, reaches into compiler internals that no longer
+exist and fails on any input; Spotless's `greclipse` step deletes the space before every
+`>`, so `n > 1` comes back as `n> 1` and seven Eclipse formatter options will not stop
+it; `gnatpp` ships only with AdaCore's own distribution; GnuCOBOL, lci, gforth, GNU as
+and SWI-Prolog publish no formatter; Free Pascal's `ptop` capitalises keywords and
+dedents `end;` to column 0, which is worse than leaving the file alone.
 Each one's `.editorconfig` carries the indent the language expects instead.
 
 The alternative in both cases was a target that looked like a check. A reader
@@ -1475,6 +1483,75 @@ inert from Python — those rules are a language-server feature — so `lint` is
 registers an `atexit` handler that posts to an Application Insights endpoint; telemetry is on
 by default for any non-`dev` version. A template that phoned home on every test run would be
 a defect, not a feature.
+
+**`bqn` needs `CC=cc`, and without it the template would be amd64-only.** CBQN defaults to
+clang. On amd64 its build driver notices clang is absent and falls back to `cc` with a note;
+on arm64 it does not — the bootstrap stage builds, then the driver invokes clang and dies
+with `exited with error code 127`. The rest of the flag set is `singeli=0 REPLXX=0` (the
+other two git submodules, which a source tarball does not have), `FFI=0` (no libffi in the
+image), `nogit=1` as a guard, and `version=` because `nogit=1` leaves nothing to derive a
+version from.
+
+The bootstrap problem is the interesting part. CBQN's build system is written in BQN, so
+building it needs a BQN, and upstream resolves that with precompiled bytecode pulled as a
+submodule. The template downloads that bytecode separately and unpacks it at
+`build/bytecodeLocal`, pinned to the commit **CBQN v0.12.0 itself records** rather than to
+the newest one, so the bytecode matches the compiler it bootstraps. That commit is the one
+pin in the repo `pins.yml` cannot watch, because the bytecode repository publishes no tags.
+
+`lint` is real, which is not obvious for a language with no syntax-only flag: wrapping a
+file's source in `{𝕊: … }` and handing it to `•BQN` compiles the body and calls it nowhere,
+so an unknown glyph, a malformed train or an undefined identifier is reported without
+executing a line. It therefore also checks the suite, which a template whose `lint` runs the
+tests cannot do. Two failure routes ship, because neither suffices: `•Exit` carries the fail
+count, and `tap-run` compares the plan against the results — an uncaught BQN error ends the
+program where it stands, so without the plan check a dead file would look merely shorter.
+
+**`befunge` prints its test names by traversing the grid westwards.** The IP pushes cells in
+the order it visits them and `,` pops from the top, so a stringmode run read right-to-left
+lands with its leftmost character on top: the name is written in the grid in natural order
+and the row is walked east-to-west, with a `0` under it and `>:#,_` printing until that zero.
+Each assertion is two rows of 79 columns, and the code row's turning `v` sits in column 78
+because the text row pads to column 78 with `<`. Those 29 cells repeat fifteen times, because
+Befunge has no functions — and that repetition is the lesson rather than an accident.
+
+Three things about the language that the suite had to be built around. **Every scratch cell
+lives at a negative coordinate.** The failure count was first kept at `(0,50)`, and the moment
+the file grew past fifty rows `p` overwrote a row of the suite and the program hung on
+`Unknown instruction at x=0 y=50`; a negative coordinate is the only address a growing program
+can be certain it will never grow over. **`k` repeats n+1 times, not n** — cfunge's
+`iterate.c` says so deliberately, because the IP then advances onto the instruction and runs
+it once more, which makes it the gotcha slot. And **a never-written cell reads back as 32**, a
+space, not zero.
+
+There is no splice here, so the lolcode and intercal precedent does not transfer: those
+languages are linear, and concatenating two Befunge grids would mean deciding which
+coordinates each occupies, with nothing in the language to store a return address. `i` loads
+a file into the playfield at a vector you choose and is the nearest thing to an import, and it
+still gives you no way to run the loaded grid and come back. So every file is a program on its
+own. For the same reason no `{{TOKEN}}` appears inside a grid row: substitution changes the
+row's width, and the turning column only works because the row below is exactly as wide.
+
+**`smalltalk` cost one compiler error, which was not the expectation.** Debian dropped GNU
+Smalltalk after bullseye and upstream has released nothing since 2010, so the template builds
+3.2.5 from `ftp.gnu.org`. The 2010 C needed `-Wno-error=incompatible-pointer-types` for a
+single `iconv` call in gnulib and nothing else — no `-fcommon`, no `-std=gnu89` — and aarch64
+behaved identically. What actually stopped the build three times was the host, not the code:
+`configure` wants GNU awk and InfoZIP by name, and the tarball is `.tar.xz`.
+
+**`gst` exits 0 after a parse error**, which is the hazard that would have shipped silently.
+It reports on stderr, skips the statement and carries on, so a test class that failed to
+compile would leave a suite that passed by being empty. The helper therefore treats non-empty
+stderr as a failure as well as reading `TestResult hasPassed`, and the two signals never
+conflate: a green run writes exactly zero bytes to stderr, and a failing assertion also leaves
+it empty. `gst-sunit` could not be used at all — it takes `class.tests` arguments or a package
+name, and both name the suite — so the helper builds the suite from `TestCase allSubclasses`
+against a snapshot that has no `TestCase` subclasses of its own, which makes whatever `tests/`
+filed in the whole suite without anything naming it.
+
+Its `fmt` is the usual no-op, but `build` is real and worth the row: the build output of an
+image-oriented language is an image, so `make build` files `src/` into a fresh object memory
+and snapshots it to `/cache`, which `gst -I` then starts with the project already loaded.
 
 ## Deferred
 
