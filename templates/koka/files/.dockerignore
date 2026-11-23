@@ -1,0 +1,7 @@
+.git
+.github
+.env
+.koka
+src
+test
+*.md
