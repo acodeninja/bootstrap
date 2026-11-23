@@ -1,7 +1,7 @@
 # Containers
 
 Every generated project runs its toolchain inside Docker. The host needs **Docker** and
-**make**, and that answer is the same for all 54 templates.
+**make**, and that answer is the same for all 57 templates.
 
 ## Why containers
 

@@ -18,7 +18,7 @@ same shape of answer every time.
   toolchain lives in a container too — you do not install Zig to try Zig, and you do not
   end up with four Node versions on your laptop.
 - **One set of commands across every language.** `make test`, `make lint`, `make fmt`
-  mean the same thing in all 54 templates. You should not have to remember whether this
+  mean the same thing in all 57 templates. You should not have to remember whether this
   one is `rebar3 eunit` or `dune test`.
 - **Idiomatic, not lowest-common-denominator.** The shipped code demonstrates how the
   language actually handles errors, iteration and tests — see [kitchen-sink.md](kitchen-sink.md).
