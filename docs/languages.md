@@ -67,6 +67,10 @@ patches, so an old minor can outrank a current one. See
 | `koka`       | `debian:trixie-20261104-slim` + Koka 3.2.9      | TAP, own `test/lib/tap.kk`   | `koka --library --no-compile` / —    | 5    |
 | `lean`       | `debian:trixie-20261104-slim` + Lean 4.36.0     | `lake test`                  | `lake build`, warnings fatal / —     | 5    |
 | `mercury`    | `debian:trixie-20261104-slim` + Mercury 22.01.9 from source | TAP, own `tap.m` | `mmc --make <mod>.check` / —         | 5    |
+| `tcl`        | `debian:trixie-20261104-slim` + Tcl 8.6.16      | `tcltest` (stdlib)           | bytecode parse check / —             | 6    |
+| `sql`        | `debian:trixie-20261104-slim` + SQLite 3.46.1, sqlfluff 4.5.0 | TAP through `sqlite3` | `sqlfluff lint` / `sqlfluff format`  | 6    |
+| `scheme`     | `debian:trixie-20261104-slim` + Guile 3.0.10    | `SRFI-64`                    | `compile-file`, warnings fatal / —   | 6    |
+| `racket`     | `debian:trixie-20261104-slim` + Racket 8.16     | `raco test` + `rackunit`     | `raco expand` / —                    | 6    |
 
 ## Waves
 
@@ -85,6 +89,11 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 - **Wave 5** is the paradigm pass: thirteen rows picked because a cell in the language
   matrix was empty or thinly occupied rather than because somebody asked, plus the four
   that came off the Deferred list. See [paradigm coverage](#paradigm-coverage).
+- **Wave 6** is a different axis from wave 5: its rows were chosen for the *model of
+  computation* the first fifty missed — a declarative query language, an array language,
+  a two-dimensional playfield, an image-based object system, actors with reference
+  capabilities, a quantum language — rather than for a cell in the paradigm matrix.
+  Some, like `scheme` and `tcl`, are instead languages that were simply overdue.
 
 ## Paradigm coverage
 
@@ -121,26 +130,30 @@ popularity alone.
 
 ## Where lint and fmt prove nothing
 
-Nineteen of the lint and fmt targets above do nothing, across seventeen templates, and
-they are worth one list rather than seventeen notes. **`basic` and `lolcode` have no
+Twenty-two of the lint and fmt targets above do nothing, across twenty templates, and
+they are worth one list rather than twenty notes. **`basic` and `lolcode` have no
 `lint`**: neither Bywater BASIC nor `lci` has a check mode, a syntax-only flag or a
 third-party checker, so `make lint` prints why and exits 0. CI runs it, and for those
 two it is theatre.
 
-**Seventeen have no `fmt`** — `ada`, `arm32`, `asp`, `ats`, `basic`, `cobol`,
+**Twenty have no `fmt`** — `ada`, `arm32`, `asp`, `ats`, `basic`, `cobol`,
 `commonlisp`, `forth`, `groovy`, `intercal`, `koka`, `lean`, `lolcode`, `mercury`,
-`pascal`, `prolog` and `raku`. Koka ships one binary with no format subcommand and
-issue 521 has been open since 2024; Lean's release tarball carries a compiler, a
-linker and a build tool and nothing that rewrites source;
+`pascal`, `prolog`, `racket`, `raku`, `scheme` and `tcl`. Koka ships one binary with no
+format subcommand and issue 521 has been open since 2024; Lean's release tarball
+carries a compiler, a linker and a build tool and nothing that rewrites source;
 Potassco publish no formatter for ASP and nothing third-party is packaged; ATS2 ships
 `patscc` and `patsopt` and nothing that formats; Common Lisp indentation is a function
 of what each macro means, which is why editors ship indent tables rather than
-formatters; Raku's only candidate, `Perl6::Tidy`, reaches into compiler internals that
-no longer exist and fails on any input; Spotless's `greclipse` step deletes the space
-before every `>`, so `n > 1` comes back as `n> 1` and seven Eclipse formatter options
-will not stop it; `gnatpp` ships only with AdaCore's own distribution; GnuCOBOL, lci,
-gforth, GNU as and SWI-Prolog publish no formatter; Free Pascal's `ptop` capitalises
-keywords and dedents `end;` to column 0, which is worse than leaving the file alone.
+formatters, and Scheme has the same problem with nothing packaged to solve it;
+Racket's `raco fmt` lives in a third-party package that publishes no version tags, so
+there is no version to pin; nothing packaged formats Tcl and no third-party candidate
+is stable enough to pin; Raku's only candidate, `Perl6::Tidy`, reaches into compiler
+internals that no longer exist and fails on any input; Spotless's `greclipse` step
+deletes the space before every `>`, so `n > 1` comes back as `n> 1` and seven Eclipse
+formatter options will not stop it; `gnatpp` ships only with AdaCore's own
+distribution; GnuCOBOL, lci, gforth, GNU as and SWI-Prolog publish no formatter; Free
+Pascal's `ptop` capitalises keywords and dedents `end;` to column 0, which is worse
+than leaving the file alone.
 Each one's `.editorconfig` carries the indent the language expects instead.
 
 The alternative in both cases was a target that looked like a check. A reader
@@ -1332,6 +1345,74 @@ What `lint` catches here, no other row in this table catches: a determinism decl
 is tighter than the code (`Declared 'det', inferred 'semidet'`), one that is looser than it
 needs to be, and a switch that does not cover every constructor.
 
+**`tcl`'s lint exists because Tcl raises nothing when it parses a broken file.** The
+byte-compiler turns a parse error into a `syntax` instruction that fires only if the code
+runs, so byte-compiling succeeds on anything and every obvious check — `tclsh -c` does not
+exist, `info complete` returns true for `set x {a}b` — reports a broken file as fine. The
+instruction is the verdict instead: `::tcl::unsupported::getbytecode` returns the
+instruction stream, and the literal pushed before the `syntax` opcode is the message. That
+catches an unclosed brace, an unclosed bracket, an unterminated quote, characters after a
+close-brace and a malformed `expr`, with no false positives over Tcl's own shipped library.
+It cannot catch a misspelled command, because that is a runtime error in Tcl, and a parse
+error inside a `proc` body surfaces under `make test` rather than `make lint` — a body is
+not compiled until it is first called. The README says so.
+
+Two tcltest defaults would each have made the suite a lie. `runAllTests` prints what failed
+and then *returns* whether anything did, exiting for nothing, so `exit [runAllTests]` is
+what makes a red assertion red. And `-notfile` defaults to `l.*.test`, which silently skips
+every test file whose name begins with `l`: a `tests/lexer.test` would never have run and
+nothing would have said so.
+
+**`sql` is the only row whose test framework is the output format.** Each file prints its own
+plan and one `iif(cond, 'ok', 'not ok') || ' N - name'` line per assertion, and
+`sqlite3 -batch ':memory:' '.read src/schema.sql' '.read tests/x.sql'` runs it — `.read` as
+positional arguments, schema first. `sqlite3` exits 0 for a query that returns the string
+`not ok` exactly as it does for any other string, so `tap-run` decides the status, the same
+shape `forth`, `cobol`, `basic`, `lolcode` and `intercal` use. A runtime error does not stop
+`.read` either: the interpreter carries on to the end of the file, which is why the
+plan-versus-count check matters as much as the exit code.
+
+sqlfluff is both the lint and the fmt, and it dictates the file's shape rather than the other
+way round. `LT05` counts comment lines, so `{{PROJECT_NAME}}` gets a line of its own: a
+52-character project name interpolated into a prose line pushed a freshly scaffolded project
+over 80 characters and `make lint` went red before its owner had written anything. `LT14`
+rejects `ORDER BY` inside an aggregate while allowing it inside `OVER (…)`, and the
+`group_concat` assertion needs it, because SQLite's aggregate order is otherwise arbitrary.
+And `RAISE` is unusable in a TAP file — it aborts the script, so the errors slot asserts
+`INSERT OR IGNORE` plus `changes() = 0`, which is how a test sees a refusal without the
+refusal taking the file down.
+
+**`scheme` is a reminder that a framework can report a failure without reporting it to the
+shell.** SRFI-64 prints `# of unexpected failures 1` and exits 0; Guile's own
+`srfi-64/testing.scm` calls `test-runner-on-final` and nothing else. So the image's helper
+installs a `test-runner-factory`, keeps every runner `test-begin` asks for, and exits 1 when
+the fail and unexpected-pass counts across all of them are non-zero. It also turns
+`test-log-to-file` off, because SRFI-64 writes `<suite>.log` into the working directory,
+which in a bind mount is the user's project.
+
+`guild` is in `guile-3.0-dev` rather than `guile-3.0`, so `lint` and `build` call
+`compile-file` from `(system base compile)` — in the runtime package — and capture
+`current-warning-port` instead. The warnings are named individually rather than by level:
+`-W3` is what reports unused variables, and it reports fifteen of them inside SRFI-64's own
+expansion of `test-equal`, which would leave the kitchen sink permanently unlintable.
+
+**`racket`'s bytecode cannot be left in the project, and `.gitignore` is not enough.** Racket
+CS stamps its machine type into every `.zo` and does not fall back to the source when it
+does not match: an amd64 scaffold's `compiled/` run under the arm64 image fails outright with
+`fasl-read: incompatible fasl-object machine-type 'ta6le found`. This repo builds both
+architectures, so ignoring the directory would park architecture-specific state in somebody's
+checkout. `PLTCOMPILEDROOTS=/cache/zo:` moves it into the volume, and **the trailing colon is
+load-bearing**: the empty element expands to the default roots, which is where Debian ships
+the collections' own bytecode under a per-architecture path. Spelled `/cache/zo:same`, every
+run recompiles the whole of rackunit's closure from source, on the second run as well as the
+first.
+
+`lint` is `raco expand`, not `raco make`. Both resolve identifiers, but `raco make` caches:
+the second run prints `[already up-to-date]` for every file and checks nothing, which is the
+failure this repo already records against `gprbuild`. Expansion redoes the work every run and
+writes nothing, so it is also the only one of the two that leaves the tree alone, which is
+what `lint` is for. `raco make` is `make build`, where caching is the point.
+
 ## Deferred
 
 Frameworks are out of the first cut, but the ID namespace reserves them:
@@ -1343,5 +1424,6 @@ template directories under the same contract, not a new mechanism.
 audience rather than about whether the template would be any good. Two of the four
 turned out to be among the better rows in the set.
 
-No official image exists for `crystal`, `scala`, `racket`, `deno` or `bun`, so those
-would be hand-rolled or vendor and are not in the cheap category.
+No official image exists for `crystal`, `scala`, `deno` or `bun`, so those
+would be hand-rolled or vendor and are not in the cheap category. `racket` sat in that
+list until wave 6 built it on Debian's package.
