@@ -1,6 +1,6 @@
 # Languages
 
-The 49 targets, their chosen tooling, and when each lands. This is the implementer's
+The 50 targets, their chosen tooling, and when each lands. This is the implementer's
 worksheet: one row is one template.
 
 Test runners are chosen **stdlib-first**. A built-in runner is one less dependency to
@@ -66,6 +66,7 @@ patches, so an old minor can outrank a current one. See
 | `commonlisp` | `debian:trixie-20261104-slim` + SBCL 2.5.2, cl-fiveam 1.4.3 | `FiveAM`        | `sbcl` compile, warnings fatal / —   | 5    |
 | `koka`       | `debian:trixie-20261104-slim` + Koka 3.2.9      | TAP, own `test/lib/tap.kk`   | `koka --library --no-compile` / —    | 5    |
 | `lean`       | `debian:trixie-20261104-slim` + Lean 4.36.0     | `lake test`                  | `lake build`, warnings fatal / —     | 5    |
+| `mercury`    | `debian:trixie-20261104-slim` + Mercury 22.01.9 from source | TAP, own `tap.m` | `mmc --make <mod>.check` / —         | 5    |
 
 ## Waves
 
@@ -81,22 +82,54 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
   test framework because the language has no stdlib one.
 - **Wave 4** is everything added after the first twenty-six shipped. Its rows are not
   ordered by difficulty, because they arrive when somebody asks for them.
-- **Wave 5** is the paradigm pass: rows picked because a cell in the language matrix was
-  empty rather than because somebody asked. A second logic language, a systems language
-  with a tracing GC, a systems language with dynamic types, and the first functional
-  language here that manages its own memory.
+- **Wave 5** is the paradigm pass: thirteen rows picked because a cell in the language
+  matrix was empty or thinly occupied rather than because somebody asked, plus the four
+  that came off the Deferred list. See [paradigm coverage](#paradigm-coverage).
+
+## Paradigm coverage
+
+The first thirty-seven rows were chosen by what people write and by whether a usable image
+existed. Nobody had checked the *paradigm* spread, and five cells were thin. Thirteen rows
+in wave 5 fill them, and the honest accounting matters as much as the list: three of the
+five already had an occupant, so those rows are a second one rather than a first.
+
+| cell                                  | already there          | wave 5 adds                  |
+| ------------------------------------- | ---------------------- | ---------------------------- |
+| logic                                 | `prolog`               | `asp`, `mercury`, `flix`     |
+| functional, memory not garbage collected | — (`swift` is ARC but not functional) | `koka`, `lean`, `ats` |
+| systems, dynamically typed            | `forth`                | `objc`, `commonlisp`         |
+| systems, garbage collected            | `go`, `nim`            | `d`                          |
+| scripting, statically typed           | `typescript`, `dart`   | `haxe`, `raku`               |
+
+**Only two cells were genuinely empty**: a second logic language, and a functional language
+whose memory is reference counted or hand-managed. The three new logic rows are each a
+different mechanism — `prolog` resolves, `asp` finds models, `mercury` type- and
+mode-checks, `flix` embeds Datalog in a functional language — which is the point of having
+four rather than one. `koka` and `lean` count references, `ats` frees by hand with linear
+types, and every other functional row here traces.
+
+The remaining four of the thirteen — `julia`, `groovy`, `raku` and `haxe` — came off the
+Deferred list, which is now empty of languages. They had been declined on audience rather
+than on whether the template would be good, and two of them turned out to be among the
+better rows in the table.
+
+**What this does not claim.** The cells are a coverage check, not a taxonomy: `flix` is
+functional as much as it is logic, `objc` is a systems language with a dynamic object model
+bolted onto a static one, and `raku`'s typing is gradual rather than static. A row earns its
+place by being a good template, and the matrix is only what stopped the choice being made by
+popularity alone.
 
 ## Where lint and fmt prove nothing
 
-Eighteen of the lint and fmt targets above do nothing, across sixteen templates, and
-they are worth one list rather than sixteen notes. **`basic` and `lolcode` have no
+Nineteen of the lint and fmt targets above do nothing, across seventeen templates, and
+they are worth one list rather than seventeen notes. **`basic` and `lolcode` have no
 `lint`**: neither Bywater BASIC nor `lci` has a check mode, a syntax-only flag or a
 third-party checker, so `make lint` prints why and exits 0. CI runs it, and for those
 two it is theatre.
 
-**Sixteen have no `fmt`** — `ada`, `arm32`, `asp`, `ats`, `basic`, `cobol`,
-`commonlisp`, `forth`, `groovy`, `intercal`, `koka`, `lean`, `lolcode`, `pascal`,
-`prolog` and `raku`. Koka ships one binary with no format subcommand and upstream
+**Seventeen have no `fmt`** — `ada`, `arm32`, `asp`, `ats`, `basic`, `cobol`,
+`commonlisp`, `forth`, `groovy`, `intercal`, `koka`, `lean`, `lolcode`, `mercury`,
+`pascal`, `prolog` and `raku`. Koka ships one binary with no format subcommand and
 issue 521 has been open since 2024; Lean's release tarball carries a compiler, a
 linker and a build tool and nothing that rewrites source;
 Potassco publish no formatter for ASP and nothing third-party is packaged; ATS2 ships
@@ -1265,6 +1298,39 @@ elaborated and compiled to native code before anything else builds, and that art
 cross machines, which is `zig`'s unwinnable case avoided by not creating it. `lean-toolchain`
 is deliberately absent too: without elan it is ignored, so it would be an unchecked second
 pin, and `lake update` rewrites it.
+
+**`mercury` is the row with no package and no image anywhere**, so the image bootstraps the
+compiler from C: 5m22s on arm64 and 6m03s on amd64, measured on both CI architectures
+before the row was written, for a 154MiB install. The build cache turns that into a cost
+paid when the Dockerfile changes rather than on every run, which is the only reason it is
+affordable — and it is why the bootstrap sits in the final stage. A builder stage would
+either leave the 407MB unpacked source in a layer forever or make the expensive layer's
+cache key depend on a stage that inline cache does not record.
+
+**`--enable-libgrades=hlc.gc` is half the configuration.** It builds one grade, but amd64
+still *defaults* to `asm_fast.gc` and then cannot find the standard library it did not
+build; aarch64 already defaults to `hlc.gc`, so the mistake is invisible on one of the two
+architectures the matrix runs. `--with-default-grade=hlc.gc` is the other half.
+
+`--errorcheck-only` cannot be used, despite being the obvious flag: it wants `.int` files
+nothing has built, and combining it with `--make` is refused outright. The `--make` target
+`<module>.check` is the usable spelling — it builds the interfaces, error-checks, and writes
+no target code. And `mmc` has no build-directory flag at all, only `./Mercury`; passing
+absolute paths makes it write a `Mercury.modules` mapping, so the whole build runs from
+`/cache/build` and points back at the bind mount, which is why this template needs no nested
+volume where `raku` and `fortran` do.
+
+**The mode system is subtler than "a wrong mode is an error".** A *ground* argument in an
+`out` slot is accepted: Mercury compiles an implied mode, a fresh variable plus a unification
+afterwards, and what changes is the determinism — the call becomes `semidet`, which is fine
+in a semidet context and rejected in a `det` one. Only a *free* argument in an `in` slot is
+a mode error. Mercury also reorders conjunctions to satisfy modes, which quietly rescues
+several things a reader would expect to fail. The gotchas slot is written around the real
+behaviour rather than the expected one.
+
+What `lint` catches here, no other row in this table catches: a determinism declaration that
+is tighter than the code (`Declared 'det', inferred 'semidet'`), one that is looser than it
+needs to be, and a switch that does not cover every constructor.
 
 ## Deferred
 
