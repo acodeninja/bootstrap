@@ -196,9 +196,10 @@ Five cases, recorded here so they are not rediscovered per template:
 
 Every reference above was resolved against the registry on 2026-11-19, tags included, and
 each wave 4 row on the day it landed. None of `zig`, `lua`, `elm`, `pascal`, `cobol`,
-`basic`, `lolcode`, `intercal` or `ada` has a Docker Official Image at all; `r` has one and
-does not use it, for the reason its row gives. Either way, **re-check before
-writing one**:
+`basic`, `lolcode`, `intercal`, `ada`, `octave` or `powershell` has a Docker Official
+Image at all — Microsoft's `powershell` image is a vendor one, and has no arm64. `r` and
+`bash` each have one and do not use it, for the reasons their rows give. Either way,
+**re-check before writing one**:
 
 ```console
 $ docker search --filter is-official=true lua
@@ -207,7 +208,7 @@ $ docker search --filter is-official=true lua
 Tags will go stale faster than the table. Treat the versions as the starting point they
 were verified at, not as a standing claim about what is current.
 
-### Debian variants, and the three exceptions
+### Debian variants, and the four exceptions
 
 Where an image publishes several OS variants, take the **Debian** one — `-slim` or
 `-trixie-slim` where published, the plain Debian tag otherwise. Alpine was considered and
