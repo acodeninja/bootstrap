@@ -265,6 +265,13 @@ Applied in every template, adapted to the language's runner:
   `describe` wrapper invites a name that only parses next to its parent, which is exactly
   the fragment the rule above bans — and the leaf is what CI output, `grep` and failure
   reports show.
+
+  **`powershell` is the one exception, and it is the runner's doing rather than a
+  choice.** Pester discovers tests by running the file and collecting what it finds, and
+  an `It` outside a `Describe` or `Context` is a discovery error — so that suite has a
+  single `Describe` around the whole file. The rule above still does the work it was
+  written for: there is one wrapper rather than one per section, and every `It` name is
+  written to read on its own.
 - The file lives wherever the language's runner discovers it **without a declaration
   anywhere**: the project root in JavaScript, beside the source in Zig, `tests/` in Rust
   and Python, `test/` in Erlang and Gleam. It is one file wherever that is. Discovery
