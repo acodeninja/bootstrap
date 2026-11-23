@@ -1,0 +1,6 @@
+# The eval target is the compiler's own interpreter and leaves no artefact
+# behind, so building the library means typechecking every module in it.
+-cp src
+--macro include('{{PROJECT_SNAKE}}')
+--interp
+--no-output

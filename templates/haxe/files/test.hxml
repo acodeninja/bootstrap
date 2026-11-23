@@ -1,0 +1,12 @@
+# Runner is generated into /cache/build from whatever is in test/, so no file
+# here names a test class.
+-cp src
+-cp test
+-cp /cache/build
+-lib utest
+--main Runner
+--interp
+
+# utest still declares one `@:enum abstract`, which 4.3 warns about on every
+# run. Narrowed to that warning so a deprecation in this project still shows.
+-w -WDeprecatedEnumAbstract
