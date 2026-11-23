@@ -1,0 +1,6 @@
+[sqlfluff]
+dialect = sqlite
+
+# raw, not the default jinja: these files are SQL rather than templates, and a
+# literal {{ in a string would otherwise be read as a placeholder.
+templater = raw
