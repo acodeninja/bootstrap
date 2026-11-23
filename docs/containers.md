@@ -140,16 +140,19 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | scala                  | `eclipse-temurin:25-jdk-noble` + scala-cli 1.19 | official    |
 | qsharp                 | `python:3.15-slim-trixie` + QDK 1.34          | official    |
 | pony                   | `debian:trixie-slim` + ponyc 0.78.2           | hand-rolled |
+| bqn                    | `debian:trixie-slim` + CBQN 0.12.0 source     | hand-rolled |
+| befunge                | `debian:trixie-slim` + cfunge 1,001 source    | hand-rolled |
+| smalltalk              | `debian:trixie-slim` + GNU Smalltalk 3.2.5 source | hand-rolled |
 
-Across 57 templates that is **28 official, 4 vendor, 25 hand-rolled**. Hand-rolled held
+Across 60 templates that is **28 official, 4 vendor, 28 hand-rolled**. Hand-rolled held
 at three — zig, lua and elm — from 18 templates to 26, because every language added in
 between built on an official image and merely added a package. Wave 4 added nine, wave 5
-eight and wave 6 five, which are the languages with no official image to build on at
+eight and wave 6 eight, which are the languages with no official image to build on at
 all. Under mise, six languages had no usable pin.
 
 ### One image, several templates
 
-Seven images cover thirty-eight templates. This is deliberate; do not "tidy up" by giving
+Seven images cover forty-one templates. This is deliberate; do not "tidy up" by giving
 each language its own.
 
 | Image                                 | Templates                                                         |
@@ -158,7 +161,7 @@ each language its own.
 | `gradle:9.9-jdk25`                    | kotlin, java, groovy                                              |
 | `mcr.microsoft.com/dotnet/sdk:10.0`   | fsharp, csharp                                                    |
 | `gcc:16-trixie`                       | c, cpp, fortran                                                   |
-| `debian:trixie-slim`                  | zig, lua, pascal, cobol, basic, lolcode, intercal, r, ada, arm32, d, objc, asp, ats, commonlisp, koka, lean, mercury, tcl, sql, scheme, racket, pony |
+| `debian:trixie-slim`                  | zig, lua, pascal, cobol, basic, lolcode, intercal, r, ada, arm32, d, objc, asp, ats, commonlisp, koka, lean, mercury, tcl, sql, scheme, racket, pony, bqn, befunge, smalltalk |
 | `eclipse-temurin:25-jdk-noble`        | flix, scala                                                       |
 | `python:3.15-slim-trixie`             | python, qsharp                                                    |
 
