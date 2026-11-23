@@ -117,13 +117,13 @@ jobs:
   image-amd64:
     needs: [scope, lint, contract, remote]
     # Everything cheap runs first. Three minutes of script tests and linters
-    # against seventy builds is not a trade worth thinking about, and the if
+    # against 128 builds is not a trade worth thinking about, and the if
     # below is deliberately not wrapped in !cancelled(): that would override
     # the success requirement needs already carries.
     if: ${{ needs.scope.outputs.build == 'true' }}
     runs-on: ubuntu-latest
     # Six times the slowest template. Without one a hung leg holds a runner
-    # for GitHub's six-hour default, and the weekly matrix is seventy of them.
+    # for GitHub's six-hour default, and the weekly matrix is 128 of them.
     timeout-minutes: 30
     permissions:
       contents: read

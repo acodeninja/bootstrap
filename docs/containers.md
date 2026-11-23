@@ -506,7 +506,7 @@ use — writing this document exhausted it after three `docker manifest inspect`
 before `docker login` cleared it. Two places it matters:
 
 - **This repository's CI** builds from shared runner IPs — two images per changed
-  template, one per architecture, and all seventy-four of them on the weekly run — and
+  template, one per architecture, and all 128 of them on the weekly run — and
   `--no-pull` means it really does build them. Authenticate with `docker/login-action`
   before any build. See [ci.md](ci.md).
 - **First run on a developer machine** now pulls from ghcr, which has no such limit, so
