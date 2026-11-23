@@ -1,0 +1,8 @@
+.git
+.github
+.env
+.scala-build
+.bsp
+src
+test
+*.md
