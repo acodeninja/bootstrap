@@ -163,10 +163,13 @@ change.
 
 ## Not in scope yet
 
-Framework templates (`javascript-react`, `python-fastapi`), and the four further
-languages with verified official images listed under "Deferred" in
-[languages.md](languages.md). Both are additions under the existing contract, not
-changes to it.
+Framework templates (`javascript-react`, `python-fastapi`) are additions under the
+existing contract rather than changes to it, and the ID namespace already reserves
+them.
+
+There is no longer a deferred language list to point at: the four that sat under
+"Deferred" in [languages.md](languages.md) — `julia`, `groovy`, `raku` and `haxe` —
+landed in wave 5, and that section has said the list is empty ever since.
 
 One known gap is also deferred rather than solved: the Windows `make` path is
 unverified, because no Windows runner can run a Linux container and so none of them
