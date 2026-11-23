@@ -40,6 +40,9 @@ AUTHOR=
 YEAR=
 REPLY_CONTENT=
 FILE_COUNT=0
+DRY_LIST=
+TAB=$'\t'
+LF=$'\n'
 TEMP_ROOT=
 REMOTE_ROOT=
 
@@ -407,19 +410,26 @@ read_file() {
   IFS= read -r -d '' REPLY_CONTENT <"$1" || :
 }
 
+# The dry-run listing is sorted flat and bytewise on each path *inside the
+# template*, which is what bootstrap.ps1 does -- so the two agree on a directory
+# whose name is a prefix of a sibling file, where a depth-first walk would emit
+# test/greet.hx before test.hxml and a flat sort puts test.hxml first. Sorting the
+# unexpanded path rather than the written one keeps src/test_{{PROJECT_SNAKE}}.py
+# ahead of src/{{PROJECT_SNAKE}}.py, since t sorts before {.
 walk() {
-  local src=$1 rel=$2 mode=$3 entry base name dest
+  local src=$1 rel=$2 srcrel=$3 mode=$4 entry base name dest key
   for entry in "$src"/*; do
     base=${entry##*/}
     name=$(apply_tokens "$base")
     dest=${rel:+$rel/}$name
+    key=${srcrel:+$srcrel/}$base
     if [ -d "$entry" ]; then
       if [ "$mode" = write ]; then mkdir -p "$TARGET/$dest"; fi
-      walk "$entry" "$dest" "$mode"
+      walk "$entry" "$dest" "$key" "$mode"
     else
       FILE_COUNT=$((FILE_COUNT + 1))
       if [ "$mode" = dry ]; then
-        printf '%s\n' "$dest"
+        DRY_LIST=$DRY_LIST$key$TAB$dest$LF
       else
         read_file "$entry"
         apply_tokens "$REPLY_CONTENT" >"$TARGET/$dest"
@@ -430,7 +440,7 @@ walk() {
 
 scaffold() {
   FILE_COUNT=0
-  walk "$TEMPLATE_DIR/files" '' "$1"
+  walk "$TEMPLATE_DIR/files" '' '' "$1"
 }
 
 # Docker Desktop maps ownership itself, and $UID under Git Bash is a Windows
@@ -605,6 +615,7 @@ main() {
 
   if [ "$OPT_DRY" -eq 1 ]; then
     scaffold dry
+    printf %s "$DRY_LIST" | sort | cut -f2-
     step dry-run "$FILE_COUNT files -> $TARGET"
     exit 0
   fi
