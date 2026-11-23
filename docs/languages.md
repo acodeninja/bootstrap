@@ -1553,6 +1553,21 @@ Its `fmt` is the usual no-op, but `build` is real and worth the row: the build o
 image-oriented language is an image, so `make build` files `src/` into a fresh object memory
 and snapshots it to `/cache`, which `gst -I` then starts with the project already loaded.
 
+**Two languages were asked for in wave 6 and are not here.** J was wanted as the array row
+and lost it to BQN on the architecture filter: `jsoftware.com` publishes
+`j9.5_linux64.tar.gz` and `j9.6_linux64.tar.gz` and **404s on both `_linuxarm64` URLs**, and
+every image in this repo is built natively on `ubuntu-24.04-arm` as well as on amd64. The
+same filter removed Hack and Debian's `crystal` in wave 5; it is the single most common
+reason a language does not get a row.
+
+Unison was dropped for the opposite kind of reason: `ucm` publishes `linux-arm64` and
+`linux-x64` binaries, so it would have built. But Unison code does not live in text files —
+the codebase is a SQLite database, `.u` scratch files are an input to it, the base library
+comes from Unison Share over the network, and the only non-interactive driver is
+`ucm transcript`. A template whose source of truth is a binary database fights `git init`
+and cannot have a deletable kitchen sink, which is two of this contract's load-bearing
+assertions. The language is interesting and the template would have been a lie.
+
 ## Deferred
 
 Frameworks are out of the first cut, but the ID namespace reserves them:
