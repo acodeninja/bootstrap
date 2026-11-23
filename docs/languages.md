@@ -1,6 +1,6 @@
 # Languages
 
-The 44 targets, their chosen tooling, and when each lands. This is the implementer's
+The 47 targets, their chosen tooling, and when each lands. This is the implementer's
 worksheet: one row is one template.
 
 Test runners are chosen **stdlib-first**. A built-in runner is one less dependency to
@@ -61,6 +61,9 @@ patches, so an old minor can outrank a current one. See
 | `julia`      | `julia:1.13.4-trixie`                          | `Test` (stdlib)              | `JuliaFormatter --check` / `--inplace` | 5    |
 | `groovy`     | `gradle:9.9.1-jdk25` + Groovy 6.0.0            | `Spock 2.5`                  | `codenarc` / —                       | 5    |
 | `flix`       | `eclipse-temurin:25.0.5.1_2-jdk-noble` + flix 0.80.0 | `flix test`            | `flix check` / `flix format`         | 5    |
+| `haxe`       | `haxe:4.3.7-trixie` + utest 1.13.2             | `utest`                      | `--interp --no-output` + `formatter --check` / `formatter` | 5    |
+| `raku`       | `rakudo-star:2026.09-trixie`                   | `Test` via `prove6`          | `raku -c` / —                        | 5    |
+| `commonlisp` | `debian:trixie-20261104-slim` + SBCL 2.5.2, cl-fiveam 1.4.3 | `FiveAM`        | `sbcl` compile, warnings fatal / —   | 5    |
 
 ## Waves
 
@@ -83,21 +86,24 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 
 ## Where lint and fmt prove nothing
 
-Fourteen of the lint and fmt targets above do nothing, across twelve templates, and they
-are worth one list rather than twelve notes. **`basic` and `lolcode` have no `lint`**:
-neither Bywater BASIC nor `lci` has a check mode, a syntax-only flag or a third-party
-checker, so `make lint` prints why and exits 0. CI runs it, and for those two it is
-theatre.
+Sixteen of the lint and fmt targets above do nothing, across fourteen templates, and
+they are worth one list rather than fourteen notes. **`basic` and `lolcode` have no
+`lint`**: neither Bywater BASIC nor `lci` has a check mode, a syntax-only flag or a
+third-party checker, so `make lint` prints why and exits 0. CI runs it, and for those
+two it is theatre.
 
-**Twelve have no `fmt`** — `ada`, `arm32`, `asp`, `ats`, `basic`, `cobol`, `forth`,
-`groovy`, `intercal`, `lolcode`, `pascal` and `prolog`. Potassco publish no formatter
-for ASP and nothing third-party is packaged; ATS2 ships `patscc` and `patsopt` and
-nothing that formats; Spotless's `greclipse` step deletes the space before every `>`,
-so `n > 1` comes back as `n> 1` and seven Eclipse formatter options will not stop it;
-`gnatpp` ships only with AdaCore's own distribution; GnuCOBOL, lci, gforth, GNU as and
-SWI-Prolog publish no formatter; Free Pascal's `ptop` capitalises keywords and dedents
-`end;` to column 0, which is worse than leaving the file alone. Each one's
-`.editorconfig` carries the indent the language expects instead.
+**Fourteen have no `fmt`** — `ada`, `arm32`, `asp`, `ats`, `basic`, `cobol`,
+`commonlisp`, `forth`, `groovy`, `intercal`, `lolcode`, `pascal`, `prolog` and `raku`.
+Potassco publish no formatter for ASP and nothing third-party is packaged; ATS2 ships
+`patscc` and `patsopt` and nothing that formats; Common Lisp indentation is a function
+of what each macro means, which is why editors ship indent tables rather than
+formatters; Raku's only candidate, `Perl6::Tidy`, reaches into compiler internals that
+no longer exist and fails on any input; Spotless's `greclipse` step deletes the space
+before every `>`, so `n > 1` comes back as `n> 1` and seven Eclipse formatter options
+will not stop it; `gnatpp` ships only with AdaCore's own distribution; GnuCOBOL, lci,
+gforth, GNU as and SWI-Prolog publish no formatter; Free Pascal's `ptop` capitalises
+keywords and dedents `end;` to column 0, which is worse than leaving the file alone.
+Each one's `.editorconfig` carries the indent the language expects instead.
 
 The alternative in both cases was a target that looked like a check. A reader
 cannot tell a check that passed from one that was never made, so these say so.
@@ -1159,19 +1165,72 @@ recompiles its standard library every invocation, so the only reusable artefact 
 JVM's class-data archive, which the launcher creates in `/cache` on first use rather than
 baking 57MB keyed to one exact JDK build into the image.
 
+**`haxe` is on the official image, and `haxe:5.0.0` is not the tag to pin.** The plain
+`5.0.0` tag's manifest annotates itself `5.0.0-preview.1-trixie`, so 4.3.7 is the newest
+stable — a variant of the trap in [containers.md](containers.md#base-images), where the
+version in the tag is not the version in the image. The image is
+`buildpack-deps:trixie-scm`, which is why `haxelib git` works without installing anything.
+
+It is here as a statically typed scripting language, so the suite is about the type system
+as a programmer uses it — an enum with a parameter and an exhaustive `switch`, an
+`abstract` over `Int`, anonymous structure types, `Null<T>` — and there is no
+cross-compilation anywhere, which was the reason it had been declined.
+
+**Two Haxe facts cost a draft each.** Enums with arguments cannot be compared with `==` at
+all: it is a compile error directing you to `switch` or `Type.enumEq`, so it cannot be the
+asserted half of a gotcha, and the shipped assertion uses the half that *does* compile and
+silently lies — two anonymous structures with identical fields are not `==`. And
+`haxe-formatter` deletes the blank line between two adjacent `//` comment blocks, which is
+the obvious layout for a section header above a note, so the suite is shaped to survive its
+own formatter rather than configured to stop it.
+
+**`raku` needed no package manager and no pin.** `rakudo-star:2026.09-trixie` is a Docker
+Official Image on both architectures and bundles `zef` and `App::Prove6`, which Debian's
+`rakudo` does not — so `prove6 -Isrc t` discovers tests with no declaration anywhere, the
+same property that makes [`perl`](#notes-on-individual-rows) one of the better rows. There
+is no `ARG` in the Dockerfile at all: the `FROM` tag is the pin, and Dependabot moves it.
+
+Rakudo writes a module's precompiled bytecode to `.precomp` **beside the source**, and
+there is no flag or environment variable that moves it — so `compose.yaml` mounts a named
+volume at `src/.precomp`, the nested-volume pattern `fortran` and `clojure` already use.
+
+**The single-argument rule is the gotcha, and it is the opposite of Perl 5.** `@a` inside
+another list stays one element rather than flattening; `|@a` is what asks for flattening.
+A draft asserting the Perl 5 behaviour went red on that line, which is the best argument
+for the assertion being in the file.
+
+**`commonlisp` takes FiveAM from apt on purpose.** The tarball route would have meant four
+pins for a framework and three dependencies, and one of them — `alexandria` — has no
+authoritative GitHub home at all, so `pins.yml` would hit its `no upstream found` branch
+and the weekly row would be permanently red. Debian's `cl-fiveam 1.4.3` *is* the current
+upstream release, so one apt layer buys the whole tree with the datestamped base tag as
+its pin. `templates/r` makes the same trade for `r-cran-testthat`.
+
+`clfoundation/sbcl` was considered and rejected: it is a credible multi-arch vendor image,
+but it publishes no datestamped tag, so apt packages installed on top of it would move
+under a tag that does not.
+
+**`lint` had to be `handler-bind`, not ASDF.** SBCL keeps style warnings out of
+`compile-file`'s `warnings-p`, so `asdf:*compile-file-warnings-behaviour* :error` does not
+notice an unused binding — measured, not assumed. A `handler-bind` on `warning` sees both
+that and a genuine type error, which is what the lint script uses, and `:force` is there
+because a fasl already up to date is loaded in silence and would pass anything.
+
+Its generated test system is only rewritten when the bytes change. ASDF treats every
+component as stale when its system definition is newer than the fasl, so writing that file
+unconditionally recompiled the whole suite on every run — the same rule `templates/c`'s
+`unity-discover` follows, for the same reason.
+
 ## Deferred
 
 Frameworks are out of the first cut, but the ID namespace reserves them:
 `javascript-react`, `python-fastapi`, `rust-axum`, `go-chi`. They are additional
 template directories under the same contract, not a new mechanism.
 
-Two more languages have official images, verified on 2026-11-19, and were declined for
-now rather than ruled out — adding one is a mechanical job:
-
-| id       | image              | test runner         | why it was declined                      |
-| -------- | ------------------ | ------------------- | ---------------------------------------- |
-| `raku`   | `rakudo-star`      | `Test` (core)       | distinct, but very small audience        |
-| `haxe`   | `haxe:4.3`         | `utest`             | cross-compilation is the draw, not idiom |
+**The language list is empty.** All four that sat here — `julia`, `groovy`, `raku` and
+`haxe` — landed in wave 5, and the reasons they had been declined were judgements about
+audience rather than about whether the template would be any good. Two of the four
+turned out to be among the better rows in the set.
 
 No official image exists for `crystal`, `scala`, `racket`, `deno` or `bun`, so those
 would be hand-rolled or vendor and are not in the cheap category.

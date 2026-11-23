@@ -1,7 +1,7 @@
 # Containers
 
 Every generated project runs its toolchain inside Docker. The host needs **Docker** and
-**make**, and that answer is the same for all 44 templates.
+**make**, and that answer is the same for all 47 templates.
 
 ## Why containers
 
@@ -106,6 +106,8 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | nim                    | `nim:2.2`                                    | official    |
 | julia                  | `julia:1.13-trixie`                          | official    |
 | flix                   | `eclipse-temurin:25-jdk-noble` + flix 0.80   | official    |
+| haxe                   | `haxe:4.3-trixie` + utest, formatter         | official    |
+| raku                   | `rakudo-star:2026.09-trixie`                 | official    |
 | perl                   | `perl:5.44-slim-trixie` + 2 CPAN tools       | official    |
 | fortran                | `gcc:16-trixie` + fpm 0.14                   | official    |
 | fsharp, csharp         | `mcr.microsoft.com/dotnet/sdk:10.0`          | vendor      |
@@ -127,8 +129,9 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | objc                   | `debian:trixie-slim` + gobjc, GNUstep Base   | hand-rolled |
 | asp                    | `debian:trixie-slim` + clingo 5.6            | hand-rolled |
 | ats                    | `debian:trixie-slim` + ATS2 0.4.2            | hand-rolled |
+| commonlisp             | `debian:trixie-slim` + SBCL 2.5, cl-fiveam   | hand-rolled |
 
-Across 44 templates that is **24 official, 4 vendor, 16 hand-rolled**. The hand-rolled
+Across 47 templates that is **26 official, 4 vendor, 17 hand-rolled**. The hand-rolled
 set — zig, lua, elm, pascal, cobol, basic, lolcode, intercal, r, ada, forth and arm32 —
 held at three from 18 templates to 26, because every language added in between built on
 an official image and merely added a package. Wave 4 added the other nine, which are
@@ -137,7 +140,7 @@ had no usable pin.
 
 ### One image, several templates
 
-Five images cover twenty-five templates. This is deliberate; do not "tidy up" by giving
+Five images cover twenty-six templates. This is deliberate; do not "tidy up" by giving
 each language its own.
 
 | Image                                 | Templates                                                         |
@@ -146,7 +149,7 @@ each language its own.
 | `gradle:9.9-jdk25`                    | kotlin, java, groovy                                              |
 | `mcr.microsoft.com/dotnet/sdk:10.0`   | fsharp, csharp                                                    |
 | `gcc:16-trixie`                       | c, cpp, fortran                                                   |
-| `debian:trixie-slim`                  | zig, lua, pascal, cobol, basic, lolcode, intercal, r, ada, arm32, d, objc, asp, ats |
+| `debian:trixie-slim`                  | zig, lua, pascal, cobol, basic, lolcode, intercal, r, ada, arm32, d, objc, asp, ats, commonlisp |
 
 Sharing a base image does not mean sharing a template. Each still has its own
 Dockerfile, Makefile and kitchen sink, because the image is the toolchain and the
