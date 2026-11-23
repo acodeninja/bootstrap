@@ -1,0 +1,73 @@
+v
+ Fifteen passing assertions: the toolbox for solving a kata in Befunge-98.
+ The pointer starts on the v above and travels down this column, where a
+ space is the no-op instruction, until it meets the first > and turns east.
+ Every comment line here begins with a space for exactly that reason.
+
+ An assertion is two rows. The first pushes its whole TAP line right to
+ left, so that popping it prints forwards, under a 0 that ends the print
+ loop:
+
+   v"not ok 7 - something that is true"0<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+ The second leaves a difference that is zero when the assertion holds, adds
+ the verdict to a failure count, skips the four $ that drop "not " when it
+ passed, prints the line, and turns south into the next assertion:
+
+   >"0"68*-!!:01-0g+01-0p4*j$$$$>:#,_a,$                                 v
+
+ Nothing can be factored out, because Befunge has no functions, so those
+ twenty-nine cells appear fifteen times. The last row hands the count to q,
+ which is the process exit status.
+
+ The count lives in cell (-1,0) and the scratch cells below are at (-1,1)
+ and (-1,2). Negative coordinates are the only ones a program can be sure
+ it will never grow over: the count was at (0,50) until this file passed
+ fifty rows, at which point p was overwriting a row of the suite.
+>001-0p                                                                       v
+v"1..15"0<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+>>:#,_a,$                                                                     v
+ collections: a stack and a playfield, and nothing else
+v"not ok 1 - the stack is the only collection there is"0<<<<<<<<<<<<<<<<<<<<<<<
+>7:+e-!!:01-0g+01-0p4*j$$$$>:#,_a,$                                           v
+v"not ok 2 - a value put in with p comes back out with g"0<<<<<<<<<<<<<<<<<<<<<
+>901-1p01-1g9-!!:01-0g+01-0p4*j$$$$>:#,_a,$                                   v
+v"not ok 3 - a cell that was never written reads back as a space"0<<<<<<<<<<<<<
+>01-2g" "-!!:01-0g+01-0p4*j$$$$>:#,_a,$                                       v
+ strings: there are none, only character codes on the stack
+v"not ok 4 - there are no strings, only character codes"0<<<<<<<<<<<<<<<<<<<<<<
+>"A"88*1+-!!:01-0g+01-0p4*j$$$$>:#,_a,$                                       v
+v"not ok 5 - comparing two characters is subtracting their codes"0<<<<<<<<<<<<<
+>"b""a"-1-!!:01-0g+01-0p4*j$$$$>:#,_a,$                                       v
+v"not ok 6 - a run of spaces inside a string arrives as one space"0<<<<<<<<<<<<
+>7"  "$7-!!:01-0g+01-0p4*j$$$$>:#,_a,$                                        v
+ types and branching: there are no types, and a branch is a turn or a skip
+v"not ok 7 - a character and its numeric code are the same value"0<<<<<<<<<<<<<
+>"0"68*-!!:01-0g+01-0p4*j$$$$>:#,_a,$                                         v
+v"not ok 8 - j turns a decision into a count of cells to skip"0<<<<<<<<<<<<<<<<
+>13j111 1-!!:01-0g+01-0p4*j$$$$>:#,_a,$                                       v
+v"not ok 9 - a state is a number and backtick is the only test"0<<<<<<<<<<<<<<<
+>53`1-!!:01-0g+01-0p4*j$$$$>:#,_a,$                                           v
+ iteration: no loop instruction, so the pointer comes round again
+v"not ok 10 - a loop is the pointer crossing cells it already ran"0<<<<<<<<<<<<
+ the next four rows are the loop: push, turn back, body and test, turn out
+>15                                                                           v
+v<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+>\2*\1-:|
+v<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+>$48*-!!:01-0g+01-0p4*j$$$$>:#,_a,$                                           v
+v"not ok 11 - an apostrophe lifts the next cell into a value"0<<<<<<<<<<<<<<<<<
+>'Z9a*-!!:01-0g+01-0p4*j$$$$>:#,_a,$                                          v
+ functions: there are none, and no way to invent one
+v"not ok 12 - the stack is the only way to pass an argument"0<<<<<<<<<<<<<<<<<<
+>34\-1-!!:01-0g+01-0p4*j$$$$>:#,_a,$                                          v
+v"not ok 13 - folding a sequence is pushing it all and then adding"0<<<<<<<<<<<
+>123++6-!!:01-0g+01-0p4*j$$$$>:#,_a,$                                         v
+ errors: nothing is raised and nothing is caught
+v"not ok 14 - nothing is raised: dividing by zero gives zero"0<<<<<<<<<<<<<<<<<
+>60/0-!!:01-0g+01-0p4*j$$$$>:#,_a,$                                           v
+ gotchas: the one most likely to cost an hour
+v"not ok 15 - k runs its instruction once more than the count it popped"0<<<<<<
+>01k1++2-!!:01-0g+01-0p4*j$$$$>:#,_a,$                                        v
+v<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+>01-0gq

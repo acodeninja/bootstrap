@@ -1,0 +1,7 @@
+v
+ The project's own program. Befunge has no import of any kind, so nothing
+ here can be called from anywhere else: run it on its own with make shell,
+ and then cfunge src/{{PROJECT_SNAKE}}.b98
+>                                                                             v
+v"Hello, Befunge!"0<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+>>:#,_a,0q

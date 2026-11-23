@@ -1,0 +1,12 @@
+v
+ A second test, so that deleting the kitchen sink leaves a suite behind.
+ The machinery is the one tests/kitchen_sink.b98 explains at the top.
+>001-0p                                                                       v
+v"1..2"0<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+>>:#,_a,$                                                                     v
+v"not ok 1 - a string pushed left to right comes back off right to left"0<<<<<<
+>"Hi"$88*8+-!!:01-0g+01-0p4*j$$$$>:#,_a,$                                     v
+v"not ok 2 - the zero under a string is what stops the printing loop"0<<<<<<<<<
+>0"Hi"$$0-!!:01-0g+01-0p4*j$$$$>:#,_a,$                                       v
+v<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+>01-0gq

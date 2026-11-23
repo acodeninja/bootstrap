@@ -1,0 +1,17 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[Makefile]
+indent_style = tab
+
+# A space is the no-op instruction and a column position is program structure,
+# so trimming the end of a line would delete code from the playfield.
+[*.b98]
+trim_trailing_whitespace = false
