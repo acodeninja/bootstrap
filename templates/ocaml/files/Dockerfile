@@ -2,7 +2,7 @@
 FROM ocaml/opam:debian-13-ocaml-5.5@sha256:e718e33bc76fee9f8d712225757b848aaaeff47a3dbdb63cac7bf30cb6a14536
 
 ARG DUNE_VERSION=3.25.0
-ARG ALCOTEST_VERSION=1.10.1
+ARG ALCOTEST_VERSION=1.10.2
 ARG OCAMLFORMAT_VERSION=0.29.0
 
 # `eval $(opam env)` lasts one RUN layer, so the switch is spelled out here
