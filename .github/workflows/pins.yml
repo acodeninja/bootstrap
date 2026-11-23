@@ -63,6 +63,14 @@ jobs:
                 fsharp.FANTOMAS_VERSION)
                   want=$(curl -fsSL https://api.nuget.org/v3-flatcontainer/fantomas/index.json \
                            | jq -r '[.versions[] | select(test("-") | not)] | last') ;;
+                smalltalk.SMALLTALK_VERSION)
+                  # Debian dropped GNU Smalltalk after bullseye and upstream has
+                  # released nothing since 2010, so the release directory listing
+                  # is the only place a version exists.
+                  want=$(curl -fsSL https://ftp.gnu.org/gnu/smalltalk/ \
+                           | grep -o 'smalltalk-[0-9][0-9.]*\.tar\.xz' \
+                           | sed 's/smalltalk-//; s/\.tar\.xz$//' \
+                           | sort -V | tail -1) ;;
                 mercury.MERCURY_VERSION)
                   # Debian dropped Mercury and upstream publishes no binaries, so
                   # the only place a version exists is the release directory listing.
