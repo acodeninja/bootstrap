@@ -1,0 +1,7 @@
+use Test;
+use lib 'src';
+use {{PROJECT_SNAKE}};
+
+is greet('world'), 'Hello, world!', 'a greeting addresses the name it is given';
+
+done-testing;

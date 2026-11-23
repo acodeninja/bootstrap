@@ -1,0 +1,22 @@
+name: {{PROJECT_SLUG}}
+
+services:
+  dev:
+    build:
+      context: .
+      cache_from:
+        - ghcr.io/acodeninja/bootstrap/raku:main
+      cache_to:
+        - type=inline
+    image: ghcr.io/acodeninja/bootstrap/raku:main
+    working_dir: /work
+    init: true
+    user: '${DOCKER_UID:-1000}:${DOCKER_GID:-1000}'
+    volumes:
+      - .:/work
+      - cache:/cache
+      - precomp:/work/src/.precomp
+
+volumes:
+  cache:
+  precomp:

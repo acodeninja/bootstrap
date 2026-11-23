@@ -1,0 +1,183 @@
+# Fifteen passing assertions: the toolbox for solving a kata in Raku.
+
+use Test;
+
+enum Gate <Locked Unlocked>;
+
+subset Small of Int where * < 10;
+
+class Reading {
+    has Int $.at;
+    has Str $.label;
+}
+
+class X::NotPositive is Exception {
+    has Str $.text is required;
+
+    method message(--> Str) { "not a number: $!text" }
+}
+
+multi label(Small $value --> Str) { 'small number' }
+multi label(Int $value --> Str) { 'number' }
+multi label(Str $value --> Str) { 'text' }
+
+sub parse-positive(Str $text --> Int) {
+    die X::NotPositive.new(:$text) unless $text ~~ /^ \d+ $/;
+    +$text
+}
+
+sub apply-to(&transform, @values --> List) {
+    @values.map(&transform).list
+}
+
+# collections
+
+subtest 'a typed array keeps what you put in it, in order' => {
+    my Int @items = 1, 2;
+
+    @items.push(3);
+
+    is @items.elems, 3;
+    is @items[1], 2;
+    is-deeply @items[1 .. 2], (2, 3);
+};
+
+subtest 'a hash lookup for a key that was never set is not defined' => {
+    my %counts = a => 2, b => 1;
+
+    is %counts<a>, 2;
+    nok %counts<z>.defined;
+    nok (%counts<z>:exists);
+};
+
+# A Set is its own type rather than a hash standing in for one, so membership
+# is a lookup and uniqueness is not something you maintain.
+subtest 'a set keeps one of each member and answers membership directly' => {
+    my $seen = <a b a>.Set;
+
+    is $seen.elems, 2;
+    ok $seen<a>;
+    nok $seen<z>;
+};
+
+# strings
+
+subtest 'a string splits into a list and joins back up' => {
+    my @words = 'one two three'.split(' ');
+
+    is-deeply @words, ['one', 'two', 'three'];
+    is @words.join('-'), 'one-two-three';
+    is @words.elems, 3;
+};
+
+subtest 'a substring is taken by position, counting from zero' => {
+    my $text = 'abcdef';
+
+    is $text.substr(0, 1), 'a';
+    is $text.substr(0, 3), 'abc';
+    is $text.substr(*-2), 'ef';
+};
+
+subtest 'a double-quoted string interpolates expressions, not just names' => {
+    my $name = 'world';
+
+    is "hello, $name", 'hello, world';
+    is "hello, {$name.uc}", 'hello, WORLD';
+    is 'ab' x 3, 'ababab';
+};
+
+# types and branching
+
+subtest 'a class with typed attributes is how a record is spelled' => {
+    my $reading = Reading.new(at => 3, label => 'high');
+
+    is $reading.at, 3;
+    is $reading.label, 'high';
+    ok $reading ~~ Reading;
+};
+
+subtest 'an enum is a fixed set of named states, numbered from zero' => {
+    is Locked.key, 'Locked';
+    is Locked.value, 0;
+    is Gate.enums.elems, 2;
+};
+
+# Typing is gradual: `my $n = 1` is unchecked, `my Int $n = 1` is checked, and
+# a subset is where a check stops being about the type and starts being about
+# the value. Dispatch reads both, and prefers the narrower candidate.
+subtest 'a multi picks its candidate by type, and a subset is a type' => {
+    is label(3), 'small number';
+    is label(42), 'number';
+    is label('x'), 'text';
+};
+
+# iteration
+
+subtest 'a loop can read both the position and the item' => {
+    my @values = 1, 2, 3, 4;
+
+    my $weighted = 0;
+    for @values.kv -> $at, $value {
+        $weighted += ($at + 1) * $value;
+    }
+
+    is $weighted, 30;
+    is @values.end, 3;
+};
+
+subtest 'a sequence can be walked two items at a time' => {
+    my @values = 1, 2, 4, 8;
+
+    my @gaps = @values.rotor(2 => -1).map({ .[1] - .[0] });
+
+    is-deeply @gaps, [1, 2, 4];
+};
+
+# functions
+
+subtest 'a function is passed to another function as a value' => {
+    my &doubled = * * 2;
+
+    is-deeply apply-to(&doubled, (1, 2, 3)), (2, 4, 6);
+    is doubled(4), 8;
+};
+
+subtest 'a list is folded to one value' => {
+    my @values = 1, 2, 3, 4;
+
+    my $product = [*] @values;
+
+    is $product, 24;
+    is @values.sum, 10;
+    is @values.max, 4;
+};
+
+# errors
+
+# Failure is a die, and an Exception subclass is what gives the refusal a name
+# a test can match on. `fail` returns a lazy Failure instead, for when the
+# caller is meant to carry on; an invalid input is not that.
+subtest 'an invalid input is refused by dying' => {
+    is parse-positive('42'), 42;
+
+    throws-like { parse-positive('nope') }, X::NotPositive,
+        message => /'not a number'/;
+};
+
+# gotchas
+
+# The hour this saves, and Perl 5 hands it to you backwards: a sigil names a
+# container, so an array put inside a list stays one container. Nothing
+# flattens on its own, and the | prefix is what asks for it.
+subtest 'an array inside a list is one element until it is flattened' => {
+    my @items = 1, 2, 3;
+
+    my @nested = @items, 4;
+    my @flattened = |@items, 4;
+
+    is @nested.elems, 2;
+    is @nested[0].elems, 3;
+    is @flattened.elems, 4;
+};
+
+done-testing;
