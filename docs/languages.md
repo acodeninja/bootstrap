@@ -1,6 +1,6 @@
 # Languages
 
-The 47 targets, their chosen tooling, and when each lands. This is the implementer's
+The 49 targets, their chosen tooling, and when each lands. This is the implementer's
 worksheet: one row is one template.
 
 Test runners are chosen **stdlib-first**. A built-in runner is one less dependency to
@@ -64,6 +64,8 @@ patches, so an old minor can outrank a current one. See
 | `haxe`       | `haxe:4.3.7-trixie` + utest 1.13.2             | `utest`                      | `--interp --no-output` + `formatter --check` / `formatter` | 5    |
 | `raku`       | `rakudo-star:2026.09-trixie`                   | `Test` via `prove6`          | `raku -c` / —                        | 5    |
 | `commonlisp` | `debian:trixie-20261104-slim` + SBCL 2.5.2, cl-fiveam 1.4.3 | `FiveAM`        | `sbcl` compile, warnings fatal / —   | 5    |
+| `koka`       | `debian:trixie-20261104-slim` + Koka 3.2.9      | TAP, own `test/lib/tap.kk`   | `koka --library --no-compile` / —    | 5    |
+| `lean`       | `debian:trixie-20261104-slim` + Lean 4.36.0     | `lake test`                  | `lake build`, warnings fatal / —     | 5    |
 
 ## Waves
 
@@ -86,14 +88,17 @@ grouping follows from that — see [roadmap.md](roadmap.md) for what each wave d
 
 ## Where lint and fmt prove nothing
 
-Sixteen of the lint and fmt targets above do nothing, across fourteen templates, and
-they are worth one list rather than fourteen notes. **`basic` and `lolcode` have no
+Eighteen of the lint and fmt targets above do nothing, across sixteen templates, and
+they are worth one list rather than sixteen notes. **`basic` and `lolcode` have no
 `lint`**: neither Bywater BASIC nor `lci` has a check mode, a syntax-only flag or a
 third-party checker, so `make lint` prints why and exits 0. CI runs it, and for those
 two it is theatre.
 
-**Fourteen have no `fmt`** — `ada`, `arm32`, `asp`, `ats`, `basic`, `cobol`,
-`commonlisp`, `forth`, `groovy`, `intercal`, `lolcode`, `pascal`, `prolog` and `raku`.
+**Sixteen have no `fmt`** — `ada`, `arm32`, `asp`, `ats`, `basic`, `cobol`,
+`commonlisp`, `forth`, `groovy`, `intercal`, `koka`, `lean`, `lolcode`, `pascal`,
+`prolog` and `raku`. Koka ships one binary with no format subcommand and upstream
+issue 521 has been open since 2024; Lean's release tarball carries a compiler, a
+linker and a build tool and nothing that rewrites source;
 Potassco publish no formatter for ASP and nothing third-party is packaged; ATS2 ships
 `patscc` and `patsopt` and nothing that formats; Common Lisp indentation is a function
 of what each macro means, which is why editors ship indent tables rather than
@@ -1220,6 +1225,46 @@ Its generated test system is only rewritten when the bytes change. ASDF treats e
 component as stale when its system definition is newer than the fasl, so writing that file
 unconditionally recompiled the whole suite on every run — the same rule `templates/c`'s
 `unity-discover` follows, for the same reason.
+
+**`koka` cannot fail on its own, which the runner has to make up for.** There is no `exit`
+in the standard library and an uncaught exception still leaves the process at status 0 — a
+binary that printed `not ok 13` exited 0 when it was checked. So `koka-tap` is what fails
+the build: it reads the TAP stream, refuses any `not ok` line, and compares the plan against
+the number of results. A template that trusted the program's exit code would have shipped a
+suite that could not go red.
+
+Reporting a result is itself an effect in `test/lib/tap.kk`, which is the language's claim
+made structural, and `lint` is a type *and effect* check: `koka --library --no-compile`
+rejects an effect dropped from a signature. `--library` is not optional there, because
+without it Koka synthesises a `main` and fails on a module that has none.
+
+Two further Koka facts. `{{PROJECT_SNAKE}}` is unusable: `_` is a module path separator, so
+`import my_koka` resolves to `my/koka` and fails — the template uses the slug throughout.
+And `std/data/map`, `set`, `dict` and `array` are 13-to-15-line stubs whose bodies say
+`Todo.`, so the collections section asserts a list and a list of pairs, the same shape `c`
+has to take.
+
+**`lean` carries its own C toolchain, so the image has none.** The release tarball ships
+`clang`, `ld.lld`, `libc++` and `libunwind`; `command -v cc gcc ld` prints nothing in the
+built image and `lake test` still compiles and links. `ca-certificates`, `curl` and `git`
+are installed for `lake update` alone, the way `zig` keeps certificates for `zig fetch`.
+The toolchain is 3.1GB, most of it `Init`/`Std`/`Lean` oleans, and it is not pruned: the
+parts that look removable are what the bundled `clang` links against, and a pruned
+toolchain fails in somebody else's project rather than here.
+
+**`warningAsError` is what gives `lean`'s lint teeth**, and it was measured: the same unused
+binding that fails the build with the option set builds successfully without it. `linter.all`
+is deliberately off — it demands a doc string on every public declaration, and `lake lint`
+only lints the modules named on its command line, which would mean naming the kitchen sink.
+
+`lake test` discovers tests through a `testDriver` naming a library whose modules come from
+a glob, and the glob needs **two** entries plus a root module that exists: `["test", "test.+"]`
+works, `["test.*"]` and `["test.+"]` both fail demanding a root, and `roots = []` is ignored.
+`lakefile.toml` rather than `lakefile.lean` for a related reason — a Lean config file is
+elaborated and compiled to native code before anything else builds, and that artefact cannot
+cross machines, which is `zig`'s unwinnable case avoided by not creating it. `lean-toolchain`
+is deliberately absent too: without elan it is ignored, so it would be an unchecked second
+pin, and `lake update` rewrites it.
 
 ## Deferred
 

@@ -1,7 +1,7 @@
 # Containers
 
 Every generated project runs its toolchain inside Docker. The host needs **Docker** and
-**make**, and that answer is the same for all 47 templates.
+**make**, and that answer is the same for all 49 templates.
 
 ## Why containers
 
@@ -130,8 +130,10 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | asp                    | `debian:trixie-slim` + clingo 5.6            | hand-rolled |
 | ats                    | `debian:trixie-slim` + ATS2 0.4.2            | hand-rolled |
 | commonlisp             | `debian:trixie-slim` + SBCL 2.5, cl-fiveam   | hand-rolled |
+| koka                   | `debian:trixie-slim` + Koka 3.2              | hand-rolled |
+| lean                   | `debian:trixie-slim` + Lean 4.36             | hand-rolled |
 
-Across 47 templates that is **26 official, 4 vendor, 17 hand-rolled**. The hand-rolled
+Across 49 templates that is **26 official, 4 vendor, 19 hand-rolled**. The hand-rolled
 set — zig, lua, elm, pascal, cobol, basic, lolcode, intercal, r, ada, forth and arm32 —
 held at three from 18 templates to 26, because every language added in between built on
 an official image and merely added a package. Wave 4 added the other nine, which are
@@ -140,7 +142,7 @@ had no usable pin.
 
 ### One image, several templates
 
-Five images cover twenty-six templates. This is deliberate; do not "tidy up" by giving
+Five images cover twenty-eight templates. This is deliberate; do not "tidy up" by giving
 each language its own.
 
 | Image                                 | Templates                                                         |
@@ -149,7 +151,7 @@ each language its own.
 | `gradle:9.9-jdk25`                    | kotlin, java, groovy                                              |
 | `mcr.microsoft.com/dotnet/sdk:10.0`   | fsharp, csharp                                                    |
 | `gcc:16-trixie`                       | c, cpp, fortran                                                   |
-| `debian:trixie-slim`                  | zig, lua, pascal, cobol, basic, lolcode, intercal, r, ada, arm32, d, objc, asp, ats, commonlisp |
+| `debian:trixie-slim`                  | zig, lua, pascal, cobol, basic, lolcode, intercal, r, ada, arm32, d, objc, asp, ats, commonlisp, koka, lean |
 
 Sharing a base image does not mean sharing a template. Each still has its own
 Dockerfile, Makefile and kitchen sink, because the image is the toolchain and the
