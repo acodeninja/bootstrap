@@ -1,7 +1,7 @@
 # Containers
 
 Every generated project runs its toolchain inside Docker. The host needs **Docker** and
-**make**, and that answer is the same for all 60 templates.
+**make**, and that answer is the same for all 64 templates.
 
 ## Why containers
 
@@ -110,7 +110,7 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | raku                   | `rakudo-star:2026.09-trixie`                 | official    |
 | perl                   | `perl:5.44-slim-trixie` + 2 CPAN tools       | official    |
 | fortran                | `gcc:16-trixie` + fpm 0.14                   | official    |
-| fsharp, csharp         | `mcr.microsoft.com/dotnet/sdk:10.0`          | vendor      |
+| fsharp, csharp, visualbasic | `mcr.microsoft.com/dotnet/sdk:10.0`     | vendor      |
 | ocaml                  | `ocaml/opam:debian-13-ocaml-5.5`             | vendor      |
 | gleam                  | `ghcr.io/gleam-lang/gleam:v1.19-erlang-slim` | vendor      |
 | lua                    | `debian:trixie-slim` + lua, luarocks         | hand-rolled |
@@ -143,25 +143,30 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | bqn                    | `debian:trixie-slim` + CBQN 0.12.0 source     | hand-rolled |
 | befunge                | `debian:trixie-slim` + cfunge 1,001 source    | hand-rolled |
 | smalltalk              | `debian:trixie-slim` + GNU Smalltalk 3.2.5 source | hand-rolled |
+| bash                   | `debian:trixie-slim` + bats, shellcheck, shfmt | hand-rolled |
+| powershell             | `debian:trixie-slim` + PowerShell 7.7.0 tarball | hand-rolled |
+| octave                 | `debian:trixie-slim` + Octave 9.4, MISS_HIT  | hand-rolled |
 
-Across 60 templates that is **28 official, 4 vendor, 28 hand-rolled**. Hand-rolled held
+Across 64 templates that is **28 official, 5 vendor, 31 hand-rolled**. Hand-rolled held
 at three — zig, lua and elm — from 18 templates to 26, because every language added in
 between built on an official image and merely added a package. Wave 4 added nine, wave 5
 eight and wave 6 eight, which are the languages with no official image to build on at
-all. Under mise, six languages had no usable pin.
+all. Wave 7 added three more: `bash` and `octave` because Debian carries the whole
+toolchain and no vendor publishes an image for either, and `powershell` because the one
+Microsoft publishes has no arm64. Under mise, six languages had no usable pin.
 
 ### One image, several templates
 
-Seven images cover forty-one templates. This is deliberate; do not "tidy up" by giving
+Seven images cover forty-five templates. This is deliberate; do not "tidy up" by giving
 each language its own.
 
 | Image                                 | Templates                                                         |
 | ------------------------------------- | ----------------------------------------------------------------- |
 | `node:26-trixie-slim`                 | javascript, typescript, elm                                       |
 | `gradle:9.9-jdk25`                    | kotlin, java, groovy                                              |
-| `mcr.microsoft.com/dotnet/sdk:10.0`   | fsharp, csharp                                                    |
+| `mcr.microsoft.com/dotnet/sdk:10.0`   | fsharp, csharp, visualbasic                                       |
 | `gcc:16-trixie`                       | c, cpp, fortran                                                   |
-| `debian:trixie-slim`                  | zig, lua, pascal, cobol, basic, lolcode, intercal, r, ada, arm32, d, objc, asp, ats, commonlisp, koka, lean, mercury, tcl, sql, scheme, racket, pony, bqn, befunge, smalltalk |
+| `debian:trixie-slim`                  | zig, lua, pascal, cobol, basic, lolcode, intercal, r, ada, arm32, d, objc, asp, ats, commonlisp, koka, lean, mercury, tcl, sql, scheme, racket, pony, bqn, befunge, smalltalk, bash, powershell, octave |
 | `eclipse-temurin:25-jdk-noble`        | flix, scala                                                       |
 | `python:3.15-slim-trixie`             | python, qsharp                                                    |
 
@@ -219,9 +224,9 @@ Four rows cannot follow the rule:
 - **`forth`** is on `debian:bookworm-20261104-slim` because gforth is not in trixie: it
   was dropped before the release and is back in testing. Same datestamp as every other
   Debian base here, one generation back. Re-check when trixie or forky carries it again.
-- **`fsharp` and `csharp`** are on `mcr.microsoft.com/dotnet/sdk`, which is **Ubuntu 24.04**.
-  Microsoft publishes no Debian default tag for the 10.0 SDK, so there is nothing to switch
-  to.
+- **`fsharp`, `csharp` and `visualbasic`** are on `mcr.microsoft.com/dotnet/sdk`, which is
+  **Ubuntu 24.04**. Microsoft publishes no Debian default tag for the 10.0 SDK, so there is
+  nothing to switch to.
 - **`swift`** must use the *full* `swift:<ver>-trixie` image. Its `-slim` tags are
   runtime-only and carry no `swift` binary at all, so applying the `-slim` preference here
   produces an image that cannot compile anything.
