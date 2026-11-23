@@ -71,6 +71,9 @@ patches, so an old minor can outrank a current one. See
 | `sql`        | `debian:trixie-20261104-slim` + SQLite 3.46.1, sqlfluff 4.5.0 | TAP through `sqlite3` | `sqlfluff lint` / `sqlfluff format`  | 6    |
 | `scheme`     | `debian:trixie-20261104-slim` + Guile 3.0.10    | `SRFI-64`                    | `compile-file`, warnings fatal / —   | 6    |
 | `racket`     | `debian:trixie-20261104-slim` + Racket 8.16     | `raco test` + `rackunit`     | `raco expand` / —                    | 6    |
+| `scala`      | `eclipse-temurin:25.0.5.1_2-jdk-noble` + scala-cli 1.19.0 | `munit` 1.3.6      | `scalac -Wunused:all -Werror` / `scala-cli fmt` | 6    |
+| `pony`       | `debian:trixie-20261104-slim` + ponyc 0.78.2    | `PonyTest`                   | `ponyc --pass verify` / —            | 6    |
+| `qsharp`     | `python:3.15.2-slim-trixie` + QDK 1.34.0        | `qdk.test_utils.run_tests`   | QDK type checker / —                 | 6    |
 
 ## Waves
 
@@ -130,30 +133,31 @@ popularity alone.
 
 ## Where lint and fmt prove nothing
 
-Twenty-two of the lint and fmt targets above do nothing, across twenty templates, and
-they are worth one list rather than twenty notes. **`basic` and `lolcode` have no
+Twenty-four of the lint and fmt targets above do nothing, across twenty-two templates,
+and they are worth one list rather than twenty-two notes. **`basic` and `lolcode` have no
 `lint`**: neither Bywater BASIC nor `lci` has a check mode, a syntax-only flag or a
 third-party checker, so `make lint` prints why and exits 0. CI runs it, and for those
 two it is theatre.
 
-**Twenty have no `fmt`** — `ada`, `arm32`, `asp`, `ats`, `basic`, `cobol`,
+**Twenty-two have no `fmt`** — `ada`, `arm32`, `asp`, `ats`, `basic`, `cobol`,
 `commonlisp`, `forth`, `groovy`, `intercal`, `koka`, `lean`, `lolcode`, `mercury`,
-`pascal`, `prolog`, `racket`, `raku`, `scheme` and `tcl`. Koka ships one binary with no
-format subcommand and issue 521 has been open since 2024; Lean's release tarball
-carries a compiler, a linker and a build tool and nothing that rewrites source;
-Potassco publish no formatter for ASP and nothing third-party is packaged; ATS2 ships
-`patscc` and `patsopt` and nothing that formats; Common Lisp indentation is a function
-of what each macro means, which is why editors ship indent tables rather than
-formatters, and Scheme has the same problem with nothing packaged to solve it;
-Racket's `raco fmt` lives in a third-party package that publishes no version tags, so
-there is no version to pin; nothing packaged formats Tcl and no third-party candidate
-is stable enough to pin; Raku's only candidate, `Perl6::Tidy`, reaches into compiler
-internals that no longer exist and fails on any input; Spotless's `greclipse` step
-deletes the space before every `>`, so `n > 1` comes back as `n> 1` and seven Eclipse
-formatter options will not stop it; `gnatpp` ships only with AdaCore's own
-distribution; GnuCOBOL, lci, gforth, GNU as and SWI-Prolog publish no formatter; Free
-Pascal's `ptop` capitalises keywords and dedents `end;` to column 0, which is worse
-than leaving the file alone.
+`pascal`, `pony`, `prolog`, `qsharp`, `racket`, `raku`, `scheme` and `tcl`. Koka ships
+one binary with no format subcommand and issue 521 has been open since 2024; Lean's
+release tarball carries a compiler, a linker and a build tool and nothing that rewrites
+source; Pony ships no formatter and no third-party one exists; the released QDK wheel
+installs no console scripts at all, and Q#'s formatter lives only inside the language
+server; Potassco publish no formatter for ASP and nothing third-party is packaged; ATS2
+ships `patscc` and `patsopt` and nothing that formats; Common Lisp indentation is a
+function of what each macro means, which is why editors ship indent tables rather than
+formatters, and Scheme has the same problem with nothing packaged to solve it; Racket's
+`raco fmt` lives in a third-party package that publishes no version tags, so there is no
+version to pin; nothing packaged formats Tcl and no third-party candidate is stable
+enough to pin; Raku's only candidate, `Perl6::Tidy`, reaches into compiler internals
+that no longer exist and fails on any input; Spotless's `greclipse` step deletes the
+space before every `>`, so `n > 1` comes back as `n> 1` and seven Eclipse formatter
+options will not stop it; `gnatpp` ships only with AdaCore's own distribution; GnuCOBOL,
+lci, gforth, GNU as and SWI-Prolog publish no formatter; Free Pascal's `ptop` capitalises
+keywords and dedents `end;` to column 0, which is worse than leaving the file alone.
 Each one's `.editorconfig` carries the indent the language expects instead.
 
 The alternative in both cases was a target that looked like a check. A reader
@@ -1413,6 +1417,65 @@ failure this repo already records against `gprbuild`. Expansion redoes the work 
 writes nothing, so it is also the only one of the two that leaves the tree alone, which is
 what `lint` is for. `raco make` is `make build`, where caching is the point.
 
+**`scala`'s lint had to turn the build server off to mean anything.** Under scala-cli's
+default incremental compile server, `-Werror` still writes class files and the server does
+not report that as a failed run: `make test` printed `[error] unused import` and then ran
+the suite and exited 0. Incremental compilation also only reports warnings for the files it
+recompiled, so a file nobody touched is never re-checked. `lint` therefore passes
+`--server=false` — full, deterministic, and the only form that exits non-zero on a warning.
+A genuine type error fails `make test` either way. `-Xfatal-warnings`, the flag this was
+first written with, is self-defeating on Scala 3.10: it emits a deprecation warning naming
+`-Werror` as its replacement, which `-Werror` semantics then promote to an error.
+
+**Three pieces of scala-cli state live outside `$HOME`, and one of them lands in the work
+tree.** The GraalVM native launcher reads `user.home` from the passwd entry rather than the
+environment, so `ENV HOME=/cache/home` moves nothing: `SCALA_CLI_HOME` is what moves the
+incremental state, and `COURSIER_ARCHIVE_CACHE` is a separate setting that `COURSIER_CACHE`
+does not cover. Left unset, as a uid with no passwd entry — which is every CI run — coursier
+created a directory literally named `?` in the project. The run-time uid having a passwd
+entry is what hides this locally, because `eclipse-temurin:…-noble` ships an `ubuntu` user
+at 1000. `--workspace /cache/workspace` keeps `.scala-build` out of the tree, and it is
+honoured only while that path is writable by the running uid; otherwise scala-cli falls back
+to a virtual project silently, and the symptom is a slow run rather than an error.
+
+**`pony` generates its test harness because PonyTest cannot discover anything.** A `TestList`
+names every test class, and naming the suite is what the contract forbids. So a helper scans
+`tests/*.pony` for `class iso Test… is UnitTest`, writes a `Main` into `/cache/test`, and
+compiles that as its own package with `--path /work`, reaching the real suite through
+`use "tests"` — a Pony package is a directory, so nothing is copied and compiler errors point
+at the file the reader actually has. Test classes are public rather than `_`-prefixed as the
+stdlib idiom would have them, because a package-private class is invisible to the harness
+package; renaming one to `_TestFoo` is then how you park a test.
+
+The generator drops its `use "tests"` line when it finds no test classes, which is what makes
+an emptied suite a green run instead of a build error: `use` on a directory holding no `.pony`
+files is a hard ponyc error. And ponyc has no incremental mode — every invocation runs LLVM
+over the whole reachable program in about six seconds however little changed — so the helper
+keeps the harness binary beside a record of each source's path, mtime and size, and reuses it
+when that record matches. `pony-lint` ships in 0.78.2 and is deliberately stripped: it
+requires one public type per file with the file named after it, which no kitchen sink can
+satisfy, and `--pass verify` is the compiler's own answer rather than a style opinion.
+
+**`qsharp` is the only row whose suite is driven from another language, and the QDK leaves no
+alternative.** The released wheel publishes no test CLI, so the Python host lives in the image
+as `qsharp-test` and the project ships only `.qs` files. Discovery is the QDK's own:
+`qdk/test_utils.py` walks `context.code` and collects every callable whose `__is_test__` is
+true, which is what Q#'s `@Test()` attribute sets, so nothing names a test anywhere.
+
+The manifest is why the tests are evaluated rather than compiled. `qdk.Context` raises
+without a `qsharp.json` and there is no fallback, and that file's `files` field takes file
+paths only — `{"files": ["src", "tests"]}` fails with `File src/demo.qs is not listed in the
+files field`. Naming each test file in the manifest is naming the suite, so the helper loads
+`src/` as the project and `eval`s each `tests/**/*.qs` into the same context. The cost is in
+the generated README: a failing assertion reports `line_0:58:5` rather than a path, though it
+does name the test, and errors in `src/` name their real file. The manifest's `lints` field is
+inert from Python — those rules are a language-server feature — so `lint` is the type checker.
+
+`ENV QDK_PYTHON_TELEMETRY=none` is not optional. `qdk` starts a daemon thread at import and
+registers an `atexit` handler that posts to an Application Insights endpoint; telemetry is on
+by default for any non-`dev` version. A template that phoned home on every test run would be
+a defect, not a feature.
+
 ## Deferred
 
 Frameworks are out of the first cut, but the ID namespace reserves them:
@@ -1424,6 +1487,6 @@ template directories under the same contract, not a new mechanism.
 audience rather than about whether the template would be any good. Two of the four
 turned out to be among the better rows in the set.
 
-No official image exists for `crystal`, `scala`, `deno` or `bun`, so those
-would be hand-rolled or vendor and are not in the cheap category. `racket` sat in that
-list until wave 6 built it on Debian's package.
+No official image exists for `crystal`, `deno` or `bun`, so those would be hand-rolled
+or vendor and are not in the cheap category. `racket` sat in that
+list until wave 6 built it on Debian's package, as did `scala` on a Temurin JDK.
