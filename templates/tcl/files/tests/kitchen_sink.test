@@ -1,0 +1,145 @@
+# Fifteen passing assertions: the toolbox for solving a kata in Tcl.
+
+package require tcltest
+namespace import ::tcltest::*
+
+source [file join [file dirname [info script]] .. src {{PROJECT_SNAKE}}.tcl]
+
+# collections
+# Two of them, the list and the dict, and both are also strings -- a list is
+# its own text representation. There is no set type at all.
+
+test collections-1 {lappend grows a list in place and lindex counts from zero} -body {
+    set values {1 2 4}
+    lappend values 8
+
+    list [llength $values] [lindex $values 2] [lrange $values 1 2]
+} -result {4 4 {2 4}}
+
+test collections-2 {a missing dict key raises rather than reading as empty} -body {
+    set counts [dict create a 1 b 2]
+    dict set counts c 3
+
+    list [dict get $counts c] [dict exists $counts z] [catch {dict get $counts z}]
+} -result {3 0 1}
+
+test collections-3 {there is no set, so lsort -unique is how duplicates go away} -body {
+    set items {red blue red green}
+
+    list [lsort -unique $items] [expr {"blue" in $items}]
+} -result {{blue green red} 1}
+
+# strings
+
+test strings-1 {split and join convert between a string and a list} -body {
+    set record a,b,c
+
+    list [split $record ,] [join [split $record ,] -]
+} -result {{a b c} a-b-c}
+
+test strings-2 {string index and string range address characters by position} -body {
+    set text kitchen
+
+    list [string length $text] [string index $text 0] [string range $text 1 3]
+} -result {7 k itc}
+
+test strings-3 {a quoted string interpolates both variables and bracketed commands} -body {
+    set name sink
+
+    set line "[string repeat - 3] $name [string toupper [string trim {  x  }]]"
+} -result {--- sink X}
+
+# types and branching
+# There are no records, no enums and no declared types: every value is a
+# string, and a dict is the record you would otherwise have written down.
+
+test types-1 {a dict is the record, and its fields are only keys} -body {
+    set record [dict create label first count 1]
+    dict set record count 2
+
+    list [dict get $record label] [dict get $record count]
+} -result {first 2}
+
+test types-2 {switch yields the value of the arm it took} -body {
+    set describe {n {switch -- $n 0 {return zero} 1 {return one} default {return many}}}
+
+    list [apply $describe 1] [apply $describe 7]
+} -result {one many}
+
+test types-3 {a state is a bare word, and an unmatched switch yields empty rather than complaining} -body {
+    set arms {
+        locked {set next unlocked}
+        unlocked {set next locked}
+    }
+
+    list [switch -exact -- locked $arms] [switch -exact -- jammed $arms]
+} -result {unlocked {}}
+
+# iteration
+
+test iteration-1 {for carries its own index and incr is what moves it} -body {
+    set values {1 2 4 8}
+    set weighted 0
+
+    for {set i 0} {$i < [llength $values]} {incr i} {
+        incr weighted [expr {[lindex $values $i] * $i}]
+    }
+
+    set weighted
+} -result 34
+
+test iteration-2 {lookahead means indexing twice, because a list has no cursor} -body {
+    set values {1 2 4 8}
+    set widest 0
+
+    for {set i 0} {$i < [llength $values] - 1} {incr i} {
+        set gap [expr {[lindex $values [expr {$i + 1}]] - [lindex $values $i]}]
+        set widest [expr {max($widest, $gap)}]
+    }
+
+    set widest
+} -result 4
+
+# functions
+
+test functions-1 {apply runs a lambda, and {*} expands a command prefix} -body {
+    set double {x {expr {$x * 2}}}
+    set prefix [list string repeat -]
+
+    list [apply $double 21] [{*}$prefix 3]
+} -result {42 ---}
+
+test functions-2 {a fold is a foreach over an accumulator, or an operator expanded over the list} -body {
+    set values {1 2 4 8}
+    set total 0
+
+    foreach value $values {
+        set total [::tcl::mathop::+ $total $value]
+    }
+
+    list $total [::tcl::mathop::+ {*}$values]
+} -result {15 15}
+
+# errors
+# Failure is a return code rather than an object: error raises one, catch and
+# try handle it, and a test demands it with -returnCodes.
+
+test errors-1 {error raises a message, and -returnCodes error is how a test demands one} -body {
+    apply {value {
+        if {![string is integer -strict $value]} {
+            error "not a number: $value"
+        }
+        return $value
+    }} x
+} -returnCodes error -result {not a number: x}
+
+# gotchas
+# The hour this saves. A literal with a leading zero is octal, so a zero-padded
+# field read from input is quietly a different number -- and 09 is not a number
+# at all. scan with an explicit conversion is the spelling that avoids it.
+
+test gotchas-1 {a leading zero makes an integer octal, so 010 is eight} -body {
+    list [expr {010 + 0}] [catch {expr {09 + 0}}] [scan 010 %d]
+} -result {8 1 10}
+
+cleanupTests
