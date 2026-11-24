@@ -44,6 +44,45 @@ forth, arm32, d, objc, asp, ats, julia, groovy, flix, haxe, raku, commonlisp, ko
 mercury, tcl, sql, scheme, racket, scala, pony, qsharp, bqn, befunge, smalltalk,
 bash, powershell, visualbasic, octave.
 
+## Which one to try
+
+Pick the language you already write and the kitchen sink is a cheatsheet for something
+you know. The container is the whole argument for picking the opposite: it costs you
+nothing on your machine and leaves nothing behind. So find your day job on the left,
+and work right.
+
+| You write                             | Start with | Then      | Then you are ready for |
+| ------------------------------------- | ---------- | --------- | ---------------------- |
+| javascript, typescript                | `gleam`    | `zig`     | `prolog`               |
+| python, ruby                          | `elixir`   | `rust`    | `bqn`                  |
+| java, csharp, kotlin                  | `clojure`  | `haskell` | `forth`                |
+| go                                    | `rust`     | `erlang`  | `prolog`               |
+| rust                                  | `erlang`   | `ats`     | `prolog`               |
+| c, cpp                                | `ada`      | `haskell` | `commonlisp`           |
+| php                                   | `elixir`   | `rust`    | `smalltalk`            |
+| swift, dart                           | `elm`      | `zig`     | `prolog`               |
+| bash, powershell                      | `raku`     | `clojure` | `prolog`               |
+| sql                                   | `prolog`   | `asp`     | `haskell`              |
+| r, octave, matlab                     | `julia`    | `bqn`     | `racket`               |
+| haskell, ocaml, fsharp, scala, elixir | `koka`     | `lean`    | `mercury`              |
+
+**Start with** is one new idea and everything else familiar — `gleam` compiles to
+JavaScript, `clojure` runs on the JVM, `elixir` does the web work you already do.
+**Then** is two or three new ideas at once. **Then you are ready for** is the one that
+will not let you write your usual solution at all: no mutation, no functions, no loops,
+or no control flow you chose. Where that spread comes from is
+[docs/languages.md](docs/languages.md#paradigm-coverage), which records the paradigm
+cell each of the sixty-four occupies and which cells were thin.
+
+Each one ships the same fifteen-assertion kitchen sink and its own
+[course](docs/katas/), so the paradigm is the only unfamiliar thing in the project. The
+cost of being wrong is `rm -rf`.
+
+`befunge`, `intercal` and `lolcode` are in no row on purpose. They are not a paradigm
+to take back to work — they are what it is like to work with a primitive missing, and
+[docs/katas](docs/katas/README.md#what-a-language-cannot-do) says which one for each.
+Worth a weekend, not a career.
+
 ## Status
 
 All sixty-four templates work. Each one scaffolds from a cold Docker cache, runs its own

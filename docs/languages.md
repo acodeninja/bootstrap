@@ -146,6 +146,11 @@ bolted onto a static one, and `raku`'s typing is gradual rather than static. A r
 place by being a good template, and the matrix is only what stopped the choice being made by
 popularity alone.
 
+The README turns this table outward. [Which one to try](../README.md#which-one-to-try)
+keys the same spread on the reader's daily driver instead of on the gaps left to fill,
+so a reader picking a language and an implementer picking a row are reading one
+judgement rather than two.
+
 ## Where lint and fmt prove nothing
 
 Twenty-eight of the lint and fmt targets above do nothing, across twenty-five templates,
