@@ -33,8 +33,7 @@ Build Summary: 5/5 steps succeeded; 16/16 tests passed
 Ready. Next:
   cd ../my-zig
   make test
-  read src/kitchen_sink.zig for the language, then pick a kata:
-  https://learn.madetech.com/technology/katas/
+  read src/kitchen_sink.zig for the language, then start the course in README.md
 ```
 
 You need Docker and `make`. You do not need Zig, and you do not need a clone of this

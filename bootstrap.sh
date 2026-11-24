@@ -557,8 +557,7 @@ next_steps() {
   printf '\nReady. Next:\n'
   printf '  cd %s\n' "$TARGET"
   printf '  make test\n'
-  printf '  read %s for the language, then pick a kata:\n' "$KITCHEN_SINK"
-  printf '  https://learn.madetech.com/technology/katas/\n'
+  printf '  read %s for the language, then start the course in README.md\n' "$KITCHEN_SINK"
 }
 
 # Asking rather than failing is why docs/install.md documents

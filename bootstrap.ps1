@@ -567,8 +567,7 @@ function Write-NextSteps {
     Write-Output 'Ready. Next:'
     Write-Output "  cd $($script:Target)"
     Write-Output '  make test'
-    Write-Output "  read $($script:KitchenSink) for the language, then pick a kata:"
-    Write-Output '  https://learn.madetech.com/technology/katas/'
+    Write-Output "  read $($script:KitchenSink) for the language, then start the course in README.md"
 }
 
 # docs/cli.md: running with no arguments is not a usage error, because
