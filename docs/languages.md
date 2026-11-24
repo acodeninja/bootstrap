@@ -68,7 +68,7 @@ patches, so an old minor can outrank a current one. See
 | `lean`       | `debian:trixie-20261104-slim` + Lean 4.36.0     | `lake test`                  | `lake build`, warnings fatal / —     | 5    |
 | `mercury`    | `debian:trixie-20261104-slim` + Mercury 22.01.9 from source | TAP, own `tap.m` | `mmc --make <mod>.check` / —         | 5    |
 | `tcl`        | `debian:trixie-20261104-slim` + Tcl 8.6.16      | `tcltest` (stdlib)           | bytecode parse check / —             | 6    |
-| `sql`        | `debian:trixie-20261104-slim` + SQLite 3.46.1, sqlfluff 4.5.0 | TAP through `sqlite3` | `sqlfluff lint` / `sqlfluff format`  | 6    |
+| `sql`        | `postgres:17.12-trixie` + pgTAP 1.3.4, sqlfluff 4.5.0 | `pg_prove` over pgTAP        | `sqlfluff lint` + `plpgsql_check` / `sqlfluff format` | 6    |
 | `scheme`     | `debian:trixie-20261104-slim` + Guile 3.0.10    | `SRFI-64`                    | `compile-file`, warnings fatal / —   | 6    |
 | `racket`     | `debian:trixie-20261104-slim` + Racket 8.16     | `raco test` + `rackunit`     | `raco expand` / —                    | 6    |
 | `scala`      | `eclipse-temurin:25.0.5.1_2-jdk-noble` + scala-cli 1.19.0 | `munit` 1.3.6      | `scalac -Wunused:all -Werror` / `scala-cli fmt` | 6    |
