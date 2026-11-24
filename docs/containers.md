@@ -27,7 +27,7 @@ Each template's `files/` contains:
 | File           | Job                                                                 |
 | -------------- | ------------------------------------------------------------------- |
 | `Dockerfile`   | `FROM` the language's image, install dependencies, `WORKDIR /work`  |
-| `compose.yaml` | one `dev` service: bind-mounted source, named cache volumes, `user` |
+| `compose.yaml` | the `dev` service: bind-mounted source, named cache volumes, `user` |
 | `Makefile`     | `test`, `lint`, `fmt`, `build`, `shell`, `help`                     |
 
 The Makefile is the only place a real command appears. The image stays generic and the
@@ -42,6 +42,11 @@ test:   ## Run the kitchen sink suite
 lint:   ## Check formatting
 	$(RUN) zig fmt --check .
 ```
+
+`sql` is the one template with a second service. pgTAP and plpgsql_check are PostgreSQL
+extensions, so the server has to run the image the template builds rather than the
+official one as it ships, and `dev` reaches it over the compose network. Both services
+name that single image, and only `dev` carries the `build:` section.
 
 ### The Makefile may not use host shell tools
 
@@ -134,7 +139,7 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | lean                   | `debian:trixie-slim` + Lean 4.36             | hand-rolled |
 | mercury                | `debian:trixie-slim` + Mercury 22.01 source  | hand-rolled |
 | tcl                    | `debian:trixie-slim` + tcl 8.6.16            | hand-rolled |
-| sql                    | `debian:trixie-slim` + sqlite3 3.46, sqlfluff | hand-rolled |
+| sql                    | `postgres:17.12-trixie` + pgTAP, plpgsql_check, sqlfluff | official    |
 | scheme                 | `debian:trixie-slim` + Guile 3.0.10          | hand-rolled |
 | racket                 | `debian:trixie-slim` + Racket 8.16           | hand-rolled |
 | scala                  | `eclipse-temurin:25-jdk-noble` + scala-cli 1.19 | official    |
@@ -147,17 +152,17 @@ Rows name the image *family*. A template pins a narrower tag than the row shows 
 | powershell             | `debian:trixie-slim` + PowerShell 7.7.0 tarball | hand-rolled |
 | octave                 | `debian:trixie-slim` + Octave 9.4, MISS_HIT  | hand-rolled |
 
-Across 64 templates that is **28 official, 5 vendor, 31 hand-rolled**. Hand-rolled held
+Across 64 templates that is **29 official, 5 vendor, 30 hand-rolled**. Hand-rolled held
 at three — zig, lua and elm — from 18 templates to 26, because every language added in
 between built on an official image and merely added a package. Wave 4 added nine, wave 5
-eight and wave 6 eight, which are the languages with no official image to build on at
+eight and wave 6 seven, which are the languages with no official image to build on at
 all. Wave 7 added three more: `bash` and `octave` because Debian carries the whole
 toolchain and no vendor publishes an image for either, and `powershell` because the one
 Microsoft publishes has no arm64. Under mise, six languages had no usable pin.
 
 ### One image, several templates
 
-Seven images cover forty-five templates. This is deliberate; do not "tidy up" by giving
+Seven images cover forty-four templates. This is deliberate; do not "tidy up" by giving
 each language its own.
 
 | Image                                 | Templates                                                         |
@@ -166,7 +171,7 @@ each language its own.
 | `gradle:9.9-jdk25`                    | kotlin, java, groovy                                              |
 | `mcr.microsoft.com/dotnet/sdk:10.0`   | fsharp, csharp, visualbasic                                       |
 | `gcc:16-trixie`                       | c, cpp, fortran                                                   |
-| `debian:trixie-slim`                  | zig, lua, pascal, cobol, basic, lolcode, intercal, r, ada, arm32, d, objc, asp, ats, commonlisp, koka, lean, mercury, tcl, sql, scheme, racket, pony, bqn, befunge, smalltalk, bash, powershell, octave |
+| `debian:trixie-slim`                  | zig, lua, pascal, cobol, basic, lolcode, intercal, r, ada, arm32, d, objc, asp, ats, commonlisp, koka, lean, mercury, tcl, scheme, racket, pony, bqn, befunge, smalltalk, bash, powershell, octave |
 | `eclipse-temurin:25-jdk-noble`        | flix, scala                                                       |
 | `python:3.15-slim-trixie`             | python, qsharp                                                    |
 

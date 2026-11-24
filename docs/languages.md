@@ -1392,24 +1392,40 @@ what makes a red assertion red. And `-notfile` defaults to `l.*.test`, which sil
 every test file whose name begins with `l`: a `tests/lexer.test` would never have run and
 nothing would have said so.
 
-**`sql` is the only row whose test framework is the output format.** Each file prints its own
-plan and one `iif(cond, 'ok', 'not ok') || ' N - name'` line per assertion, and
-`sqlite3 -batch ':memory:' '.read src/schema.sql' '.read tests/x.sql'` runs it — `.read` as
-positional arguments, schema first. `sqlite3` exits 0 for a query that returns the string
-`not ok` exactly as it does for any other string, so `tap-run` decides the status, the same
-shape `forth`, `cobol`, `basic`, `lolcode` and `intercal` use. A runtime error does not stop
-`.read` either: the interpreter carries on to the end of the file, which is why the
-plan-versus-count check matters as much as the exit code.
+**`sql` is the only row that runs a server.** `compose.yaml` declares two services where
+every other template declares one: `db` is PostgreSQL 17 and `dev` is where psql, sqlfluff
+and pg_prove run. Both name the same image, because pgTAP and plpgsql_check are server
+extensions and have to be installed where the server is — which is why the image is built
+`FROM postgres:17.12-trixie` instead of the official image being used as it ships. Only
+`dev` carries the `build:` section, so one build produces the image both services use, and
+the three places CI reads an `image:` line out of a compose file now dedupe what they find.
 
-sqlfluff is both the lint and the fmt, and it dictates the file's shape rather than the other
-way round. `LT05` counts comment lines, so `{{PROJECT_NAME}}` gets a line of its own: a
-52-character project name interpolated into a prose line pushed a freshly scaffolded project
-over 80 characters and `make lint` went red before its owner had written anything. `LT14`
-rejects `ORDER BY` inside an aggregate while allowing it inside `OVER (…)`, and the
-`group_concat` assertion needs it, because SQLite's aggregate order is otherwise arbitrary.
-And `RAISE` is unusable in a TAP file — it aborts the script, so the errors slot asserts
-`INSERT OR IGNORE` plus `changes() = 0`, which is how a test sees a refusal without the
-refusal taking the file down.
+`with-pg` is the one script in the image. It creates pgTAP in a schema of its own, drops and
+recreates `public`, loads every file under `src/`, and then runs whatever command it was
+handed — `pg_prove` for `test`, `pg-check` for the second half of `lint`. Dropping `public`
+every run is what makes the loop repeatable, because an edited function is then replaced
+rather than shadowed, and keeping pgTAP out of it saves recreating a thousand functions to
+do so. `make build` is that script with no command at all, which is the first honest build
+this row has had: a PL/pgSQL body is parsed when the function is created and not before.
+
+`pg_prove` holds each file to the plan it declared, so the plan-versus-count check the
+SQLite version hand-rolled is gone. `RAISE` is usable now, so the errors slot asserts
+`throws_ok` against a `P0001` a function raises rather than working around a `RAISE` that
+would take the file down. The gotcha is `plpgsql.check_asserts`: one setting turns every
+`ASSERT` in the database off at once, and nothing warns that the invariant stopped being
+tested.
+
+sqlfluff still dictates the file's shape rather than the other way round. `LT05` counts
+comment lines, so `{{PROJECT_NAME}}` gets a line of its own: a 52-character project name
+interpolated into a prose line pushed a freshly scaffolded project over 80 characters and
+`make lint` went red before its owner had written anything. `LT14` wants `WHERE` on a line
+of its own, which is why every scalar subquery in the suite is spread over four. `name` is
+a keyword in the postgres dialect where it was not in the sqlite one, so the column is
+`title`. A type this project declares is lower case, so `capitalisation.types` is pinned to
+lower rather than left to "consistent", where one upper-case builtin would flip the whole
+file. And sqlfluff cannot parse `SET plpgsql.check_asserts = off` at all, so the gotcha
+reaches that setting through `set_config` inside a `DO` block — which is also how it stays
+inside the transaction the test rolls back.
 
 **`scheme` is a reminder that a framework can report a failure without reporting it to the
 shell.** SRFI-64 prints `# of unexpected failures 1` and exits 0; Guile's own

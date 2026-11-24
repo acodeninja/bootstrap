@@ -74,9 +74,14 @@ Every template's `files/` must contain:
 `.env` is **not** in `files/`. The bootstrap script generates it — see
 [containers.md](containers.md#file-ownership).
 
-`compose.yaml` is the same twenty lines in every template, differing only in `image:`
-and in any cache volume nested inside the bind mount. Beyond the four keys the table
-names it also carries `name: {{PROJECT_SLUG}}`, `working_dir: /work` and `init: true`.
+`compose.yaml` is the same twenty lines in every template but one, differing only in
+`image:` and in any cache volume nested inside the bind mount. Beyond the four keys the
+table names it also carries `name: {{PROJECT_SLUG}}`, `working_dir: /work` and
+`init: true`.
+
+`sql` is that one, and the only one. pgTAP and plpgsql_check are PostgreSQL extensions,
+so it declares a second service for the server and both services name the same image.
+That is what a toolchain with a server in it costs; it is not licence to add one.
 
 `compose.yaml` carries both a `build:` section and
 `image: ghcr.io/acodeninja/bootstrap/<template-id>:main`, and the `image` name is not
