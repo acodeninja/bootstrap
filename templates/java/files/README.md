@@ -57,6 +57,21 @@ if the build starts failing to pull its base image: Docker Hub rate-limits
 anonymous pulls and GitHub's runners share IP addresses, so the error looks
 nothing like the real cause.
 
+## Course
+
+Five katas, in this order, each introducing one thing the last one did not:
+
+1. [Hello, World](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/hello-world.md) — the toolchain, not you
+2. [FizzBuzz](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/fizzbuzz.md) — a loop, a branch, and your first test
+3. [Roman numerals](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/roman-numerals.md) — an ordered table, and a string you built
+4. [Bowling](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/bowling.md) — index arithmetic, and reading ahead of yourself
+5. [Mars Rover](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/mars-rover.md) — records, enums, parsing, and a failure worth reporting
+
+The rest of the catalogue, and why this language gets these, is in
+[docs/katas](https://github.com/acodeninja/bootstrap/tree/main/docs/katas).
+
+Delete this section when the project becomes real work.
+
 ## Licence
 
 MIT — see [LICENSE](LICENSE).
