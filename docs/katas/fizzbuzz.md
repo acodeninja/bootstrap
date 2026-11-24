@@ -20,9 +20,10 @@ Step 2 of every course, in all 64 languages. It assumes Hello, World.
 
 ## Not available in
 
-Nothing blocks it. `intercal` has no division operator and `befunge` has no strings, so
-both are a sitting's work rather than ten minutes — the course sections for those two say
-so.
+Nothing blocks it.
+
+`intercal` has no division operator and `befunge` has no strings, so for those two this is
+a sitting's work rather than ten minutes. Their course sections say so.
 
 ## Source
 

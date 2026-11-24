@@ -19,8 +19,9 @@ The last step of the `forth` course, in place of Roman numerals. It assumes Leap
 
 ## Not available in
 
-Assigned to one row, so the question does not arise elsewhere. In `forth` itself the
-language supplies the stack, the words and the execution tokens
+Nothing blocks it, and only one course asks for it.
+
+In `forth` the language supplies the stack, the words, and the execution tokens
 (`templates/forth/files/tests/kitchen_sink.fs:72`) the dispatch needs.
 
 ## Source

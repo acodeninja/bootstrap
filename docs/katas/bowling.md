@@ -22,10 +22,12 @@ it.
 
 ## Not available in
 
-Nothing blocks it. In `sql` it is the best kata in the catalogue — `lead` reads the
-following row without a second pass (`templates/sql/files/tests/kitchen_sink.sql:101`),
-which is exactly what a spare needs — and in the array languages the frames are a
-segmentation problem rather than a loop.
+Nothing blocks it.
+
+In `sql` it is the best kata in the catalogue — `lead` reads the following row without a
+second pass (`templates/sql/files/tests/kitchen_sink.sql:101`), which is exactly what a
+spare needs. In the array languages the frames are a segmentation problem rather than a
+loop.
 
 ## Source
 

@@ -22,10 +22,11 @@ closed set of states is the same idea twice.
 
 ## Not available in
 
-Nothing blocks the machine itself. The rows with no first-class functions — `befunge`,
-`sql`, `lolcode`, `basic`, `intercal`, `asp` — cannot hand the action to the transition
-as a callback, so the dispatch is a branch; the kata still works, and the difference is
-worth noticing rather than avoiding.
+Nothing blocks the machine itself.
+
+The rows with no first-class functions — `befunge`, `sql`, `lolcode`, `basic`, `intercal`,
+`asp` — cannot hand the action to the transition as a callback, so the dispatch is a
+branch. The kata still works, and the difference is worth noticing rather than avoiding.
 
 ## Source
 

@@ -22,9 +22,11 @@ Step 1 of every course, in all 64 languages. It assumes nothing.
 
 ## Not available in
 
-Nothing blocks it. Three rows have no stdout to print to, so only the second half of it
-applies: in `elm` the language has no terminal I/O at all, and in `asp` and `sql` the
-output of a program is an answer set and a row. Write the function, assert the value.
+Nothing blocks it.
+
+Three rows have no stdout to print to, so only the second half applies: `elm` has no
+terminal I/O at all, and in `asp` and `sql` the output of a program is an answer set and a
+row. Write the function, assert the value.
 
 ## Source
 
