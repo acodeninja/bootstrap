@@ -976,6 +976,24 @@ jobs:
                  | grep -q '@echo'; then
               note "$id" "the help recipe calls echo"
             fi
+
+            # The course in each README repeats its row in docs/katas, because a
+            # generated project carries no copy of docs/. Nothing but CI can keep
+            # two hand-written copies of the same list in step.
+            course=$(sed -n '/^## Course/,/^## Licence/p' "$files/README.md" \
+                       | grep -o 'docs/katas/[a-z-]*\.md' \
+                       | sed 's#.*/##; s#\.md$##' | tr '\n' ' ')
+            indexed=$(grep "^| \`$id\` |" docs/katas/README.md \
+                        | awk -F'|' '{print $4}' \
+                        | grep -o '([a-z-]*\.md)' | tr -d '()' \
+                        | sed 's#\.md$##' | tr '\n' ' ')
+            [ "$course" = "hello-world fizzbuzz $indexed" ] \
+              || note "$id" "the README course is not the row docs/katas lists"
+
+            for kata in $course; do
+              [ -e "docs/katas/$kata.md" ] \
+                || note "$id" "the course links a missing brief: $kata"
+            done
           done
 
           exit $status

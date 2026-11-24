@@ -339,9 +339,15 @@ One job, `lint`, and a gate on everything after it:
 `lint` also sweeps the templates themselves, which nothing did before: the required files,
 the four that must stay byte-identical to `templates/c/files/`, the `.dockerignore`
 exclusions, the six Makefile targets, the ban on POSIX tools in a recipe, a `help` that
-reaches its text without a shell, and a shipped lockfile that pins every `uses:` in the
-shipped workflow. Every one of those was a contract rule held up by review alone, which is
-how two `.dockerignore` files lost their source exclusions without a leg going red.
+reaches its text without a shell, a shipped lockfile that pins every `uses:` in the
+shipped workflow, and a `## Course` section that still matches the row
+[katas/README.md](katas/README.md) lists for that template. Every one of those was a
+contract rule held up by review alone, which is how two `.dockerignore` files lost their
+source exclusions without a leg going red.
+
+The course is the only one of those guarding a duplicate rather than a contract. A
+generated project carries no copy of `docs/`, so its README has to repeat the list, and
+two hand-written copies of one list drift.
 
 Those two diffs are the only things that have ever compared the two entry points. They are
 kept in step by hand, and a drift between them would otherwise be invisible. Each side
