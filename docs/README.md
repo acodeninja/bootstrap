@@ -14,6 +14,7 @@ Read in this order:
 | [template-contract.md](template-contract.md) | What is inside `templates/<id>/`, and how do I add one?         |
 | [containers.md](containers.md)               | How the language gets installed, and which image each one uses  |
 | [kitchen-sink.md](kitchen-sink.md)           | What is in the shipped test, and why that?                      |
+| [katas/](katas/)                             | Which katas, in which order, for each language?                 |
 | [languages.md](languages.md)                 | The 64 targets, their tooling, and when each lands              |
 | [ci.md](ci.md)                               | CI in the generated project, and CI that proves this repo works |
 | [roadmap.md](roadmap.md)                     | Build order                                                     |

@@ -20,9 +20,11 @@ Run either with no arguments to be prompted instead. No clone, nothing installed
 One command gets you a project with a pinned toolchain, a formatter, a linter, CI, and
 a test suite that runs immediately. That suite is a kitchen sink: one page of fifteen
 passing assertions covering the collections, strings, types, iteration, functions and
-error handling you need to go and solve a
-[kata](https://learn.madetech.com/technology/katas/), plus the one quirk most likely to
-cost you an hour — and nothing else. Delete the file when you start real work.
+error handling you need to go and solve a [kata](docs/katas/), plus the one quirk most
+likely to cost you an hour — and nothing else. Delete the file when you start real work.
+
+It also ships a **course**: four or five katas in order, picked for that language and
+listed in its `README.md`. The catalogue behind it is [docs/katas](docs/katas/).
 
 ## Prerequisites
 

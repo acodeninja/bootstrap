@@ -60,7 +60,7 @@ Every template's `files/` must contain:
 | `compose.yaml`                   | the `dev` service: bind mount, cache volumes, `user`, `image`, build cache     |
 | `Makefile`                       | `test`, `lint`, `fmt`, `build`, `shell`, `help`                                |
 | `.dockerignore`                  | `.git`, `.github`, `.env`, `src`, the suite, build output                      |
-| `README.md`                      | What this is, how to run it, the prerequisites                                 |
+| `README.md`                      | What this is, how to run it, the prerequisites, the course             |
 | the kitchen sink                 | The one-page suite, at `KITCHEN_SINK` — see [kitchen-sink.md](kitchen-sink.md) |
 | `.gitignore`                     | Build artefacts for this language, plus `.env`                                 |
 | `.editorconfig`                  | Indentation and line endings matching the language's convention                |

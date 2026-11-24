@@ -5,7 +5,7 @@ all-passing assertions that together are a cheatsheet for the language's toolbox
 page, read top to bottom in under a minute.
 
 The framing is **"here are the tools you'll need to solve any of these katas"** —
-the [Made Tech kata list](https://learn.madetech.com/technology/katas/). The coverage is
+the [kata catalogue](katas/), which credits every source it draws on. The coverage is
 derived by working backwards from what those katas actually require.
 
 ## Why not ship a kata
@@ -77,20 +77,20 @@ to a language tour, and a reader who wants one has the language's own documentat
 This table is the argument that the scope is right, and the check that stops the suite
 growing into a full language tour.
 
-| Kata               | Themes it draws on                                                 |
-| ------------------ | ------------------------------------------------------------------ |
-| Bowling            | `02` arithmetic · `04` loop with index · `05` slice and lookahead  |
-| Wordle             | `05` set and map · `06` character compare · `08` enum result       |
-| Number to LCD      | `06` repeat, chunk, join · `05` list building                      |
-| Roman numerals     | `02` arithmetic · `05` ordered table · `06` string building        |
-| Snake              | `01` mutable state · `05` deque · `08` record and direction enum   |
-| Tennis             | `04` match · `08` enum                                             |
-| Tennis Refactoring | `07` extraction · `08` types                                       |
-| Turnstile          | `04` and `08` exhaustive match on a state enum                     |
-| Word Wrap          | `06` split and slice · `07` recursion                              |
-| Test Framework     | `07` closures and higher-order functions · `09` catching failure   |
-| Video Store        | `08` sum type or interface · `05` collections · `06` formatting    |
-| Mars Rover         | `02` modulo · `06` parsing a command string · `08` enum and record |
+| Kata                                              | Themes it draws on                                                 |
+| ------------------------------------------------- | ------------------------------------------------------------------ |
+| [Bowling](katas/bowling.md)                       | `02` arithmetic · `04` loop with index · `05` slice and lookahead  |
+| [Wordle](katas/wordle.md)                         | `05` set and map · `06` character compare · `08` enum result       |
+| [Number to LCD](katas/number-to-lcd.md)           | `06` repeat, chunk, join · `05` list building                      |
+| [Roman numerals](katas/roman-numerals.md)         | `02` arithmetic · `05` ordered table · `06` string building        |
+| [Snake](katas/snake.md)                           | `01` mutable state · `05` deque · `08` record and direction enum   |
+| [Tennis](katas/tennis.md)                         | `04` match · `08` enum                                             |
+| [Tennis Refactoring](katas/tennis-refactoring.md) | `07` extraction · `08` types                                       |
+| [Turnstile](katas/turnstile.md)                   | `04` and `08` exhaustive match on a state enum                     |
+| [Word Wrap](katas/word-wrap.md)                   | `06` split and slice · `07` recursion                              |
+| [Test Framework](katas/test-framework.md)         | `07` closures and higher-order functions · `09` catching failure   |
+| [Video Store](katas/video-store.md)               | `08` sum type or interface · `05` collections · `06` formatting    |
+| [Mars Rover](katas/mars-rover.md)                 | `02` modulo · `06` parsing a command string · `08` enum and record |
 
 Anything no kata needs — concurrency, generics, modules, I/O, reflection — stays out.
 If you are tempted to add a theme, name the kata that needs it first.
@@ -233,7 +233,14 @@ explanation out of the generated `README.md` — the README is about the project
 building, not the scaffolding you were handed, and it must survive the deletion
 unchanged. That constraint still holds; the orientation just moved somewhere that leaves
 no file behind at all. `bootstrap.sh` prints it as the last thing it does, naming the
-file and linking the kata list.
+file and pointing at the course in the generated `README.md`.
+
+**The course section is the one exception to that rule, and it is deliberate.** A list
+of katas is closer to the scaffolding than to the project, so by the paragraph above it
+does not belong in the generated `README.md` — but it is the first thing a reader wants
+and the last thing they should need a URL for. It keeps both halves of the constraint:
+it never names the kitchen sink, so deleting the suite cannot invalidate it, and it is
+the last section before the licence, so it leaves in one cut. See [katas/](katas/).
 
 ## Test conventions
 
