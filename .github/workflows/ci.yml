@@ -289,10 +289,12 @@ jobs:
       # :main-amd64 left by an earlier run looks exactly like one this run
       # wrote. A tag naming this commit cannot be mistaken for an older one, so
       # it is what manifest merges from.
+      #
+      # Deduped, because a template may name that one image once per service.
       - name: push what the tests passed
         if: ${{ needs.scope.outputs.publish == 'true' }}
         run: |
-          image=$(sed -n 's/^ *image: *//p' ../scaffold/compose.yaml)
+          image=$(sed -n 's/^ *image: *//p' ../scaffold/compose.yaml | sort -u)
           docker tag "$image" "${image}-amd64"
           docker tag "$image" "${image%:*}:${GITHUB_SHA}-amd64"
 
@@ -469,7 +471,7 @@ jobs:
       - name: push what the tests passed
         if: ${{ needs.scope.outputs.publish == 'true' }}
         run: |
-          image=$(sed -n 's/^ *image: *//p' ../scaffold/compose.yaml)
+          image=$(sed -n 's/^ *image: *//p' ../scaffold/compose.yaml | sort -u)
           docker tag "$image" "${image}-arm64"
           docker tag "$image" "${image%:*}:${GITHUB_SHA}-arm64"
 
@@ -951,7 +953,8 @@ jobs:
 
             # Two copies of one image name. A template caching from another
             # template's image would still build, just never from cache.
-            image=$(sed -n 's/^    image: //p' "$files/compose.yaml")
+            # Deduped: two services naming one image is not two images.
+            image=$(sed -n 's/^    image: //p' "$files/compose.yaml" | sort -u)
             cached=$(sed -n 's/^        - \(ghcr\.io.*\)$/\1/p' "$files/compose.yaml")
             [ "$image" = "$cached" ] \
               || note "$id" "compose.yaml caches from ${cached:-nothing}"
