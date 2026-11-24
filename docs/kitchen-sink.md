@@ -151,6 +151,7 @@ the TDD loop for every invalid input a kata has.
 | PowerShell              | `throw` terminates; `Write-Error` does not — `Should -Throw`       |
 | Visual Basic            | `Throw`, with `Catch ... When` filtering without unwinding         |
 | Octave                  | `error("pkg:id", ...)`, caught by `identifier` rather than message |
+| SQL (PL/pgSQL)          | `RAISE` carries a sqlstate, and `EXCEPTION WHEN` catches by name   |
 
 ## Gotchas are deliberately not uniform
 

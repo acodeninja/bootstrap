@@ -24,14 +24,17 @@ opinion about it.
 
 Two separate walls, and a row needs to clear both:
 
-- **No first-class functions** — `befunge` (none, and no way to invent one), `sql`
-  (nothing to pass a function to), `lolcode` (a function cannot be handed anywhere),
-  `basic` (`DEF FN` will not nest and `GOSUB` takes no arguments), `intercal`, `asp`.
-- **Nothing catches a failure** — `qsharp` (no try, no catch, no Result), `arm32`,
-  `sql`, and the four above.
+- **No first-class functions** — `befunge` (none, and no way to invent one), `lolcode` (a
+  function cannot be handed anywhere), `basic` (`DEF FN` will not nest and `GOSUB` takes no
+  arguments), `intercal`, `asp`.
+- **Nothing catches a failure** — `qsharp` (no try, no catch, no Result), `arm32`, and the
+  four above.
 
 `forth` is the surprise: it has execution tokens and `CATCH`/`THROW`, so despite sitting
-on the Constrained track it is one of the better languages here for this.
+on the Constrained track it is one of the better languages here for this. `sql` is the
+other, and the proof is in the template: PL/pgSQL has `RAISE` and `EXCEPTION WHEN`, a
+function name can be held as a `regprocedure` and called through `EXECUTE`, and pgTAP —
+which the suite is written in — is a test framework written in exactly that.
 
 ## Source
 

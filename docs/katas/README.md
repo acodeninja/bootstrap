@@ -138,8 +138,8 @@ in the template's own suite rather than claimed here:
 | Wall | Blocks | Rows |
 | ---- | ------ | ---- |
 | no strings | word-wrap, number-to-lcd, wordle, diamond, string-calculator | `intercal`, `befunge`, `lolcode`, `qsharp`, `asp` |
-| no first-class functions | test-framework | `befunge`, `sql`, `lolcode`, `basic`, `intercal`, `asp` |
-| nothing catches a failure | test-framework | `qsharp`, `lolcode`, `befunge`, `intercal`, `arm32`, `sql` |
+| no first-class functions | test-framework | `befunge`, `lolcode`, `basic`, `intercal`, `asp` |
+| nothing catches a failure | test-framework | `qsharp`, `lolcode`, `befunge`, `intercal`, `arm32` |
 | no polymorphism | video-store, tennis-refactoring | `sql`, `asp`, `bqn`, `befunge`, `intercal`, `lolcode`, `basic`, `forth`, `arm32`, `qsharp` |
 
 `asp` is the one row that is not a general-purpose language at all: clingo grounds a
