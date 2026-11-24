@@ -1,146 +1,153 @@
--- A cheatsheet for SQLite, and fifteen assertions that all pass on the first
--- run. Delete this file when you start real work: nothing in src/ refers to
--- it. The katas these tools are chosen for are at
+-- A cheatsheet for PostgreSQL and PL/pgSQL, and fifteen assertions that all
+-- pass on the first run. Delete this file when you start real work: nothing
+-- in src/ refers to it. The katas these tools are chosen for are at
 -- https://learn.madetech.com/technology/katas/.
 --
--- Every assertion prints its own TAP line, because SQL has no test framework
--- and sqlite3 exits 0 whether a query returns 'ok' or 'not ok'. tap-run
--- compares the plan below against the results and decides the exit status.
+-- pgTAP supplies the assertions and pg_prove runs the file, holding it to the
+-- plan below. The transaction never commits, so a test can insert whatever it
+-- needs and the next run starts from exactly the same place.
 
-SELECT '1..15';
+BEGIN;
 
--- collections: a table is the only collection. There is no array, no map and
--- no set that can be the value of a column, so all three are shapes a rowset
--- is put into.
+SELECT plan(15);
 
-WITH items (value) AS (VALUES (10), (20), (30))
+-- collections: an array is a value a single column can hold, jsonb is the
+-- map, and a rowset is still what everything else gets read into.
 
-SELECT
-    iif(count(*) = 3, 'ok', 'not ok')
-    || ' 1 - a values list is the literal collection, count is its length'
-FROM items;
+SELECT is(
+    cardinality(ARRAY[10, 20, 30]),
+    3,
+    'an array is one value, and cardinality counts what is inside it'
+);
 
-WITH wanted (state) AS (VALUES ('held'), ('gone'))
+SELECT is(
+    '{"held": "On hold"}'::jsonb ->> 'held',
+    'On hold',
+    'jsonb is the map, and the arrow operator reads a key out as text'
+);
 
-SELECT
-    iif(count(states.label) = 1, 'ok', 'not ok')
-    || ' 2 - a left join is the lookup, and a missing key gives null'
-FROM wanted
-LEFT JOIN states ON wanted.state = states.state;
+SELECT is(
+    (
+        SELECT count(DISTINCT tag)::integer
+        FROM tags
+        WHERE tag IN ('alpha', 'beta')
+    ),
+    2,
+    'distinct makes a set, and in asks whether a value is in one'
+);
 
-SELECT
-    iif(count(DISTINCT tag) = 2, 'ok', 'not ok')
-    || ' 3 - distinct makes a set, and in asks whether a value is in one'
-FROM tags
-WHERE tag IN ('alpha', 'beta');
+-- strings: there is interpolation, there is a split, and a regex hands back
+-- its captures as an array rather than an object you ask questions of.
 
--- strings: there is no interpolation and no split. Concatenation is an
--- operator, and taking a string apart means finding the separator yourself.
+SELECT is(
+    format('%s holds %s tags', 'first', 2),
+    'first holds 2 tags',
+    'format interpolates, and %s takes whatever type it is handed'
+);
 
-SELECT
-    iif(length(name || state) = 9, 'ok', 'not ok')
-    || ' 4 - two pipes concatenate, and length counts characters'
-FROM records
-WHERE id = 1;
+SELECT is(
+    split_part('On hold', ' ', 2),
+    'hold',
+    'split_part takes a separator and counts the parts from one'
+);
 
-SELECT
-    iif(substr(label, 1, instr(label, ' ') - 1) = 'On', 'ok', 'not ok')
-    || ' 5 - substr counts from one, and instr locates the separator'
-FROM states
-WHERE state = 'held';
+SELECT is(
+    (regexp_match('record-42', '([0-9]+)'))[1],
+    '42',
+    'regexp_match returns its captures as an array, not a match object'
+);
 
--- The ORDER BY belongs inside the aggregate: without it the order rows arrive
--- in is whatever the query plan happened to produce.
-SELECT
-    iif(
-        group_concat(
-            tag, ','
-            ORDER BY tag
-        ) = 'alpha,beta', 'ok', 'not ok'
-    ) || ' 6 - group_concat joins a column into one ordered string'
-FROM tags
-WHERE record_id = 1;
+-- types and branching: an enum is a type of its own, a composite names the
+-- fields of a row, and a case expression is the only dispatch there is.
 
--- types and branching: no struct literal and no enum. A table declaration is
--- the record type, a declared type is an affinity rather than a guarantee,
--- and a lookup table is where a fixed set of named states lives.
+SELECT is(
+    label('held'),
+    'On hold',
+    'an enum value passes as itself, and case in the body is the dispatch'
+);
 
-SELECT
-    iif(typeof(parent_id) = 'null', 'ok', 'not ok')
-    || ' 7 - typeof reports the type of the value, not of the column'
-FROM records
-WHERE id = 1;
+SELECT ok(
+    'open'::record_state < 'done'::record_state,
+    'an enum orders by the order it was declared in, not alphabetically'
+);
 
-SELECT
-    iif(count(states.label) = 4, 'ok', 'not ok')
-    || ' 8 - a lookup table is the enum, and every record resolves in it'
-FROM records
-INNER JOIN states ON records.state = states.state;
+SELECT is(
+    (
+        SELECT kept
+        FROM totals()
+        WHERE state = 'open'
+    ),
+    2::bigint,
+    'a composite type names the fields of the row a function returns'
+);
 
-SELECT
-    iif(sum(CASE state WHEN 'open' THEN 1 ELSE 0 END) = 2, 'ok', 'not ok')
-    || ' 9 - case yields a value per branch, and iif is the two way form'
-FROM records;
+-- iteration: plpgsql has the loop that SQL does not, and a recursive cte is
+-- the same answer with nothing to accumulate in.
 
--- iteration: there are no loops. A recursive CTE walks a sequence it builds
--- as it goes, and a window function is how one row reads its neighbours.
+SELECT is(
+    sum_to(5),
+    15,
+    'plpgsql has a for loop, and the loop declares its own index'
+);
 
-WITH RECURSIVE counter (i) AS (
-    SELECT 1
-    UNION ALL
-    SELECT i + 1
-    FROM counter
-    WHERE i < 5
-)
+SELECT is(
+    (
+        WITH RECURSIVE counter (i) AS (
+            SELECT 1
+            UNION ALL
+            SELECT i + 1
+            FROM counter
+            WHERE i < 5
+        )
 
-SELECT
-    iif(sum(i) = 15, 'ok', 'not ok')
-    || ' 10 - a recursive cte is the loop, and its column is the index'
-FROM counter;
+        SELECT sum(i)
+        FROM counter
+    ),
+    15::bigint,
+    'a recursive cte is that loop again, with no variable to carry a total'
+);
 
-WITH ordered AS (
-    SELECT
-        amount,
-        lead(amount) OVER (ORDER BY id) AS next_amount
-    FROM records
-)
+-- functions: a body can catch what it raises, and it can state what it
+-- believes about its own data.
 
-SELECT
-    iif(next_amount = 5, 'ok', 'not ok')
-    || ' 11 - lead reads the following row without a second pass'
-FROM ordered
-WHERE amount = 3;
+SELECT is(
+    share(10, 0),
+    0,
+    'exception when catches inside the body, and the function still returns'
+);
 
--- functions: there are no first class functions and nothing to pass one to.
--- A view is the named, reusable query, and an aggregate is the fold.
+SELECT is(
+    checked_amount(1),
+    3,
+    'assert states an invariant, and passes for as long as it holds'
+);
 
-SELECT
-    iif(count(*) = 3, 'ok', 'not ok')
-    || ' 12 - a view is a stored query, read back exactly like a table'
-FROM totals;
+-- errors: raise ends the function where it stands and carries a code, which
+-- is what a caller matches on rather than the message.
 
-SELECT
-    iif(sum(amount) = 15, 'ok', 'not ok')
-    || ' 13 - an aggregate folds every row down to one value'
-FROM records;
+SELECT throws_ok(
+    $$SELECT hold(99)$$,
+    'P0001',
+    'no record 99',
+    'raise exception ends the function and carries a sqlstate with it'
+);
 
--- errors: nothing is raised and nothing catches. A constraint refuses the
--- row, and without OR IGNORE that refusal stops the whole script where it
--- stands, which is why the plan line above is the safety net.
+-- gotchas: ASSERT is not a check you can count on being there. One setting
+-- turns every one of them off at once, and nothing tells you the invariant
+-- stopped being tested. The third argument keeps it inside this transaction.
 
-INSERT OR IGNORE INTO records (id, name, state, amount)
-VALUES (1, 'clash', 'open', 1);
+DO $$
+BEGIN
+    PERFORM set_config('plpgsql.check_asserts', 'off', true);
+END
+$$;
 
-SELECT
-    iif(changes() = 0, 'ok', 'not ok')
-    || ' 14 - a constraint refuses the row and changes() counts none';
+SELECT is(
+    checked_amount(4),
+    0,
+    'assert is skipped entirely when plpgsql.check_asserts is off'
+);
 
--- gotchas: NULL is the absence of a value rather than a value, so comparing
--- against it is unknown rather than false. NOT IN over a column holding one
--- is therefore unknown for every row, and the query quietly returns nothing.
+SELECT finish FROM finish();
 
-SELECT
-    iif(count(*) = 0, 'ok', 'not ok')
-    || ' 15 - not in over a nullable column matches no rows at all'
-FROM records
-WHERE records.id NOT IN (SELECT child.parent_id FROM records AS child);
+ROLLBACK;

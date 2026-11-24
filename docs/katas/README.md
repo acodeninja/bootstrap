@@ -98,7 +98,7 @@ is what comes after.
 | `scala` | Pattern matching | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
 | `scheme` | Lisp | [word-wrap](word-wrap.md) → [roman-numerals](roman-numerals.md) → [test-framework](test-framework.md) |
 | `smalltalk` | Message passing | [roman-numerals](roman-numerals.md) → [tennis](tennis.md) → [test-framework](test-framework.md) |
-| `sql` | Declarative | [bowling](bowling.md) → [turnstile](turnstile.md) |
+| `sql` | Declarative | [bowling](bowling.md) → [turnstile](turnstile.md) → [test-framework](test-framework.md) |
 | `swift` | Mainstream | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
 | `tcl` | Text processing | [word-wrap](word-wrap.md) → [string-calculator](string-calculator.md) |
 | `typescript` | Mainstream | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |

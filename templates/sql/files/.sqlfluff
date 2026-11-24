@@ -1,6 +1,11 @@
 [sqlfluff]
-dialect = sqlite
+dialect = postgres
 
 # raw, not the default jinja: these files are SQL rather than templates, and a
 # literal {{ in a string would otherwise be read as a placeholder.
 templater = raw
+
+# Spelled out rather than left to "consistent": the name of a type this project
+# declares is lower case, so one upper case builtin would flip the whole file.
+[sqlfluff:rules:capitalisation.types]
+capitalisation_policy = lower

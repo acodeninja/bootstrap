@@ -1,12 +1,26 @@
-SELECT '1..2';
+BEGIN;
 
-SELECT
-    iif(count(*) = 4, 'ok', 'not ok')
-    || ' 1 - the schema loads with four records'
-FROM records;
+SELECT plan(2);
 
-SELECT
-    iif(kept = 2 AND amount = 10, 'ok', 'not ok')
-    || ' 2 - the totals view sums the records sharing a state'
-FROM totals
-WHERE state = 'open';
+SELECT is(
+    (
+        SELECT count(*)::integer
+        FROM records
+    ),
+    4,
+    'the schema loads, seeded with four records'
+);
+
+SELECT is(
+    (
+        SELECT kept
+        FROM totals()
+        WHERE state = 'open'
+    ),
+    2::bigint,
+    'the totals function folds the records that share a state'
+);
+
+SELECT finish FROM finish();
+
+ROLLBACK;

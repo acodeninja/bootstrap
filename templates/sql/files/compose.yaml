@@ -1,6 +1,23 @@
 name: {{PROJECT_SLUG}}
 
 services:
+  # The only template with a second service. pgTAP and plpgsql_check are
+  # server extensions, so the server runs the image this project builds
+  # rather than the official one untouched. trust, because the port is never
+  # published and a throwaway kata database has no secret to keep.
+  db:
+    image: ghcr.io/acodeninja/bootstrap/sql:main
+    environment:
+      POSTGRES_DB: {{PROJECT_SNAKE}}
+      POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d {{PROJECT_SNAKE}}']
+      interval: 2s
+      timeout: 5s
+      retries: 15
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
   dev:
     build:
       context: .
@@ -9,12 +26,24 @@ services:
       cache_to:
         - type=inline
     image: ghcr.io/acodeninja/bootstrap/sql:main
+    # The base image's entrypoint exists to start a server. This service runs
+    # psql and sqlfluff, so it has to reach them directly.
+    entrypoint: []
     working_dir: /work
     init: true
     user: '${DOCKER_UID:-1000}:${DOCKER_GID:-1000}'
+    environment:
+      PGHOST: db
+      PGUSER: postgres
+      PGDATABASE: {{PROJECT_SNAKE}}
+      PGOPTIONS: -c search_path=public,tap
+    depends_on:
+      db:
+        condition: service_healthy
     volumes:
       - .:/work
       - cache:/cache
 
 volumes:
   cache:
+  pgdata:

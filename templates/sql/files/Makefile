@@ -6,24 +6,25 @@ RUN := docker compose run --rm dev
 # $(info) is make's own, so the text and its columns survive cmd.exe, which
 # prints the quotes echo needs; @cd . stops "Nothing to be done for 'help'".
 help:
-	$(info make test    Run the test suite)
-	$(info make lint    Check every statement with sqlfluff)
+	$(info make test    Run every test file through pg_prove)
+	$(info make lint    Check every statement, and every function body)
 	$(info make fmt     Reformat every statement with sqlfluff)
-	$(info make build   Nothing to build: SQLite reads the schema as it runs)
-	$(info make shell   Open a shell in the container)
+	$(info make build   Load src/ into a fresh schema)
+	$(info make shell   Open a shell beside a running database)
 	@cd .
 
 test:
-	$(RUN) tap-run
+	$(RUN) with-pg pg_prove --ext .sql tests/
 
 lint:
 	$(RUN) sqlfluff lint .
+	$(RUN) with-pg pg-check
 
 fmt:
 	$(RUN) sqlfluff format .
 
 build:
-	@echo "nothing to build: SQLite reads the schema as it runs"
+	$(RUN) with-pg
 
 shell:
 	$(RUN) bash
