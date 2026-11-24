@@ -996,6 +996,16 @@ jobs:
             done
           done
 
+          # The README recommends a language to try for each daily driver, and
+          # those ids are hand-written. One naming a template that does not
+          # exist is an instruction a reader cannot follow.
+          for id in $(sed -n '/^## Which one to try/,/^## Status/p' README.md \
+                        | grep '^| [a-z]' \
+                        | awk -F'|' '{print $3, $4, $5}' | tr -d '`'); do
+            [ -d "templates/$id" ] \
+              || note README.md "recommends a template that does not exist: $id"
+          done
+
           exit $status
 
   # bootstrap.ps1 had no job at all: six hundred lines of the product that
