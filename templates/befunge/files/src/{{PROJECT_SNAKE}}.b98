@@ -1,7 +1,22 @@
 v
- The project's own program. Befunge has no import of any kind, so nothing
- here can be called from anywhere else: run it on its own with make shell,
- and then cfunge src/{{PROJECT_SNAKE}}.b98
+ The project's own program, and the nearest thing Befunge has to a greeter.
+ There is no import of any kind, so nothing here can be called from anywhere
+ else -- not from a test, not from another file. A program is the only unit
+ there is, and `make shell` then `cfunge src/{{PROJECT_SNAKE}}.b98` runs this
+ one.
+ 
+ These lines are a comment, and Befunge has no comment syntax. They survive
+ because the instruction pointer never reaches them: it starts at the top
+ left heading right, the v in column 0 above turns it downward, and it then
+ travels down column 0 through the space that each of these lines begins
+ with. A space is the no-op. Lose that leading space and the line is code.
+ 
+ So a column is semantics here. The > below turns the pointer right again, it
+ runs to the v at the far end, comes back leftward along the row of < pushing
+ Hello, Befunge! on to the stack one character at a time, and the last row
+ prints until it meets the 0 that was pushed underneath. The pointer's path
+ is the control flow and the layout is the program, which is why make fmt
+ refuses to do anything at all: moving a cell would change what runs.
 >                                                                             v
 v"Hello, Befunge!"0<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 >>:#,_a,0q

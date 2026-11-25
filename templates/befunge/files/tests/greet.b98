@@ -1,6 +1,27 @@
 v
- A second test, so that deleting the kitchen sink leaves a suite behind.
- The machinery is the one tests/kitchen_sink.b98 explains at the top.
+ A test, and the suite that survives deleting the kitchen sink. Nothing names
+ this file: make test hands every tests/*.b98 to cfunge in turn and reads the
+ TAP each one prints, so a test file is found by existing. Run them all with
+ make test.
+ 
+ Befunge has no test framework and no way to write one, because it has no
+ functions -- so a test here is a program that prints TAP and exits with the
+ number of assertions that failed. The 1..2 two rows below is the plan, and
+ adding an assertion means changing that number by hand: nothing counts for
+ you, and a plan that disagrees with the ok lines is a failure of its own.
+ 
+ An assertion is arithmetic rather than a call. Each row leaves a flag, !!
+ normalises it to 0 or 1, and that one flag does two jobs: it is added to the
+ failure count, and multiplied by 4 it tells j how many cells to skip. The
+ four cells in question are $ drops, and what they drop is the not at the
+ front of the message -- so one string prints ok when the test passed and
+ not ok when it did not. The text in the quotes is the name of the test, and
+ it is what a failure shows you, so write it to read on its own.
+ 
+ The running count lives in the cell at 0,-1, one row above the playfield.
+ That is deliberate: a cell inside the grid is a cell this file might grow
+ into, and the kitchen sink beside this one records the time that happened.
+ 01-0p writes it, 01-0g reads it, and the last row exits with it.
 >001-0p                                                                       v
 v"1..2"0<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 >>:#,_a,$                                                                     v
