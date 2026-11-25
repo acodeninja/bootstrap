@@ -4,6 +4,37 @@
 --
 -- Every file under src/ is loaded into a fresh public schema before the tests
 -- run, so a test sees all of this without naming the file it came from.
+--
+-- Comments are two hyphens to end of line, or the /* */ pair. Keep them under
+-- eighty characters: the linter counts a comment line like any other, and the
+-- formatter will reflow the statements around one. A comment must also not
+-- begin with the linter's own name, which it reads as an inline directive.
+
+-- The greeter, and the unit of work here is a function: a kata in this template
+-- is something like fizzbuzz(n integer) RETURNS text, tested by selecting from
+-- it. There is no module and no export list -- a function belongs to a schema,
+-- and public is the one every test can see.
+--
+-- LANGUAGE sql means the body is a query rather than a procedure. That is the
+-- form to reach for first; the functions further down this file are plpgsql,
+-- which is what you need once there is a variable, a loop or an exception
+-- handler involved.
+--
+-- IMMUTABLE promises the same arguments always give the same answer, so the
+-- planner may call it once instead of per row. STABLE and VOLATILE are the
+-- other two, and the default is VOLATILE: the safe, slow one.
+--
+-- The doubled dollar is dollar quoting, which is how a body is written without
+-- escaping every quote inside it. Any tag works, so a body that itself contains
+-- a doubled dollar can be wrapped in $body$ instead.
+CREATE FUNCTION greet(name text) RETURNS text
+LANGUAGE sql IMMUTABLE AS $$
+    -- A SQL function returns the result of its last query, so there is no
+    -- RETURN here. format is the readable way to build text -- || concatenates
+    -- too, but yields NULL if any operand is NULL, which is rarely what anybody
+    -- means.
+    SELECT format('Hello, %s!', name);
+$$;
 
 CREATE TYPE record_state AS ENUM ('open', 'held', 'done');
 

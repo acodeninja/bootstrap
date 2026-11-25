@@ -120,6 +120,7 @@ these are the ones that have actually broken something:
 | `elm` | elm-format is not configurable, moves comments, and enforces its own blank lines around top-level declarations. |
 | `dart` | `dart format` hard-wraps at 80 and rewraps `///`; lint is `--fatal-infos`. |
 | `lolcode` | `BTW` must begin a statement, and `src/` is spliced into each test with `HAI` and `KTHXBYE` stripped — a comment outside those markers is lost. |
+| `sql` | A comment may not **begin** with the word `sqlfluff`: the linter reads `-- sqlfluff…` as an inline configuration directive and warns that it cannot parse the sentence. The 80-column cap counts comment lines, and `sqlfluff format` reflows statements around them. |
 | `tcl` | `#` is a comment only where a command may begin. Inside a `switch` arm list or an `expr` body it is an argument. |
 | `zig` | `///` is a compile error anywhere but immediately before a declaration, and `//!` only at the top of a file. There is no block comment. |
 | `visualbasic` | No block comment exists; every line needs its own apostrophe, and a continuation underscore cannot be followed by one. |
