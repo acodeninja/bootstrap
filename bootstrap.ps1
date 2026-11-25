@@ -34,6 +34,7 @@ $script:TargetRoot = ''
 $script:TemplateRoot = ''
 $script:TemplateDir = ''
 $script:Display = ''
+$script:Greeter = ''
 $script:KitchenSink = ''
 $script:ProjectName = ''
 $script:ProjectSlug = ''
@@ -283,6 +284,8 @@ function Resolve-Template {
     }
     $script:Display = Get-ManifestValue $manifest 'DISPLAY_NAME'
     if ([string]::IsNullOrEmpty($script:Display)) { $script:Display = $script:TemplateId }
+    $script:Greeter = Get-ManifestValue $manifest 'GREETER'
+    if ([string]::IsNullOrEmpty($script:Greeter)) { $script:Greeter = 'the greeter under src/' }
     $script:KitchenSink = Get-ManifestValue $manifest 'KITCHEN_SINK'
     if ([string]::IsNullOrEmpty($script:KitchenSink)) { $script:KitchenSink = 'the kitchen sink file' }
 }
@@ -562,12 +565,18 @@ function Invoke-TestRun {
     }
 }
 
+# Two files, in the order somebody new should open them: how this language
+# writes a function and a test, then what else it gives you. The greeter's path
+# carries tokens where the sink's does not, so it goes through Expand-Tokens --
+# printing src/{{PROJECT_SNAKE}}.rs at somebody would be worse than saying
+# nothing.
 function Write-NextSteps {
     Write-Output ''
     Write-Output 'Ready. Next:'
     Write-Output "  cd $($script:Target)"
     Write-Output '  make test'
-    Write-Output "  read $($script:KitchenSink) for the language, then start the course in README.md"
+    Write-Output "  read $(Expand-Tokens $script:Greeter) for how a function and a test are written here"
+    Write-Output "  read $($script:KitchenSink) for what else the language gives you, then the course in README.md"
 }
 
 # docs/cli.md: running with no arguments is not a usage error, because

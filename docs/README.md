@@ -35,7 +35,8 @@ Build Summary: 5/5 steps succeeded; 16/16 tests passed
 Ready. Next:
   cd ../my-zig
   make test
-  read src/kitchen_sink.zig for the language, then start the course in README.md
+  read src/my_zig.zig for how a function and a test are written here
+  read src/kitchen_sink.zig for what else the language gives you, then the course in README.md
 ```
 
 You need Docker and `make`. You do not need Zig, and you do not need a clone of this

@@ -32,6 +32,7 @@ TARGET=
 TEMPLATE_DIR=
 TEMPLATE_ROOT=
 DISPLAY=
+GREETER=
 KITCHEN_SINK=
 PROJECT_NAME=
 PROJECT_SLUG=
@@ -279,6 +280,8 @@ resolve_template() {
   fi
   DISPLAY=$(manifest_value "$TEMPLATE_DIR/template.env" DISPLAY_NAME)
   [ -n "$DISPLAY" ] || DISPLAY=$TEMPLATE_ID
+  GREETER=$(manifest_value "$TEMPLATE_DIR/template.env" GREETER)
+  [ -n "$GREETER" ] || GREETER='the greeter under src/'
   KITCHEN_SINK=$(manifest_value "$TEMPLATE_DIR/template.env" KITCHEN_SINK)
   [ -n "$KITCHEN_SINK" ] || KITCHEN_SINK='the kitchen sink file'
 }
@@ -553,11 +556,17 @@ run_tests() {
       "the project is scaffolded at '$TARGET'; the output above says why"
 }
 
+# Two files, in the order somebody new should open them: how this language
+# writes a function and a test, then what else it gives you. The greeter's path
+# carries tokens where the sink's does not, so it goes through apply_tokens --
+# printing src/{{PROJECT_SNAKE}}.rs at somebody would be worse than saying
+# nothing.
 next_steps() {
   printf '\nReady. Next:\n'
   printf '  cd %s\n' "$TARGET"
   printf '  make test\n'
-  printf '  read %s for the language, then start the course in README.md\n' "$KITCHEN_SINK"
+  printf '  read %s for how a function and a test are written here\n' "$(apply_tokens "$GREETER")"
+  printf '  read %s for what else the language gives you, then the course in README.md\n' "$KITCHEN_SINK"
 }
 
 # Asking rather than failing is why docs/install.md documents

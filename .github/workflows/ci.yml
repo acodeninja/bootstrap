@@ -940,8 +940,16 @@ jobs:
               note "$id" "KITCHEN_SINK does not resolve: ${sink:-unset}"
             fi
 
+            # Both scripts print this path, and it is the only one of the two
+            # that carries tokens -- so a stale value here reaches a reader as
+            # an orientation line naming a file that is not there.
+            greeter=$(sed -n 's/^GREETER="\(.*\)"$/\1/p' "$env")
+            if [ -z "$greeter" ] || [ ! -e "$files/$greeter" ]; then
+              note "$id" "GREETER does not resolve: ${greeter:-unset}"
+            fi
+
             keys=$(sed -n 's/^\([A-Z_]*\)=.*/\1/p' "$env" | sort | tr '\n' ' ')
-            [ "$keys" = "DISPLAY_NAME KITCHEN_SINK " ] \
+            [ "$keys" = "DISPLAY_NAME GREETER KITCHEN_SINK " ] \
               || note "$id" "template.env declares: $keys"
 
             # The suite must not reach the build context: an image that can see

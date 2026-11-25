@@ -233,8 +233,15 @@ There is no companion `KITCHEN-SINK.md`. An earlier design had one, to keep the
 explanation out of the generated `README.md` — the README is about the project you are
 building, not the scaffolding you were handed, and it must survive the deletion
 unchanged. That constraint still holds; the orientation just moved somewhere that leaves
-no file behind at all. `bootstrap.sh` prints it as the last thing it does, naming the
-file and pointing at the course in the generated `README.md`.
+no file behind at all. `bootstrap.sh` prints it as the last thing it does, naming this
+file and the [greeter](greeter.md) beside it, and pointing at the course in the generated
+`README.md`.
+
+The greeter is the one shipped file this rule does not reach, and
+[greeter.md](greeter.md) says why: it is the test that survives deleting this one, so its
+comments are permanent and are written for somebody who will still be reading them in a
+month. It is also the only other place in a generated project where a comment is allowed
+to say what the line does.
 
 **The course section is the one exception to that rule, and it is deliberate.** A list
 of katas is closer to the scaffolding than to the project, so by the paragraph above it

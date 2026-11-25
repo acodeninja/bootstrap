@@ -84,11 +84,12 @@ or, from a clone, `./bootstrap.sh zig ../my-zig` — the same steps either way.
    cached. A failure exits `4`.
 7. **Run the test.** `make test`. This is the whole promise of the tool, so it runs by
    default and a failure exits `5`. Skipped with `--no-build`.
-8. **Print next steps.** The test command, the name of the kitchen-sink file, and a
-   pointer to the course in the project's own `README.md`. The orientation itself is
-   written to no file — see [kitchen-sink.md](kitchen-sink.md#it-is-meant-to-be-deleted)
-   — and the course is the one thing that does ship inside the project, as the last
-   section of its README.
+8. **Print next steps.** The test command, the two files worth reading in the order to
+   read them — the [greeter](greeter.md) for how this language writes a function and a
+   test, then the kitchen sink for what else it gives you — and a pointer to the course in
+   the project's own `README.md`. The orientation itself is written to no file — see
+   [kitchen-sink.md](kitchen-sink.md#it-is-meant-to-be-deleted) — and the course is the one
+   thing that does ship inside the project, as the last section of its README.
 
 Steps 6 and 7 are the slow ones and the only ones that touch the network.
 
