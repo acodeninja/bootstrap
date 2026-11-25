@@ -233,6 +233,13 @@ sorts after `tap`. `make fmt` would then rewrite a file that shipped formatted, 
 rejects. A template is only format-stable if it is stable for every project name, so try
 yours with a name at each end of the alphabet.
 
+`c` had the same bug for longer, against `unity.h`, and nothing caught it: CI scaffolds
+into `../scaffold`, and `scaffold.h` sorts before `unity.h`, so the shipped order was
+correct for the one name the matrix ever used. It surfaced the first time somebody
+scaffolded a project named later in the alphabet. Both templates now keep the blank line
+and say why in a comment beside it — `cpp` was already correct against `doctest.h` and
+carries the same note.
+
 CI bootstraps into `../scaffold` rather than `../out` for this reason: the matrix should
 exercise a realistic project name, not an adversarial one.
 
