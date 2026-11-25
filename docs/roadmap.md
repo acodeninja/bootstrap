@@ -133,16 +133,19 @@ nothing, and `test` is the one that reports counts a driver can exit on.
 4. The `kitchen-sink` file has every section, no more than fifteen assertions, and all
    of them pass, per [kitchen-sink.md](kitchen-sink.md). The errors slot uses the
    language's native failure idiom; the gotcha is genuinely specific to this language.
-5. Deleting the kitchen sink — the file at `KITCHEN_SINK`, plus any build-script block
+5. The greeter at `GREETER` and its test answer all five of
+   [greeter.md](greeter.md#five-things-and-nothing-else)'s questions, in this language's
+   own idiom rather than a port of another template's, and survive `make fmt` unchanged.
+6. Deleting the kitchen sink — the file at `KITCHEN_SINK`, plus any build-script block
    that names it — leaves a project that still builds.
-6. The Makefile calls no host tool but `docker`.
-7. Any vendored code is confined to `vendor/`, version-pinned in a header comment,
+7. The Makefile calls no host tool but `docker`.
+8. Any vendored code is confined to `vendor/`, version-pinned in a header comment,
    excluded from lint and fmt, and its licence named in the generated `README.md`.
-8. `grep -rn '{{[A-Z_]\{2,\}}}' <generated>` finds nothing. Not a bare `{{` — that
+9. `grep -rn '{{[A-Z_]\{2,\}}}' <generated>` finds nothing. Not a bare `{{` — that
    also matches the `${{ secrets... }}` every template's CI workflow ships.
-9. CI is green.
-10. A row in [languages.md](languages.md).
-11. One commit: `feat: add <id> template`.
+10. CI is green.
+11. A row in [languages.md](languages.md).
+12. One commit: `feat: add <id> template`.
 
 ## Commits
 
