@@ -93,6 +93,13 @@ $ make test
 
 Write the comments, run that, and take the formatter's answer rather than arguing with it.
 
+Three templates were done first, chosen to break: `java` for the strictest linter and
+formatter in the set, `forth` for a hand-rolled TAP runner whose assertion syntax and
+comment syntax collide, and `befunge` for having no comment syntax at all. All three pass
+`make lint`, leave `make fmt` with nothing to do, and still pass with the sink deleted —
+`befunge` went from seven rows to twenty-two and still prints its greeting. Nothing in the
+set is harder than those three, so the procedure above is known to be sufficient.
+
 ### What bites, by language
 
 Twenty-five templates have no formatter at all and are unconstrained. The rest are, and
@@ -100,11 +107,11 @@ these are the ones that have actually broken something:
 
 | Row | What happens |
 | --- | ------------ |
-| `befunge` | **There is no comment syntax.** Prose survives only because the pointer never reaches it: the file opens `v` in column 0 and every prose line begins with a space. A column is semantics, `make fmt` says "moving a cell changes the program", and the sink's header records a bug where the file grew past row 50 and `p` began overwriting the suite. Adding rows can corrupt state cells. |
+| `befunge` | **There is no comment syntax.** Prose survives only because the pointer never reaches it: the file opens `v` in column 0, so the pointer travels down column 0 and a leading space on every prose line is the no-op it passes through. Prose therefore goes **between that opening `v` and the first `>` row**, and nowhere else — the `>`/`v`/`<` rows below it are a coupled routing block. A column is semantics, `make fmt` says "moving a cell changes the program", and the sink's header records a bug where the file grew past row 50 and `p` began overwriting the suite. Both of this template's files keep their count at `0,-1`, one row above the playfield, which is what makes growing them safe at all. |
 | `ocaml`, `ats`, `fsharp`, `pascal` | A comment is delimited by `(*` and `*)`, and the lexer still reads character literals inside it — so an apostrophe in English prose breaks the build. Write around it. |
-| `java` | Google checkstyle at `severity=error`: a 100-column cap, `CommentsIndentation`, four Javadoc-asterisk rules, `SummaryJavadoc` (no lowercase start), `JavadocParagraph`, and a rule that **bans banner comments**. `spotlessApply` reflows Javadoc. |
+| `java` | Google checkstyle at `severity=error`: a 100-column cap, `CommentsIndentation`, four Javadoc-asterisk rules, `SummaryJavadoc` (no lowercase start), `JavadocParagraph`, and a rule that **bans banner comments**. `spotlessApply` reflows Javadoc. **Use `//` and never `/** */`**: every one of those Javadoc rules then has nothing to find, and google-java-format leaves a `//` block at the right indentation alone. Keep comments out of an annotation list too — above `@Test`, not between it and `@DisplayName`. |
 | `basic` | A comment is a numbered `REM`, and line numbers are the call targets — the greeter is at 9100 and the TAP reporter at 8000. Commenting consumes the address space. |
-| `forth` | `}T` takes the rest of its line as the test name, so **no comment shares a line with an assertion**. `\` and `(` each need a following space. |
+| `forth` | `}T` takes the rest of its line as the test name, so **no comment shares a line with an assertion** — a `\` there is swallowed into the name rather than ignored. Prose goes above the definition or the assertion it describes. `\` and `(` each need a following space, and the `( addr u -- addr u )` stack effect is documentation and syntax at once: a stray `)` inside it ends it early. |
 | `intercal` | The only comment is `DON'T`, and the runner scrapes `DON'T ok - ` as TAP. Prose must never begin that way. |
 | `objc` | clang-format LLVM at 100 columns, so `ReflowComments` and `SortIncludes` are both on. The blank line between `#import "tap.h"` and the project's own header is load-bearing and must not be filled. |
 | `r` | lintr runs with defaults, so `commented_code_linter` fails on a comment that parses as R. A worked call in a comment is a lint error. |
