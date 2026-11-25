@@ -1,10 +1,33 @@
+# tcltest ships with Tcl, so there is nothing to install. `package require`
+# loads it and `namespace import` brings its commands into scope unqualified,
+# which is what lets `test` below be written bare.
 package require tcltest
 namespace import ::tcltest::*
 
+# Sourcing the code under test. The path is built rather than written: `info
+# script` is this file, `file dirname` is its directory, and `file join` puts the
+# pieces together with the right separator -- so the suite runs from anywhere.
 source [file join [file dirname [info script]] .. src {{PROJECT_SNAKE}}.tcl]
 
+# Nothing names this file. `make test` runs every tests/*.test, so a test file is
+# found by that extension and deleting one is safe. Run them with `make test`.
+#
+# `test` takes a name, a description, and then options. The first argument is an
+# identifier you would see in a summary line and the second is the sentence a
+# reader wants -- so the pair is `greet-1` plus the description, and the
+# description is what to write carefully.
+#
+# -body is the code to run and -result is what it should produce. The comparison
+# is exact string equality by default, and -match can make it a glob or a
+# regexp instead.
+#
+# Both are in braces rather than quotes, which matters: braces pass the text
+# through unsubstituted, so the body is evaluated when the test runs rather than
+# interpolated now. A hash inside a braced body is not a comment.
 test greet-1 {a greeting addresses the name it is given} -body {
     {{PROJECT_SNAKE}}::greet world
 } -result {Hello, world!}
 
+# Prints the summary and sets the exit status. Without it a failing test reports
+# itself and the process still exits zero.
 cleanupTests
