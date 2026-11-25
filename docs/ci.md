@@ -349,6 +349,17 @@ The course is the only one of those guarding a duplicate rather than a contract.
 generated project carries no copy of `docs/`, so its README has to repeat the list, and
 two hand-written copies of one list drift.
 
+It reads three columns of that row — the starter kata, the feature kata and the
+follow-ons — and prefixes [Hello, World](katas/hello-world.md), which is step 1 in all 64
+and so has no column. An empty read is itself a failure: without that assertion, a
+renamed column would leave every README matching nothing and passing.
+
+The same step walks the other direction, which nothing did before: every brief in
+`docs/katas/` has to be linked from that README. The fifty-four
+[feature katas](katas/README.md#the-feature-katas) are written here rather than cited from
+a catalogue, so a course edit that orphans one would otherwise leave a file nobody reaches
+and nothing reports.
+
 Those two diffs are the only things that have ever compared the two entry points. They are
 kept in step by hand, and a drift between them would otherwise be invisible. Each side
 generates its list in its own shell: `bash` invoked from PowerShell is whatever is first

@@ -1,4 +1,4 @@
-# repeat-until
+# Repeat until
 
 Tcl has no `repeat ... until`. Add one, so that `repeat { ... } until { ... }` runs the body
 at least once and then keeps going while the condition is false. It must see and set the

@@ -23,8 +23,12 @@ passing assertions covering the collections, strings, types, iteration, function
 error handling you need to go and solve a [kata](docs/katas/), plus the one quirk most
 likely to cost you an hour — and nothing else. Delete the file when you start real work.
 
-It also ships a **course**: four or five katas in order, picked for that language and
-listed in its `README.md`. The catalogue behind it is [docs/katas](docs/katas/).
+It also ships a **course**: three katas in order, listed in its `README.md`. Hello, World,
+which arrives already solved and commented so you can read how a function and a test are
+written here; a starter kata; and then one chosen so that the thing this language is *for*
+is the thing that solves it — ownership in Rust, effect rows in Koka, reference
+capabilities in Pony. Follow-ons after that, and the catalogue behind it all is
+[docs/katas](docs/katas/).
 
 ## Prerequisites
 

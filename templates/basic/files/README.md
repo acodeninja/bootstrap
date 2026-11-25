@@ -97,13 +97,13 @@ nothing like the real cause.
 
 ## Course
 
-Five katas, in this order, each introducing one thing the last one did not:
+Three katas, in this order, each introducing one thing the last one did not:
 
-1. [Hello, World](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/hello-world.md) — the toolchain, not you
+1. [Hello, World](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/hello-world.md) — the toolchain, not you, and already solved beside this file
 2. [FizzBuzz](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/fizzbuzz.md) — a loop, a branch, and your first test
-3. [Leap years](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/leap-years.md) — arithmetic and branching, no strings needed
-4. [Roman numerals](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/roman-numerals.md) — an ordered table, and a string you built
-5. [Bowling](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/bowling.md) — index arithmetic, and reading ahead of yourself
+3. [Dispatch table](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/computed-gosub.md) — a jump whose destination you work out
+
+Then, when the group wants more: [Leap years](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/leap-years.md) → [Roman numerals](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/roman-numerals.md) → [Bowling](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/bowling.md).
 
 The rest of the catalogue, and why this language gets these, is in
 [docs/katas](https://github.com/acodeninja/bootstrap/tree/main/docs/katas).

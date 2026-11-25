@@ -67,12 +67,13 @@ nothing like the real cause.
 
 ## Course
 
-Four katas, in this order, each introducing one thing the last one did not:
+Three katas, in this order, each introducing one thing the last one did not:
 
-1. [Hello, World](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/hello-world.md) — the toolchain, not you
-2. [FizzBuzz](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/fizzbuzz.md) — a loop, a branch, and your first test
-3. [Bowling](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/bowling.md) — index arithmetic, and reading ahead of yourself
-4. [Turnstile](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/turnstile.md) — a state machine, and a transition that carries an action
+1. [Hello, World](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/hello-world.md) — the toolchain, not you, and already solved beside this file
+2. [Leap years](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/leap-years.md) — arithmetic and branching, no strings needed
+3. [A fair bit, and a pair that agree](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/superposition.md) — superposition, entanglement, and an operation run backwards
+
+Then, when the group wants more: [Bowling](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/bowling.md) → [Turnstile](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/turnstile.md).
 
 The rest of the catalogue, and why this language gets these, is in
 [docs/katas](https://github.com/acodeninja/bootstrap/tree/main/docs/katas).

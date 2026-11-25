@@ -983,20 +983,39 @@ jobs:
             # The course in each README repeats its row in docs/katas, because a
             # generated project carries no copy of docs/. Nothing but CI can keep
             # two hand-written copies of the same list in step.
+            #
+            # Three columns of that row are the course: the starter kata, the
+            # feature kata, and the follow-ons. Step 1 is Hello, World in all 64,
+            # so the table carries no column for it and it is prefixed here. An
+            # empty $indexed means the row is missing or the columns moved, which
+            # would otherwise let every README match nothing and pass.
             course=$(sed -n '/^## Course/,/^## Licence/p' "$files/README.md" \
                        | grep -o 'docs/katas/[a-z-]*\.md' \
                        | sed 's#.*/##; s#\.md$##' | tr '\n' ' ')
             indexed=$(grep "^| \`$id\` |" docs/katas/README.md \
-                        | awk -F'|' '{print $4}' \
+                        | awk -F'|' '{print $4, $5, $6}' \
                         | grep -o '([a-z-]*\.md)' | tr -d '()' \
                         | sed 's#\.md$##' | tr '\n' ' ')
-            [ "$course" = "hello-world fizzbuzz $indexed" ] \
+            [ -n "$indexed" ] || note "$id" "docs/katas lists no course row"
+            [ "$course" = "hello-world $indexed" ] \
               || note "$id" "the README course is not the row docs/katas lists"
 
             for kata in $course; do
               [ -e "docs/katas/$kata.md" ] \
                 || note "$id" "the course links a missing brief: $kata"
             done
+          done
+
+          # The other direction, which nothing checked: a brief no row links is a
+          # brief that rots unread. The fifty-four feature katas are written here
+          # rather than cited from a catalogue, so this is the only thing that
+          # would notice one being orphaned by a course edit.
+          for brief in docs/katas/*.md; do
+            name=${brief#docs/katas/}
+            name=${name%.md}
+            case "$name" in README) continue ;; esac
+            grep -qF "($name.md)" docs/katas/README.md \
+              || note docs/katas "nothing links the brief: $name"
           done
 
           # The README recommends a language to try for each daily driver, and

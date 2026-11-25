@@ -139,12 +139,13 @@ nothing like the real cause.
 
 ## Course
 
-Four katas, in this order, each introducing one thing the last one did not:
+Three katas, in this order, each introducing one thing the last one did not:
 
-1. [Hello, World](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/hello-world.md) — the toolchain, not you
+1. [Hello, World](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/hello-world.md) — the toolchain, not you, and already solved beside this file
 2. [FizzBuzz](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/fizzbuzz.md) — a loop, a branch, and your first test
-3. [Leap years](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/leap-years.md) — arithmetic and branching, no strings needed
-4. [Roman numerals](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/roman-numerals.md) — an ordered table, and a string you built
+3. [Leap years, proved](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/proofs-beside-the-code.md) — a claim about every input, not a dozen cases
+
+Then, when the group wants more: [Leap years](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/leap-years.md) → [Roman numerals](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/roman-numerals.md).
 
 The rest of the catalogue, and why this language gets these, is in
 [docs/katas](https://github.com/acodeninja/bootstrap/tree/main/docs/katas).

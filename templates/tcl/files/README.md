@@ -106,12 +106,13 @@ nothing like the real cause.
 
 ## Course
 
-Four katas, in this order, each introducing one thing the last one did not:
+Three katas, in this order, each introducing one thing the last one did not:
 
-1. [Hello, World](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/hello-world.md) — the toolchain, not you
+1. [Hello, World](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/hello-world.md) — the toolchain, not you, and already solved beside this file
 2. [FizzBuzz](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/fizzbuzz.md) — a loop, a branch, and your first test
-3. [Word wrap](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/word-wrap.md) — splitting a string, and recursion
-4. [String calculator](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/string-calculator.md) — requirements that keep arriving, and errors reported together
+3. [Repeat until](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/everything-is-a-string.md) — a control structure of your own, in the caller's frame
+
+Then, when the group wants more: [Word wrap](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/word-wrap.md) → [String calculator](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/string-calculator.md).
 
 The rest of the catalogue, and why this language gets these, is in
 [docs/katas](https://github.com/acodeninja/bootstrap/tree/main/docs/katas).

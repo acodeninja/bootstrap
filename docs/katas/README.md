@@ -5,7 +5,7 @@ answer. This directory holds two things: **a course for each of the 64 templates
 index of every kata the sources below carry, so a course is a path through a catalogue
 rather than a list somebody had to invent.
 
-Twenty-one katas have a brief here. The rest are in [the catalogue](#the-catalogue) with
+Seventy-five katas have a brief here. The rest are in [the catalogue](#the-catalogue) with
 their sources, which is all a kata needs — a brief exists where a course sends somebody.
 
 Briefs restate the problem and say what it teaches. **None of them contains a solution or
@@ -18,92 +18,103 @@ trade.
 
 Four rules, and they are what make 64 courses read as one system.
 
-1. **Step 1 is always [Hello, World](hello-world.md).** It tests the toolchain, not the
-   reader: build, run, output, and where the suite lives.
-2. **Step 2 is always [FizzBuzz](fizzbuzz.md).** The first loop, branch, division and
-   string output — and the first test the reader writes rather than reads. That last part
-   is why it is not skippable on the fourteen rows whose runner is hand-rolled TAP instead
-   of a framework: learning to add an assertion is the first real skill there.
-3. **Steps 3 to 5 introduce one new capability class each**, in the order the language
-   makes them available.
-4. **A course stops where the language stops.** No step needs a primitive the language
-   lacks, which is why some courses are four steps and two are three. The reason is in
-   each brief, under *Not available in*.
+1. **Step 1 is always [Hello, World](hello-world.md)**, and it is the one step that ships
+   solved. Every project carries a `greet` function and a test for it, commented for
+   exactly this purpose — see [greeter.md](../greeter.md). The reader reads the answer,
+   runs it, breaks it, then writes their own. It tests the toolchain, not the reader.
+2. **Step 2 is a starter kata**, and it is [FizzBuzz](fizzbuzz.md) on fifty-eight rows:
+   the first loop, branch, division and string output, and the first test the reader
+   writes rather than reads. Six rows take [leap years](leap-years.md) instead, because
+   they have no usable string or no division operator and FizzBuzz there is a sitting's
+   work rather than ten minutes — `arm32`, `asp`, `befunge`, `intercal`, `lolcode` and
+   `qsharp`.
+3. **Step 3 is a feature kata**: a small problem chosen so that the thing this language is
+   *for* is the thing that solves it. Fifty-four of them, listed in
+   [the feature katas](#the-feature-katas) below, and they are the step that stops a Rust
+   course being a Java course with different punctuation.
+4. **Then the follow-ons**, three katas from the language's track, which is where the
+   course used to end. They are suggestions rather than steps: the group picks up
+   whichever it fancies, and the catalogue is right behind them.
 
-A course is three to five katas because that is a week of evenings, not a syllabus. When
-it runs out, the catalogue is right there.
+Three steps, because that is an evening each and a week in total. The old five-step course
+is still here — its last three entries are the follow-ons.
+
+A course stops where the language stops. No step needs a primitive the language lacks,
+which is why some rows have two follow-ons and `befunge` has one. The reason is in each
+brief, under *Not available in*.
 
 ## The courses
 
-Every course starts [Hello, World](hello-world.md) → [FizzBuzz](fizzbuzz.md). This table
-is what comes after.
+Every course starts [Hello, World](hello-world.md). This table is what comes after, and it
+is the source the CI check reads: each template's `README.md` repeats its own row, and
+nothing but CI can keep two hand-written copies of one list in step.
 
-| id | track | then |
-| -- | ----- | ---- |
-| `ada` | Systems | [roman-numerals](roman-numerals.md) → [number-to-lcd](number-to-lcd.md) → [mars-rover](mars-rover.md) |
-| `arm32` | Constrained | [leap-years](leap-years.md) → [roman-numerals](roman-numerals.md) |
-| `asp` | Declarative | [turnstile](turnstile.md) → [eight-queens](eight-queens.md) |
-| `ats` | Proof and effects | [leap-years](leap-years.md) → [roman-numerals](roman-numerals.md) |
-| `bash` | Text processing | [word-wrap](word-wrap.md) → [string-calculator](string-calculator.md) |
-| `basic` | Constrained | [leap-years](leap-years.md) → [roman-numerals](roman-numerals.md) → [bowling](bowling.md) |
-| `befunge` | Playfield | [langtons-ant](langtons-ant.md) |
-| `bqn` | Array and numeric | [bowling](bowling.md) → [game-of-life](game-of-life.md) |
-| `c` | Systems | [roman-numerals](roman-numerals.md) → [number-to-lcd](number-to-lcd.md) → [mars-rover](mars-rover.md) |
-| `clojure` | Lisp | [word-wrap](word-wrap.md) → [roman-numerals](roman-numerals.md) → [test-framework](test-framework.md) |
-| `cobol` | Constrained | [leap-years](leap-years.md) → [roman-numerals](roman-numerals.md) → [bowling](bowling.md) |
-| `commonlisp` | Lisp | [word-wrap](word-wrap.md) → [roman-numerals](roman-numerals.md) → [test-framework](test-framework.md) |
-| `cpp` | Systems | [roman-numerals](roman-numerals.md) → [number-to-lcd](number-to-lcd.md) → [mars-rover](mars-rover.md) |
-| `csharp` | Mainstream | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
-| `d` | Systems | [roman-numerals](roman-numerals.md) → [number-to-lcd](number-to-lcd.md) → [mars-rover](mars-rover.md) |
-| `dart` | Mainstream | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
-| `elixir` | Pattern matching | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
-| `elm` | Pattern matching | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
-| `erlang` | Pattern matching | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
-| `flix` | Pattern matching | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
-| `forth` | Constrained | [leap-years](leap-years.md) → [rpn-calculator](rpn-calculator.md) |
-| `fortran` | Array and numeric | [bowling](bowling.md) → [game-of-life](game-of-life.md) → [diamond](diamond.md) |
-| `fsharp` | Pattern matching | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
-| `gleam` | Pattern matching | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
-| `go` | Mainstream | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
-| `groovy` | Mainstream | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
-| `haskell` | Pattern matching | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
-| `haxe` | Mainstream | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
-| `intercal` | Playfield | [leap-years](leap-years.md) → [roman-numerals](roman-numerals.md) |
-| `java` | Mainstream | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
-| `javascript` | Mainstream | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
-| `julia` | Array and numeric | [bowling](bowling.md) → [game-of-life](game-of-life.md) → [diamond](diamond.md) |
-| `koka` | Proof and effects | [roman-numerals](roman-numerals.md) → [turnstile](turnstile.md) |
-| `kotlin` | Mainstream | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
-| `lean` | Proof and effects | [leap-years](leap-years.md) → [roman-numerals](roman-numerals.md) |
-| `lolcode` | Constrained | [leap-years](leap-years.md) → [roman-numerals](roman-numerals.md) |
-| `lua` | Mainstream | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
-| `mercury` | Declarative | [turnstile](turnstile.md) → [eight-queens](eight-queens.md) |
-| `nim` | Mainstream | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
-| `objc` | Message passing | [roman-numerals](roman-numerals.md) → [tennis](tennis.md) → [video-store](video-store.md) |
-| `ocaml` | Pattern matching | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
-| `octave` | Array and numeric | [bowling](bowling.md) → [game-of-life](game-of-life.md) → [diamond](diamond.md) |
-| `pascal` | Systems | [roman-numerals](roman-numerals.md) → [number-to-lcd](number-to-lcd.md) → [mars-rover](mars-rover.md) |
-| `perl` | Text processing | [word-wrap](word-wrap.md) → [string-calculator](string-calculator.md) → [diamond](diamond.md) |
-| `php` | Mainstream | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
-| `pony` | Pattern matching | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
-| `powershell` | Text processing | [word-wrap](word-wrap.md) → [string-calculator](string-calculator.md) → [diamond](diamond.md) |
-| `prolog` | Declarative | [turnstile](turnstile.md) → [eight-queens](eight-queens.md) |
-| `python` | Mainstream | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
-| `qsharp` | Proof and effects | [bowling](bowling.md) → [turnstile](turnstile.md) |
-| `r` | Array and numeric | [bowling](bowling.md) → [game-of-life](game-of-life.md) → [diamond](diamond.md) |
-| `racket` | Lisp | [word-wrap](word-wrap.md) → [roman-numerals](roman-numerals.md) → [test-framework](test-framework.md) |
-| `raku` | Text processing | [word-wrap](word-wrap.md) → [string-calculator](string-calculator.md) → [diamond](diamond.md) |
-| `ruby` | Mainstream | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
-| `rust` | Pattern matching | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
-| `scala` | Pattern matching | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
-| `scheme` | Lisp | [word-wrap](word-wrap.md) → [roman-numerals](roman-numerals.md) → [test-framework](test-framework.md) |
-| `smalltalk` | Message passing | [roman-numerals](roman-numerals.md) → [tennis](tennis.md) → [test-framework](test-framework.md) |
-| `sql` | Declarative | [bowling](bowling.md) → [turnstile](turnstile.md) → [test-framework](test-framework.md) |
-| `swift` | Mainstream | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
-| `tcl` | Text processing | [word-wrap](word-wrap.md) → [string-calculator](string-calculator.md) |
-| `typescript` | Mainstream | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
-| `visualbasic` | Mainstream | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
-| `zig` | Systems | [roman-numerals](roman-numerals.md) → [number-to-lcd](number-to-lcd.md) → [mars-rover](mars-rover.md) |
+| id | track | starter | feature kata | then |
+| -- | ----- | ------- | ------------ | ---- |
+| `ada` | Systems | [fizzbuzz](fizzbuzz.md) | [subtypes-and-contracts](subtypes-and-contracts.md) | [roman-numerals](roman-numerals.md) → [number-to-lcd](number-to-lcd.md) → [mars-rover](mars-rover.md) |
+| `arm32` | Constrained | [leap-years](leap-years.md) | [the-register-contract](the-register-contract.md) | [roman-numerals](roman-numerals.md) |
+| `asp` | Declarative | [leap-years](leap-years.md) | [choice-rules](choice-rules.md) | [turnstile](turnstile.md) → [eight-queens](eight-queens.md) |
+| `ats` | Proof and effects | [fizzbuzz](fizzbuzz.md) | [linear-types](linear-types.md) | [leap-years](leap-years.md) → [roman-numerals](roman-numerals.md) |
+| `bash` | Text processing | [fizzbuzz](fizzbuzz.md) | [exit-status-and-the-subshell](exit-status-and-the-subshell.md) | [word-wrap](word-wrap.md) → [string-calculator](string-calculator.md) |
+| `basic` | Constrained | [fizzbuzz](fizzbuzz.md) | [computed-gosub](computed-gosub.md) | [leap-years](leap-years.md) → [roman-numerals](roman-numerals.md) → [bowling](bowling.md) |
+| `befunge` | Playfield | [leap-years](leap-years.md) | [the-playfield-is-the-program](the-playfield-is-the-program.md) | [langtons-ant](langtons-ant.md) |
+| `bqn` | Array and numeric | [fizzbuzz](fizzbuzz.md) | [tacit-programming](tacit-programming.md) | [bowling](bowling.md) → [game-of-life](game-of-life.md) |
+| `c` | Systems | [fizzbuzz](fizzbuzz.md) | [tagged-unions-by-hand](tagged-unions-by-hand.md) | [roman-numerals](roman-numerals.md) → [number-to-lcd](number-to-lcd.md) → [mars-rover](mars-rover.md) |
+| `clojure` | Lisp | [fizzbuzz](fizzbuzz.md) | [persistent-data-structures](persistent-data-structures.md) | [word-wrap](word-wrap.md) → [roman-numerals](roman-numerals.md) → [test-framework](test-framework.md) |
+| `cobol` | Constrained | [fizzbuzz](fizzbuzz.md) | [condition-names](condition-names.md) | [leap-years](leap-years.md) → [roman-numerals](roman-numerals.md) → [bowling](bowling.md) |
+| `commonlisp` | Lisp | [fizzbuzz](fizzbuzz.md) | [syntactic-macros](syntactic-macros.md) | [word-wrap](word-wrap.md) → [roman-numerals](roman-numerals.md) → [test-framework](test-framework.md) |
+| `cpp` | Systems | [fizzbuzz](fizzbuzz.md) | [visiting-a-variant](visiting-a-variant.md) | [roman-numerals](roman-numerals.md) → [number-to-lcd](number-to-lcd.md) → [mars-rover](mars-rover.md) |
+| `csharp` | Mainstream | [fizzbuzz](fizzbuzz.md) | [query-over-a-sequence](query-over-a-sequence.md) | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
+| `d` | Systems | [fizzbuzz](fizzbuzz.md) | [code-that-runs-at-compile-time](code-that-runs-at-compile-time.md) | [roman-numerals](roman-numerals.md) → [number-to-lcd](number-to-lcd.md) → [mars-rover](mars-rover.md) |
+| `dart` | Mainstream | [fizzbuzz](fizzbuzz.md) | [absence-in-the-type](absence-in-the-type.md) | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
+| `elixir` | Pattern matching | [fizzbuzz](fizzbuzz.md) | [pattern-matched-function-heads](pattern-matched-function-heads.md) | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
+| `elm` | Pattern matching | [fizzbuzz](fizzbuzz.md) | [illegal-states-unrepresentable](illegal-states-unrepresentable.md) | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
+| `erlang` | Pattern matching | [fizzbuzz](fizzbuzz.md) | [actors-and-mailboxes](actors-and-mailboxes.md) | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
+| `flix` | Pattern matching | [fizzbuzz](fizzbuzz.md) | [datalog-in-an-expression](datalog-in-an-expression.md) | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
+| `forth` | Constrained | [fizzbuzz](fizzbuzz.md) | [defining-words](defining-words.md) | [leap-years](leap-years.md) → [rpn-calculator](rpn-calculator.md) |
+| `fortran` | Array and numeric | [fizzbuzz](fizzbuzz.md) | [whole-array-operations](whole-array-operations.md) | [bowling](bowling.md) → [game-of-life](game-of-life.md) → [diamond](diamond.md) |
+| `fsharp` | Pattern matching | [fizzbuzz](fizzbuzz.md) | [units-of-measure](units-of-measure.md) | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
+| `gleam` | Pattern matching | [fizzbuzz](fizzbuzz.md) | [no-loops-only-recursion](no-loops-only-recursion.md) | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
+| `go` | Mainstream | [fizzbuzz](fizzbuzz.md) | [channels-and-select](channels-and-select.md) | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
+| `groovy` | Mainstream | [fizzbuzz](fizzbuzz.md) | [closures-that-remember](closures-that-remember.md) | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
+| `haskell` | Pattern matching | [fizzbuzz](fizzbuzz.md) | [laziness](laziness.md) | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
+| `haxe` | Mainstream | [fizzbuzz](fizzbuzz.md) | [abstract-types](abstract-types.md) | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
+| `intercal` | Playfield | [leap-years](leap-years.md) | [come-from](come-from.md) | [roman-numerals](roman-numerals.md) |
+| `java` | Mainstream | [fizzbuzz](fizzbuzz.md) | [records-and-pattern-switch](records-and-pattern-switch.md) | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
+| `javascript` | Mainstream | [fizzbuzz](fizzbuzz.md) | [closures-that-remember](closures-that-remember.md) | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
+| `julia` | Array and numeric | [fizzbuzz](fizzbuzz.md) | [multiple-dispatch](multiple-dispatch.md) | [bowling](bowling.md) → [game-of-life](game-of-life.md) → [diamond](diamond.md) |
+| `koka` | Proof and effects | [fizzbuzz](fizzbuzz.md) | [effect-rows](effect-rows.md) | [roman-numerals](roman-numerals.md) → [turnstile](turnstile.md) |
+| `kotlin` | Mainstream | [fizzbuzz](fizzbuzz.md) | [absence-in-the-type](absence-in-the-type.md) | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
+| `lean` | Proof and effects | [fizzbuzz](fizzbuzz.md) | [proofs-beside-the-code](proofs-beside-the-code.md) | [leap-years](leap-years.md) → [roman-numerals](roman-numerals.md) |
+| `lolcode` | Constrained | [leap-years](leap-years.md) | [guard-before-you-leap](guard-before-you-leap.md) | [roman-numerals](roman-numerals.md) |
+| `lua` | Mainstream | [fizzbuzz](fizzbuzz.md) | [metatables](metatables.md) | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
+| `mercury` | Declarative | [fizzbuzz](fizzbuzz.md) | [modes-and-determinism](modes-and-determinism.md) | [turnstile](turnstile.md) → [eight-queens](eight-queens.md) |
+| `nim` | Mainstream | [fizzbuzz](fizzbuzz.md) | [code-that-runs-at-compile-time](code-that-runs-at-compile-time.md) | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
+| `objc` | Message passing | [fizzbuzz](fizzbuzz.md) | [messages-not-calls](messages-not-calls.md) | [roman-numerals](roman-numerals.md) → [tennis](tennis.md) → [video-store](video-store.md) |
+| `ocaml` | Pattern matching | [fizzbuzz](fizzbuzz.md) | [functors](functors.md) | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
+| `octave` | Array and numeric | [fizzbuzz](fizzbuzz.md) | [whole-array-operations](whole-array-operations.md) | [bowling](bowling.md) → [game-of-life](game-of-life.md) → [diamond](diamond.md) |
+| `pascal` | Systems | [fizzbuzz](fizzbuzz.md) | [values-and-references](values-and-references.md) | [roman-numerals](roman-numerals.md) → [number-to-lcd](number-to-lcd.md) → [mars-rover](mars-rover.md) |
+| `perl` | Text processing | [fizzbuzz](fizzbuzz.md) | [context](context.md) | [word-wrap](word-wrap.md) → [string-calculator](string-calculator.md) → [diamond](diamond.md) |
+| `php` | Mainstream | [fizzbuzz](fizzbuzz.md) | [match-and-enums](match-and-enums.md) | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
+| `pony` | Pattern matching | [fizzbuzz](fizzbuzz.md) | [reference-capabilities](reference-capabilities.md) | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
+| `powershell` | Text processing | [fizzbuzz](fizzbuzz.md) | [the-object-pipeline](the-object-pipeline.md) | [word-wrap](word-wrap.md) → [string-calculator](string-calculator.md) → [diamond](diamond.md) |
+| `prolog` | Declarative | [fizzbuzz](fizzbuzz.md) | [backtracking](backtracking.md) | [turnstile](turnstile.md) → [eight-queens](eight-queens.md) |
+| `python` | Mainstream | [fizzbuzz](fizzbuzz.md) | [generators](generators.md) | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
+| `qsharp` | Proof and effects | [leap-years](leap-years.md) | [superposition](superposition.md) | [bowling](bowling.md) → [turnstile](turnstile.md) |
+| `r` | Array and numeric | [fizzbuzz](fizzbuzz.md) | [whole-array-operations](whole-array-operations.md) | [bowling](bowling.md) → [game-of-life](game-of-life.md) → [diamond](diamond.md) |
+| `racket` | Lisp | [fizzbuzz](fizzbuzz.md) | [syntactic-macros](syntactic-macros.md) | [word-wrap](word-wrap.md) → [roman-numerals](roman-numerals.md) → [test-framework](test-framework.md) |
+| `raku` | Text processing | [fizzbuzz](fizzbuzz.md) | [grammars](grammars.md) | [word-wrap](word-wrap.md) → [string-calculator](string-calculator.md) → [diamond](diamond.md) |
+| `ruby` | Mainstream | [fizzbuzz](fizzbuzz.md) | [blocks-and-enumerable](blocks-and-enumerable.md) | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
+| `rust` | Pattern matching | [fizzbuzz](fizzbuzz.md) | [ownership-and-borrowing](ownership-and-borrowing.md) | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
+| `scala` | Pattern matching | [fizzbuzz](fizzbuzz.md) | [typeclasses-by-given](typeclasses-by-given.md) | [word-wrap](word-wrap.md) → [tennis](tennis.md) → [turnstile](turnstile.md) |
+| `scheme` | Lisp | [fizzbuzz](fizzbuzz.md) | [tail-recursion-and-continuations](tail-recursion-and-continuations.md) | [word-wrap](word-wrap.md) → [roman-numerals](roman-numerals.md) → [test-framework](test-framework.md) |
+| `smalltalk` | Message passing | [fizzbuzz](fizzbuzz.md) | [messages-not-calls](messages-not-calls.md) | [roman-numerals](roman-numerals.md) → [tennis](tennis.md) → [test-framework](test-framework.md) |
+| `sql` | Declarative | [fizzbuzz](fizzbuzz.md) | [set-at-a-time](set-at-a-time.md) | [bowling](bowling.md) → [turnstile](turnstile.md) → [test-framework](test-framework.md) |
+| `swift` | Mainstream | [fizzbuzz](fizzbuzz.md) | [absence-in-the-type](absence-in-the-type.md) | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
+| `tcl` | Text processing | [fizzbuzz](fizzbuzz.md) | [everything-is-a-string](everything-is-a-string.md) | [word-wrap](word-wrap.md) → [string-calculator](string-calculator.md) |
+| `typescript` | Mainstream | [fizzbuzz](fizzbuzz.md) | [narrowing-to-never](narrowing-to-never.md) | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
+| `visualbasic` | Mainstream | [fizzbuzz](fizzbuzz.md) | [query-over-a-sequence](query-over-a-sequence.md) | [roman-numerals](roman-numerals.md) → [bowling](bowling.md) → [mars-rover](mars-rover.md) |
+| `zig` | Systems | [fizzbuzz](fizzbuzz.md) | [code-that-runs-at-compile-time](code-that-runs-at-compile-time.md) | [roman-numerals](roman-numerals.md) → [number-to-lcd](number-to-lcd.md) → [mars-rover](mars-rover.md) |
 
 Each generated project carries its own course in its `README.md`, so nobody has to come
 back here to find it. This table is the place to see all 64 at once.
@@ -120,10 +131,12 @@ Tech list widened the pool:
   legal board is and letting the solver find the boards is the entire argument for having
   a logic language, and nothing on the original twelve asks for it.
 - **Leap years** needs no strings and no collections, which is exactly the position
-  `basic`, `lolcode`, `arm32`, `intercal`, `lean` and `ats` are in. It is the only step 3
-  in the catalogue with no missing-primitive caveat at all.
+  `arm32`, `asp`, `befunge`, `intercal`, `lolcode` and `qsharp` are in — so it is the
+  starter those six take in place of FizzBuzz. It is the only kata in the catalogue with
+  no missing-primitive caveat at all, which is what qualifies it for the job.
 
-Three single-row deviations earn the same note. `forth` ends on
+Three single-row deviations earn the same note, and all three are now a course's last
+follow-on rather than its final step. `forth` ends on
 [RPN calculator](rpn-calculator.md), because the kata is a stack machine and so is the
 language. `befunge` does [Langton's Ant](langtons-ant.md), because a 2D ant on a grid is
 the one thing a 2D playfield is better at than anything else here. `smalltalk` ends on
@@ -177,10 +190,97 @@ Starting code for the refactoring katas is **linked, never vendored**. Those rep
 carry their own licences, and [template-contract.md](../template-contract.md) already sets
 the bar for third-party code here: a link clears it and a copy opens a question.
 
+## The feature katas
+
+Fifty-four briefs, written here rather than followed out of a catalogue, because a
+catalogue is organised by problem and these are organised by language. A catalogue kata
+asks "can you score a bowling game"; a feature kata asks "can you do the one thing this
+language is better at than the other sixty-three".
+
+Four rules decided them:
+
+1. **One per feature, not one per language.** The brief is named after the feature, so the
+   rows that share one are sharing an honest fact rather than a template. Seven briefs are
+   shared, by two or three rows each; forty-seven belong to one row alone.
+2. **The feature has to be the answer, not decoration.** If the problem can be solved
+   comfortably without it, it is the wrong problem — so `rust` gets a tally three functions
+   need rather than a tally one function needs, and `go` gets two workers rather than one.
+3. **It has to fit in an evening**, like FizzBuzz and unlike Bowling. The feature is the
+   hard part; the problem must not be.
+4. **It must not duplicate a follow-on.** Exhaustive matching over a state machine is
+   already [tennis](tennis.md) and [turnstile](turnstile.md), which is why the eleven
+   pattern-matching rows get eleven *different* features instead of one brief about
+   matching.
+
+**Four are a first exposure rather than reinforcement**, and their briefs say so:
+`comptime` is nowhere in zig's kitchen sink, grammars are nowhere in raku's, koka's sink
+shows built-in effects but never a handler of your own, and lean's template contains no
+`theorem`, `decide` or `Prop` at all. The other fifty are grounded in something the
+reader has already seen pass.
+
+| Brief | Rows |
+| ----- | ---- |
+| [absence-in-the-type](absence-in-the-type.md) | `dart`, `kotlin`, `swift` |
+| [abstract-types](abstract-types.md) | `haxe` |
+| [actors-and-mailboxes](actors-and-mailboxes.md) | `erlang` |
+| [backtracking](backtracking.md) | `prolog` |
+| [blocks-and-enumerable](blocks-and-enumerable.md) | `ruby` |
+| [channels-and-select](channels-and-select.md) | `go` |
+| [choice-rules](choice-rules.md) | `asp` |
+| [closures-that-remember](closures-that-remember.md) | `groovy`, `javascript` |
+| [code-that-runs-at-compile-time](code-that-runs-at-compile-time.md) | `d`, `nim`, `zig` |
+| [come-from](come-from.md) | `intercal` |
+| [computed-gosub](computed-gosub.md) | `basic` |
+| [condition-names](condition-names.md) | `cobol` |
+| [context](context.md) | `perl` |
+| [datalog-in-an-expression](datalog-in-an-expression.md) | `flix` |
+| [defining-words](defining-words.md) | `forth` |
+| [effect-rows](effect-rows.md) | `koka` |
+| [everything-is-a-string](everything-is-a-string.md) | `tcl` |
+| [exit-status-and-the-subshell](exit-status-and-the-subshell.md) | `bash` |
+| [functors](functors.md) | `ocaml` |
+| [generators](generators.md) | `python` |
+| [grammars](grammars.md) | `raku` |
+| [guard-before-you-leap](guard-before-you-leap.md) | `lolcode` |
+| [illegal-states-unrepresentable](illegal-states-unrepresentable.md) | `elm` |
+| [laziness](laziness.md) | `haskell` |
+| [linear-types](linear-types.md) | `ats` |
+| [match-and-enums](match-and-enums.md) | `php` |
+| [messages-not-calls](messages-not-calls.md) | `objc`, `smalltalk` |
+| [metatables](metatables.md) | `lua` |
+| [modes-and-determinism](modes-and-determinism.md) | `mercury` |
+| [multiple-dispatch](multiple-dispatch.md) | `julia` |
+| [narrowing-to-never](narrowing-to-never.md) | `typescript` |
+| [no-loops-only-recursion](no-loops-only-recursion.md) | `gleam` |
+| [ownership-and-borrowing](ownership-and-borrowing.md) | `rust` |
+| [pattern-matched-function-heads](pattern-matched-function-heads.md) | `elixir` |
+| [persistent-data-structures](persistent-data-structures.md) | `clojure` |
+| [proofs-beside-the-code](proofs-beside-the-code.md) | `lean` |
+| [query-over-a-sequence](query-over-a-sequence.md) | `csharp`, `visualbasic` |
+| [records-and-pattern-switch](records-and-pattern-switch.md) | `java` |
+| [reference-capabilities](reference-capabilities.md) | `pony` |
+| [set-at-a-time](set-at-a-time.md) | `sql` |
+| [subtypes-and-contracts](subtypes-and-contracts.md) | `ada` |
+| [superposition](superposition.md) | `qsharp` |
+| [syntactic-macros](syntactic-macros.md) | `commonlisp`, `racket` |
+| [tacit-programming](tacit-programming.md) | `bqn` |
+| [tagged-unions-by-hand](tagged-unions-by-hand.md) | `c` |
+| [tail-recursion-and-continuations](tail-recursion-and-continuations.md) | `scheme` |
+| [the-object-pipeline](the-object-pipeline.md) | `powershell` |
+| [the-playfield-is-the-program](the-playfield-is-the-program.md) | `befunge` |
+| [the-register-contract](the-register-contract.md) | `arm32` |
+| [typeclasses-by-given](typeclasses-by-given.md) | `scala` |
+| [units-of-measure](units-of-measure.md) | `fsharp` |
+| [values-and-references](values-and-references.md) | `pascal` |
+| [visiting-a-variant](visiting-a-variant.md) | `cpp` |
+| [whole-array-operations](whole-array-operations.md) | `fortran`, `octave`, `r` |
+
 ## The catalogue
 
-103 katas. The twenty-one with a brief are the ones a course uses; the rest are here with
-their sources, which is what you need to pick one up.
+103 katas from the sources above. The twenty-one with a brief are the ones a course uses;
+the rest are here with their sources, which is what you need to pick one up. The
+fifty-four [feature katas](#the-feature-katas) are not in this table: nothing carries them
+but this repo.
 
 | Kata | Brief | Sources |
 | ---- | ----- | ------- |

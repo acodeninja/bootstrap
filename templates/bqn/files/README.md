@@ -111,12 +111,13 @@ nothing like the real cause.
 
 ## Course
 
-Four katas, in this order, each introducing one thing the last one did not:
+Three katas, in this order, each introducing one thing the last one did not:
 
-1. [Hello, World](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/hello-world.md) — the toolchain, not you
+1. [Hello, World](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/hello-world.md) — the toolchain, not you, and already solved beside this file
 2. [FizzBuzz](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/fizzbuzz.md) — a loop, a branch, and your first test
-3. [Bowling](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/bowling.md) — index arithmetic, and reading ahead of yourself
-4. [Game of Life](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/game-of-life.md) — a grid, and a generation computed from the last one
+3. [Mean, point-free](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/tacit-programming.md) — a function built from functions, with nothing named
+
+Then, when the group wants more: [Bowling](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/bowling.md) → [Game of Life](https://github.com/acodeninja/bootstrap/blob/main/docs/katas/game-of-life.md).
 
 The rest of the catalogue, and why this language gets these, is in
 [docs/katas](https://github.com/acodeninja/bootstrap/tree/main/docs/katas).

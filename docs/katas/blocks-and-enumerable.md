@@ -1,4 +1,4 @@
-# each_slice, by hand
+# Each slice, by hand
 
 Write a method that takes a collection and a size and yields each chunk of that size to a
 block. Then make it return an enumerator when no block is given, so it chains. Then get
