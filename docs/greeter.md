@@ -116,6 +116,7 @@ these are the ones that have actually broken something:
 | `objc` | clang-format LLVM at 100 columns, so `ReflowComments` and `SortIncludes` are both on. The blank line between `#import "tap.h"` and the project's own header is load-bearing and must not be filled. |
 | `r` | lintr runs with defaults, so `commented_code_linter` fails on a comment that parses as R. A worked call in a comment is a lint error. |
 | `smalltalk` | `"` is a comment and `'` is a string. An unbalanced `"` silently swallows code, and `gst-test` fails on any stderr at all. |
+| `haskell` | A comment may not **begin** with `$` or `^`: ormolu reads those as the start of a Haddock named chunk or a trailing doc comment and **deletes the line**, which `--mode check` then fails on. `--` followed by an operator character is an operator rather than a comment, so `-->` needs a space. |
 | `elm` | elm-format is not configurable, moves comments, and enforces its own blank lines around top-level declarations. |
 | `dart` | `dart format` hard-wraps at 80 and rewraps `///`; lint is `--fatal-infos`. |
 | `lolcode` | `BTW` must begin a statement, and `src/` is spliced into each test with `HAI` and `KTHXBYE` stripped — a comment outside those markers is lost. |
