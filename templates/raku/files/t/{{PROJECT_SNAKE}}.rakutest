@@ -1,7 +1,27 @@
+# Test is in the standard library, so there is nothing to install. `use lib`
+# adds a directory to the module search path, which is what makes the third line
+# work without an installed module -- and no import list is needed there,
+# because `is export` in the module already decided what comes through.
 use Test;
 use lib 'src';
 use {{PROJECT_SNAKE}};
 
+# Nothing names this file. `make test` runs prove6 over t/, which takes every
+# *.rakutest in it -- so a test file is found by that extension and deleting one
+# is safe. Run the suite with `make test`.
+#
+# There is no enclosing block and no test function: a .rakutest file is a program
+# that prints TAP, and Test is a set of subroutines that print it. The
+# assertions are top-level statements and the file is the suite.
+#
+# `is` takes the actual value, then the expected one, then the name -- and no
+# parentheses, because a Raku subroutine call does not need them. The name is
+# what a failure prints, so write it to read on its own.
+#
+# It compares with `eq`, so it is a string comparison. `is-deeply` is the one
+# for structures, and `isa-ok` for types.
 is greet('world'), 'Hello, world!', 'a greeting addresses the name it is given';
 
+# Declares the suite finished and reports the count. `plan 1` up front is the
+# alternative; done-testing at the end means the number cannot drift.
 done-testing;
